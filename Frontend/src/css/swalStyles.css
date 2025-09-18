@@ -1,0 +1,25 @@
+.cfm-cont {
+  border-radius: 1rem;
+}
+
+.cfm-boton,
+.cfm-boton-cancel {
+  border-radius: 0.5rem;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+.swal2-icon.swal2-warning {
+  margin: 0.9rem auto 0 auto;
+}
+
+.swal2-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.9rem;
+  height: 2.7rem;
+  width: 100%;
+  flex-wrap: nowrap;
+}

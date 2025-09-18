@@ -1,0 +1,90 @@
+.cont-searchNav {
+  flex: 1;
+  height: 100%;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.cont-searchNav label {
+  width: 50%;
+  height: 100%;
+  padding: 0 0.9rem;
+  gap: 0.9rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: text;
+  position: relative;
+}
+
+.cont-searchNav label:first-of-type {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.cont-searchNav label:last-of-type {
+  border-radius: 0;
+}
+
+.cont-searchNav label:focus-within {
+  outline: auto;
+}
+
+.cont-searchNav .sep-vrtSearch {
+  width: 1px;
+  height: calc(100% - 1.8rem);
+  padding: 0;
+  background-color: #e3e3e3;
+}
+
+.cont-searchNav input {
+  width: 100%;
+  border: none;
+  font-size: 1rem;
+  outline: none;
+  max-width: calc(100% - 0.4rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.cont-searchNav label button {
+  right: 0.4rem;
+  height: 55%;
+  position: absolute;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+.cont-searchNav label button img {
+  opacity: 0.6;
+  transition: 0.1s ease-in;
+}
+
+.cont-searchNav label button:hover img {
+  opacity: 1;
+}
+
+.cont-searchNav label button.no-active {
+  opacity: 0;
+  visibility: 0;
+  pointer-events: none;
+  user-select: none;
+  cursor: default;
+}
+
+.cont-searchNav button {
+  height: 100%;
+  aspect-ratio: 1/1;
+  border: none;
+  border-radius: 0 0.5rem 0.5rem 0;
+  cursor: pointer;
+  transition: 0.1s ease-in;
+}
+
+.cont-searchNav img {
+  height: 45%;
+}

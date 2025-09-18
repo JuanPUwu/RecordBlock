@@ -1,0 +1,5 @@
+.sep-hrz {
+  height: 1px;
+  width: calc(100% - 1.8rem);
+  background-color: #e3e3e3;
+}
