@@ -558,6 +558,8 @@ export default function HomeAdmin() {
 
   // Guardar nueva información
   const crearRegistro = async () => {
+    const noEmojisRegex = /^[^\p{Extended_Pictographic}]*$/u;
+
     // Limpiar campos vacíos
     const cleanedDraft = draftCrear.filter(
       (d) => d.key.trim() !== "" || d.value.trim() !== ""
@@ -582,8 +584,20 @@ export default function HomeAdmin() {
 
     // Verificar mínimo 1 par válido
     if (cleanedDraft.length === 0) {
-      toast.error("Ingresa por lo menos un dato valido");
+      toast.error("Ingresa por lo menos un dato válido");
       return;
+    }
+
+    // Validar que no haya emojis
+    for (const { key, value } of cleanedDraft) {
+      if (!noEmojisRegex.test(key.trim())) {
+        toast.error(`El dato "${key}" contiene emojis, no es valido`);
+        return;
+      }
+      if (!noEmojisRegex.test(value.trim())) {
+        toast.error(`El detalle "${value}" contiene emojis, no es valido`);
+        return;
+      }
     }
 
     const keys = cleanedDraft.map((d) => d.key.trim());
@@ -599,7 +613,7 @@ export default function HomeAdmin() {
 
     // Convertir a objeto
     const obj = cleanedDraft.reduce((acc, { key, value }) => {
-      acc[key.trim()] = value;
+      acc[key.trim()] = value.trim();
       return acc;
     }, {});
 
@@ -688,6 +702,8 @@ export default function HomeAdmin() {
   // Guardar cambios
   const { actualizarInformacion } = useInfoUsuarioService();
   const editarRegistro = async () => {
+    const noEmojisRegex = /^[^\p{Extended_Pictographic}]*$/u;
+
     // 🔹 Limpiar campos vacíos totalmente {"": ""}
     const cleanedDraft = draftDatos.filter(
       (d) => d.key.trim() !== "" || d.value.trim() !== ""
@@ -711,6 +727,18 @@ export default function HomeAdmin() {
       return;
     }
 
+    // 🔹 Validar que no haya emojis en keys ni values
+    for (const { key, value } of cleanedDraft) {
+      if (!noEmojisRegex.test(key.trim())) {
+        toast.error(`El dato "${key}" contiene emojis, no es valido`);
+        return;
+      }
+      if (!noEmojisRegex.test(value.trim())) {
+        toast.error(`El detalle "${value}" contiene emojis, no es valido`);
+        return;
+      }
+    }
+
     // 🔹 Validar duplicados (ignorando mayúsculas/minúsculas)
     const keys = cleanedDraft.map((d) => d.key.trim());
     const lowerKeys = keys.map((k) => k.toLowerCase());
@@ -726,7 +754,7 @@ export default function HomeAdmin() {
 
     // 🔹 Convertir a objeto limpio
     const obj = cleanedDraft.reduce((acc, { key, value }) => {
-      acc[key.trim()] = value;
+      acc[key.trim()] = value.trim();
       return acc;
     }, {});
 

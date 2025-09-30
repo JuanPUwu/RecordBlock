@@ -14,16 +14,26 @@ const confirmPasswordRules = yup
   .string()
   .oneOf([yup.ref("password"), null], "Las contraseñas no son idénticas");
 
+// Expresión regular para eliminar emojis
+const noEmojisRegex = /^[^\p{Extended_Pictographic}]+$/u;
+
 // Esquema para crear cliente
 export const schemaCrearUsuario = yup.object().shape({
-  nombre: yup.string().required("Nombre requerido"),
+  nombre: yup
+    .string()
+    .required("Nombre requerido")
+    .matches(noEmojisRegex, "No se permiten emojis"),
   email: yup
     .string()
     .required("Correo requerido")
     .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Correo inválido")
-    .email("No es un correo válido"),
-  password: passwordRules,
-  password2: confirmPasswordRules,
+    .email("No es un correo válido")
+    .matches(noEmojisRegex, "No se permiten emojis"),
+  password: passwordRules.matches(noEmojisRegex, "No se permiten emojis"),
+  password2: confirmPasswordRules.matches(
+    noEmojisRegex,
+    "No se permiten emojis"
+  ),
 });
 
 // Esquema para cambiar contraseña
