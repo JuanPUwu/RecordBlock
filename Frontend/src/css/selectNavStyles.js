@@ -12,7 +12,8 @@ const selectNavStyles = {
     border: "none",
     flexWrap: "nowrap",
     cursor: "pointer",
-    boxShadow: state.isFocused ? "0 0 0 2px #0060DF" : "none",
+    boxShadow: "none",
+    outline: state.isFocused ? "auto" : "none",
   }),
   valueContainer: (base) => ({
     ...base,

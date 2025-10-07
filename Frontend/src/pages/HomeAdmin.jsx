@@ -508,6 +508,15 @@ export default function HomeAdmin() {
   // ? -> Inicio crear info cliente
   const [popUpCrearInfo, setPopUpCrearInfo] = useState(false);
   const [draftCrear, setDraftCrear] = useState([]);
+  const camposObligatorios = [
+    "Hostname",
+    "Plataforma",
+    "Marca/Modelo",
+    "Tipo",
+    "Firmware/Versión S.O",
+    "Ubicación",
+    "Licenciamiento",
+  ];
 
   const { crearInformacion } = useInfoUsuarioService();
 
@@ -904,7 +913,16 @@ export default function HomeAdmin() {
           title="Crear registro"
           disabled={!clienteSeleccionado}
           onClick={() => {
-            setDraftCrear([{ key: "", value: "" }]);
+            setDraftCrear([
+              { key: "Hostname", value: "" },
+              { key: "Plataforma", value: "" },
+              { key: "Marca/Modelo", value: "" },
+              { key: "Tipo", value: "" },
+              { key: "Firmware/Versión S.O", value: "" },
+              { key: "Ubicación", value: "" },
+              { key: "Licenciamiento", value: "" },
+            ]);
+
             setPopUpCrearInfo(true);
           }}
         >
@@ -1284,28 +1302,39 @@ export default function HomeAdmin() {
           </h2>
 
           <div ref={scrollCrearRef}>
-            {draftCrear.map(({ key, value }, i, array) => (
-              <div key={i} className="cont-dato-editar">
-                <input
-                  type="text"
-                  placeholder="Dato..."
-                  value={key}
-                  onChange={(e) => cambiarLlaveCrear(i, e.target.value)}
-                  ref={i === array.length - 1 ? inputCrearRef : null}
-                />
+            {draftCrear.map(({ key, value }, i, array) => {
+              const esObligatorio = i < 7;
 
-                <input
-                  type="text"
-                  placeholder="Detalle..."
-                  value={value}
-                  onChange={(e) => cambiarValorCrear(i, e.target.value)}
-                />
+              return (
+                <div key={i} className="cont-dato-editar">
+                  {esObligatorio ? (
+                    <span>{key}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Dato..."
+                      value={key}
+                      onChange={(e) => cambiarLlaveCrear(i, e.target.value)}
+                      ref={i === array.length - 1 ? inputCrearRef : null}
+                    />
+                  )}
 
-                <button type="button" onClick={() => eliminarDatoCrear(i)}>
-                  <img src={imgBorrar} alt="" />
-                </button>
-              </div>
-            ))}
+                  <input
+                    type="text"
+                    placeholder="Detalle..."
+                    value={value}
+                    onChange={(e) => cambiarValorCrear(i, e.target.value)}
+                    className={esObligatorio ? "input-obligatorio" : ""}
+                  />
+
+                  {!esObligatorio && (
+                    <button type="button" onClick={() => eliminarDatoCrear(i)}>
+                      <img src={imgBorrar} alt="Eliminar" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className="sep-hrz"></div>
@@ -1343,28 +1372,39 @@ export default function HomeAdmin() {
           </h2>
 
           <div ref={scrollRef}>
-            {draftDatos.map(({ key, value }, i, array) => (
-              <div key={i} className="cont-dato-editar">
-                <input
-                  type="text"
-                  placeholder="Dato..."
-                  value={key}
-                  onChange={(e) => cambiarLlaveDraft(i, e.target.value)}
-                  ref={i === array.length - 1 ? inputRef : null}
-                />
+            {draftDatos.map(({ key, value }, i, array) => {
+              const esObligatorio = i < 7;
 
-                <input
-                  type="text"
-                  placeholder="Detalle..."
-                  value={value}
-                  onChange={(e) => cambiarValorDraft(i, e.target.value)}
-                />
+              return (
+                <div key={i} className="cont-dato-editar">
+                  {esObligatorio ? (
+                    <span>{key}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Dato..."
+                      value={key}
+                      onChange={(e) => cambiarLlaveDraft(i, e.target.value)}
+                      ref={i === array.length - 1 ? inputRef : null}
+                    />
+                  )}
 
-                <button type="button" onClick={() => eliminarDatoDraft(i)}>
-                  <img src={imgBorrar} alt="" />
-                </button>
-              </div>
-            ))}
+                  <input
+                    type="text"
+                    placeholder="Detalle..."
+                    value={value}
+                    onChange={(e) => cambiarValorDraft(i, e.target.value)}
+                    className={esObligatorio ? "input-obligatorio" : ""}
+                  />
+
+                  {!esObligatorio && (
+                    <button type="button" onClick={() => eliminarDatoDraft(i)}>
+                      <img src={imgBorrar} alt="Eliminar" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <div className="sep-hrz"></div>
           <div className="cont-btns">

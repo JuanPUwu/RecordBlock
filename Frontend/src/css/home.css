@@ -491,7 +491,8 @@ section div {
   gap: 0.9rem;
 }
 
-.cont-dato-editar input {
+.cont-dato-editar input,
+.cont-dato-editar span {
   border: none;
   height: 100%;
   padding: 0 0.7rem;
@@ -501,12 +502,23 @@ section div {
   flex: none;
 }
 
+.cont-dato-editar span {
+  width: calc(35% - 2.25rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .cont-dato-editar input:first-of-type {
   width: calc(35% - 2.25rem);
 }
 
 .cont-dato-editar input:last-of-type {
   width: calc(65% - 2.25rem);
+}
+
+.cont-dato-editar input:last-of-type.input-obligatorio {
+  flex: 1;
 }
 
 .cont-dato-editar button {

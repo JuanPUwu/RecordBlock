@@ -74,19 +74,72 @@ export const crearInformacion = async (req, res) => {
       usuario_id = req.usuario.id;
       ({ datos } = req.body);
     } else {
-      return res.status(403).json({ success: false, message: "Rol no autorizado." });
+      return res
+        .status(403)
+        .json({ success: false, message: "Rol no autorizado." });
     }
 
     if (!datos) {
-      return res.status(400).json({ success: false, message: "El campo 'datos' es obligatorio" });
+      return res
+        .status(400)
+        .json({ success: false, message: "El campo 'datos' es obligatorio" });
     }
 
     const registros = Array.isArray(datos) ? datos : [datos];
+
+    // Campos mínimos requeridos
+    const camposRequeridos = [
+      "hostname",
+      "plataforma",
+      "marca/modelo",
+      "tipo",
+      "firmware/version s.o",
+      "ubicacion",
+      "licenciamiento",
+    ];
+
+    // 🔹 Función para normalizar textos (sin tildes ni mayúsculas)
+    const normalizar = (texto) =>
+      texto
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, ""); // elimina acentos
+
     for (const registro of registros) {
       if (typeof registro !== "object") {
         return res.status(400).json({
           success: false,
           message: "Cada elemento de 'datos' debe ser un JSON válido",
+        });
+      }
+
+      // 🔹 Crear un mapa normalizado de claves
+      const clavesNormalizadas = Object.keys(registro).map((k) =>
+        normalizar(k)
+      );
+
+      // 🔹 Buscar campos faltantes o vacíos
+      const faltantes = camposRequeridos.filter((campo) => {
+        const campoNormalizado = normalizar(campo);
+        const index = clavesNormalizadas.indexOf(campoNormalizado);
+
+        // No existe
+        if (index === -1) return true;
+
+        const valor = registro[Object.keys(registro)[index]];
+        return (
+          valor === null ||
+          valor === undefined ||
+          valor.toString().trim() === ""
+        );
+      });
+
+      if (faltantes.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Faltan o están vacíos los siguientes campos obligatorios: ${faltantes.join(
+            ", "
+          )}`,
         });
       }
     }
@@ -112,7 +165,10 @@ export const crearInformacion = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al crear información" });
+    console.error(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error al crear información" });
   }
 };
 
@@ -122,27 +178,33 @@ export const actualizarInformacion = async (req, res) => {
     const { info_id, usuario_id, datos } = req.body;
 
     if (!info_id) {
-      return res.status(400).json({ success: false, message: "El campo 'info_id' es obligatorio" });
+      return res
+        .status(400)
+        .json({ success: false, message: "El campo 'info_id' es obligatorio" });
     }
 
     if (!datos || typeof datos !== "object") {
-      return res
-        .status(400)
-        .json({ success: false, message: "El campo 'datos' debe ser un JSON válido" });
+      return res.status(400).json({
+        success: false,
+        message: "El campo 'datos' debe ser un JSON válido",
+      });
     }
 
     let userId;
     if (req.usuario.rol === "admin") {
       if (!usuario_id) {
-        return res
-          .status(400)
-          .json({ success: false, message: "El campo 'usuario_id' es obligatorio para admin" });
+        return res.status(400).json({
+          success: false,
+          message: "El campo 'usuario_id' es obligatorio para admin",
+        });
       }
       userId = usuario_id;
     } else if (req.usuario.rol === "cliente") {
       userId = req.usuario.id;
     } else {
-      return res.status(403).json({ success: false, message: "Rol no autorizado." });
+      return res
+        .status(403)
+        .json({ success: false, message: "Rol no autorizado." });
     }
 
     const row = await getAsync(
@@ -151,9 +213,10 @@ export const actualizarInformacion = async (req, res) => {
     );
 
     if (!row) {
-      return res
-        .status(404)
-        .json({ success: false, message: "La información no pertenece o no existe." });
+      return res.status(404).json({
+        success: false,
+        message: "La información no pertenece o no existe.",
+      });
     }
 
     await runAsync("UPDATE informacion_usuario SET datos = ? WHERE id = ?", [
@@ -167,7 +230,10 @@ export const actualizarInformacion = async (req, res) => {
       data: { info_id, usuario_id: userId, datos },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al actualizar información" });
+    console.error(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error al actualizar información" });
   }
 };
 

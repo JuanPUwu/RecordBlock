@@ -67,6 +67,8 @@ router.get("/", verificarToken, obtenerInformacion);
  *       - **Admin**: puede crear información para cualquier usuario indicando `usuario_id`.
  *       - **Cliente**: crea información asociada a su propio ID (se ignora `usuario_id` en este caso).
  *       - El campo `datos` acepta un **objeto JSON único** o un **array de objetos JSON**.
+ *       - Los siguientes campos dentro de `datos` son **obligatorios**:
+ *         `hostname`, `plataforma`, `marca_modelo`, `tipo`, `firmware_version`, `ubicacion`, `licenciamiento`.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -83,17 +85,69 @@ router.get("/", verificarToken, obtenerInformacion);
  *               datos:
  *                 oneOf:
  *                   - type: object
- *                     example:
- *                       direccion: "Calle 123"
- *                       telefono: "3000000000"
- *                       edad: 30
+ *                     required:
+ *                       - hostname
+ *                       - plataforma
+ *                       - marca_modelo
+ *                       - tipo
+ *                       - firmware_version
+ *                       - ubicacion
+ *                       - licenciamiento
+ *                     properties:
+ *                       hostname:
+ *                         type: string
+ *                         example: "ServidorPrincipal"
+ *                       plataforma:
+ *                         type: string
+ *                         example: "Windows Server"
+ *                       marca_modelo:
+ *                         type: string
+ *                         example: "Dell PowerEdge R740"
+ *                       tipo:
+ *                         type: string
+ *                         example: "Servidor"
+ *                       firmware_version:
+ *                         type: string
+ *                         example: "v2.4.1"
+ *                       ubicacion:
+ *                         type: string
+ *                         example: "Bogotá - Centro de Datos"
+ *                       licenciamiento:
+ *                         type: string
+ *                         example: "Windows Server 2022 Standard"
  *                   - type: array
  *                     items:
  *                       type: object
- *                       example:
- *                         direccion: "Carrera 45"
- *                         telefono: "3101112233"
- *                         edad: 25
+ *                       required:
+ *                         - hostname
+ *                         - plataforma
+ *                         - marca_modelo
+ *                         - tipo
+ *                         - firmware_version
+ *                         - ubicacion
+ *                         - licenciamiento
+ *                       properties:
+ *                         hostname:
+ *                           type: string
+ *                           example: "ServidorBackup"
+ *                         plataforma:
+ *                           type: string
+ *                           example: "Ubuntu Server"
+ *                         marca_modelo:
+ *                           type: string
+ *                           example: "HP ProLiant DL380"
+ *                         tipo:
+ *                           type: string
+ *                           example: "Servidor"
+ *                         firmware_version:
+ *                           type: string
+ *                           example: "v3.0.5"
+ *                         ubicacion:
+ *                           type: string
+ *                           example: "Medellín - Centro Secundario"
+ *                         licenciamiento:
+ *                           type: string
+ *                           example: "Ubuntu 22.04 LTS"
  *     responses:
  *       201:
  *         description: Información creada correctamente
