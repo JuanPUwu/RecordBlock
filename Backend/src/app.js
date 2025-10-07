@@ -36,4 +36,5 @@ const __dirname = path.dirname(__filename);
 // Servir carpeta assets como estática
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
+
 export default app;

@@ -45,6 +45,9 @@ const router = express.Router();
  *                   rol:
  *                     type: string
  *                     example: cliente
+ *                   verificado:
+ *                      type: boolean
+ *                      example: true
  *       403:
  *         description: Acceso denegado (no admin)
  *       500:

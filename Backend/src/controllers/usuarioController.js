@@ -17,7 +17,7 @@ export const obtenerUsuarios = async (req, res) => {
     }
 
     const rows = await allAsync(
-      "SELECT id, nombre, email, rol FROM usuario WHERE rol = 'cliente'"
+      "SELECT id, nombre, email, rol, verificado FROM usuario WHERE rol = 'cliente'"
     );
 
     res.json({ success: true, data: rows });
@@ -72,7 +72,7 @@ export const crearUsuario = async (req, res) => {
     // Generar token único
     const token = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-    const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
     await runAsync(
       "INSERT INTO tokens_verificacion (user_id, token_hash, expires_at) VALUES (?, ?, ?)",

@@ -6,6 +6,7 @@ import imgBorrar from "../assets/img/eliminar.png";
 export default function CardUsuario({
   nameUsuario,
   correoUsuario,
+  estado,
   onClick1,
   onClick2,
 }) {
@@ -13,6 +14,7 @@ export default function CardUsuario({
     <div className="card-usuario">
       <div>
         <span>{nameUsuario}</span>
+        <span>{estado}</span>
         <span>{correoUsuario}</span>
       </div>
       <button onClick={onClick1} title="Cambio contraseña">

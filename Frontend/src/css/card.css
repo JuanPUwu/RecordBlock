@@ -70,11 +70,16 @@
   flex-direction: row;
   align-items: center;
   padding: 0 0.7rem;
-  justify-content: space-between;
+  gap: 0.7rem;
 }
 
 .card-usuario span {
   font-size: 1rem;
+}
+
+.card-usuario span:nth-child(2) {
+  margin-left: auto;
+  color: #767676;
 }
 
 .card-usuario span:last-of-type {

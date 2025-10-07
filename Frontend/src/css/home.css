@@ -176,12 +176,9 @@
   font-size: 1.1rem;
 }
 
-.cont-label label {
-  margin-left: 0.5rem;
-}
-
 .cont-label span {
   color: #fa3d37;
+  font-size: 1rem;
 }
 
 .cont-pass {

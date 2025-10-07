@@ -46,12 +46,13 @@ export const AuthProvider = ({ children }) => {
     );
 
     // Response interceptor
+    // En AuthContext.js, interceptor de respuesta
     api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
 
-        // 🔹 Caso 401 → intentar refresh
+        // 401 → refresh token
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
           const newToken = await refreshToken();
@@ -61,8 +62,11 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
-        // 🔹 Caso 403 → token inválido → logout inmediato
-        if (error.response?.status === 403) {
+        // 403 → token inválido, pero evitar casos como correo no verificado
+        if (
+          error.response?.status === 403 &&
+          error.response?.data?.error === "Refresh token inválido o expirado"
+        ) {
           await logout();
           toast.error("Sesión expirada, vuelve a iniciar sesión");
         }
@@ -84,10 +88,16 @@ export const AuthProvider = ({ children }) => {
       toast.success("Bienvenido " + usuario.nombre);
       return { success: true, data: response.data };
     } catch (error) {
-      toast.error(error.response?.data?.error || "Error al iniciar sesión");
+      const mensaje =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Error al iniciar sesión";
+
+      toast.error(mensaje);
+
       return {
         success: false,
-        error: error.response?.data?.error || "Error al iniciar sesión",
+        error: mensaje,
       };
     }
   };

@@ -126,7 +126,7 @@ export default function HomeAdmin() {
 
       // 🔹 Título principal
       content.push({
-        text: "📄 Informe de Infraestructura",
+        text: "Inventario de equipos",
         style: "title",
         alignment: "center",
         margin: [0, 0, 0, 20],
@@ -213,7 +213,9 @@ export default function HomeAdmin() {
         },
       };
 
-      pdfMake.createPdf(docDefinition).download("informe_infraestructura.pdf");
+      pdfMake
+        .createPdf(docDefinition)
+        .download(`inventario de equipos ${new Date().toLocaleString()}.pdf`);
     } catch (error) {
       console.error("Error exportando PDF:", error);
     }
@@ -271,7 +273,7 @@ export default function HomeAdmin() {
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      saveAs(blob, "reporteRegistros.xlsx");
+      saveAs(blob, `inventario de equipos ${new Date().toLocaleString()}.xlsx`);
     } catch (error) {
       console.error("Error exportando Excel:", error);
     }
@@ -289,10 +291,12 @@ export default function HomeAdmin() {
     const response = await obtenerUsuarios();
     setClientes(response.data.data);
     setOpcionesClientes(
-      response.data.data.map((c) => ({
-        value: c.id,
-        label: c.nombre,
-      }))
+      response.data.data
+        .filter((c) => c.verificado === 1) // solo clientes verificados
+        .map((c) => ({
+          value: c.id,
+          label: c.nombre,
+        }))
     );
     setOpcionesClientesTabla(response.data.data);
   };
@@ -366,7 +370,7 @@ export default function HomeAdmin() {
     const { password2, ...usuario } = data;
     const response = await crearUsuario(usuario);
     if (response.success) {
-      toast.success("Cliente creado con exito");
+      toast.success("Cliente creado con exito, Verificación pendiente");
       obtenerClientes();
     } else {
       toast.error(response.error);
@@ -1099,6 +1103,7 @@ export default function HomeAdmin() {
                     key={cliente.id}
                     nameUsuario={cliente.nombre}
                     correoUsuario={cliente.email}
+                    estado={cliente.verificado ? "" : "(No verificado)"}
                     onClick1={() => {
                       setPopUpEditarContrasena(true);
                       setUsuarioSeleccionado(cliente);
