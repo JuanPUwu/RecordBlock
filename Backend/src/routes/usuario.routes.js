@@ -5,6 +5,7 @@ import {
   crearUsuario,
   actualizarUsuario,
   eliminarUsuario,
+  verificarCorreo,
 } from "../controllers/usuarioController.js";
 import {
   verificarToken,
@@ -56,7 +57,7 @@ router.get("/", verificarToken, verificarAdmin, obtenerUsuarios);
  * /api/usuario:
  *   post:
  *     summary: Crear un nuevo usuario, rol por defecto "cliente" (admin)
- *     description: Crea un usuario con rol "cliente" por defecto. Solo accesible para administradores.
+ *     description: Crea un usuario con rol "cliente" por defecto. Solo accesible para administradores. Envía un correo con enlace de verificación al usuario.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
@@ -73,16 +74,16 @@ router.get("/", verificarToken, verificarAdmin, obtenerUsuarios);
  *             properties:
  *               nombre:
  *                 type: string
- *                 example: Juan Pérez
+ *                 example: Pablo
  *               email:
  *                 type: string
- *                 example: juan@example.com
+ *                 example: pablys8@gmail.com
  *               password:
  *                 type: string
  *                 example: Contraseña123@
  *     responses:
  *       201:
- *         description: Usuario creado correctamente
+ *         description: Usuario creado correctamente y correo de verificación enviado
  *         content:
  *           application/json:
  *             schema:
@@ -90,10 +91,7 @@ router.get("/", verificarToken, verificarAdmin, obtenerUsuarios);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Usuario creado correctamente
- *                 usuarioId:
- *                   type: integer
- *                   example: 7
+ *                   example: Usuario creado correctamente. Se envió un correo de verificación.
  *       400:
  *         description: Datos inválidos o faltantes
  *       403:
@@ -172,5 +170,40 @@ router.put("/:id", verificarToken, actualizarUsuario);
  *         description: Error al eliminar usuario
  */
 router.delete("/:id", verificarToken, verificarAdmin, eliminarUsuario);
+
+/**
+ * @swagger
+ * /api/usuario/verificar/{token}:
+ *   get:
+ *     summary: Verificar correo electrónico del usuario
+ *     description: Verifica el correo electrónico del usuario usando el token enviado por correo. Si el token es válido y no ha expirado, marca la cuenta como verificada.
+ *     tags: [Usuario]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Token único de verificación enviado al correo del usuario
+ *     responses:
+ *       200:
+ *         description: Correo verificado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Correo verificado correctamente.
+ *       400:
+ *         description: Token inválido o expirado
+ *       500:
+ *         description: Error al verificar correo
+ */
+router.get("/verificar/:token", verificarCorreo);
 
 export default router;

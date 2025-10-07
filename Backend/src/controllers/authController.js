@@ -23,18 +23,24 @@ export const loginUsuario = async (req, res) => {
   }
 
   try {
-    const usuarios = await all("SELECT * FROM usuario WHERE email = ?", [
-      email,
-    ]);
+    const usuarios = await all("SELECT * FROM usuario WHERE email = ?", [email]);
     const usuario = usuarios[0];
 
     if (!usuario) {
-      return res.status(401).json({ error: "Usuario o contraseña no valido" });
+      return res.status(401).json({ error: "Usuario o contraseña no válido" });
+    }
+
+    // Verificar si el usuario confirmó su correo
+    if (!usuario.verificado) {
+      return res.status(403).json({
+        success: false,
+        message: "Debes verificar tu correo antes de iniciar sesión.",
+      });
     }
 
     const passwordValido = await bcrypt.compare(password, usuario.password);
     if (!passwordValido) {
-      return res.status(401).json({ error: "Usuario o contraseña no valido" });
+      return res.status(401).json({ error: "Usuario o contraseña no válido" });
     }
 
     // payload con id y rol
@@ -45,7 +51,7 @@ export const loginUsuario = async (req, res) => {
       expiresIn: TOKEN_CONFIG.ACCESS_TOKEN_EXPIRY,
     });
 
-    // refresh token -> 7 días (consistente con refreshToken)
+    // refresh token -> 7 días
     const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
       expiresIn: TOKEN_CONFIG.REFRESH_TOKEN_EXPIRY,
     });
@@ -56,10 +62,10 @@ export const loginUsuario = async (req, res) => {
       usuario.id,
     ]);
 
-    // mandar refresh token como cookie httpOnly
+    // Mandar refresh token como cookie httpOnly
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, // true solo en https/producción
+      secure: false, // true solo en producción con HTTPS
       sameSite: "lax",
       maxAge: TOKEN_CONFIG.REFRESH_TOKEN_EXPIRY_MS,
     });
@@ -74,6 +80,7 @@ export const loginUsuario = async (req, res) => {
     res.status(500).json({ error: "Error en el servidor" });
   }
 };
+
 
 // ==================== REFRESH TOKEN ====================
 export const refreshToken = async (req, res) => {

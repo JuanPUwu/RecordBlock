@@ -1,6 +1,10 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import validator from "validator"; // para validar email
+import path from "path";
+import { fileURLToPath } from "url";
 import { runAsync, getAsync, allAsync } from "../utils/dbHelpers.js";
+import { enviarCorreoVerificacion } from "../utils/email.js";
 
 // Obtener todos los usuarios con rol "cliente" (solo admin)
 export const obtenerUsuarios = async (req, res) => {
@@ -18,7 +22,9 @@ export const obtenerUsuarios = async (req, res) => {
 
     res.json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al obtener clientes" });
+    res
+      .status(500)
+      .json({ success: false, message: "Error al obtener clientes" });
   }
 };
 
@@ -34,34 +40,101 @@ export const crearUsuario = async (req, res) => {
 
     const { nombre, email, password } = req.body;
     if (!nombre || !email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Nombre, email y password son requeridos." });
+      return res.status(400).json({
+        success: false,
+        message: "Nombre, email y password son requeridos.",
+      });
     }
 
     if (!validator.isEmail(email)) {
-      return res.status(400).json({ success: false, message: "Email inválido." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email inválido." });
     }
 
     const existe = await getAsync(
       "SELECT * FROM usuario WHERE nombre = ? OR email = ?",
       [nombre, email]
     );
-
     if (existe) {
-      return res.status(400).json({ success: false, message: "El cliente ya existe." });
+      return res
+        .status(400)
+        .json({ success: false, message: "El cliente ya existe." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    await runAsync(
-      "INSERT INTO usuario (nombre, email, password, rol) VALUES (?, ?, ?, 'cliente')",
+    const result = await runAsync(
+      "INSERT INTO usuario (nombre, email, password, rol, verificado) VALUES (?, ?, ?, 'cliente', 0)",
       [nombre, email, hashedPassword]
     );
+    const userId = result.lastID;
 
-    res.status(201).json({ success: true, message: "Usuario creado correctamente." });
+    // Generar token único
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+
+    await runAsync(
+      "INSERT INTO tokens_verificacion (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
+      [userId, tokenHash, expiresAt.toISOString()]
+    );
+
+    await enviarCorreoVerificacion(email, token);
+
+    res.status(201).json({
+      success: true,
+      message:
+        "Usuario creado correctamente. Se envió un correo de verificación.",
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al crear cliente" });
+    console.error(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error al crear cliente", err });
+  }
+};
+
+//  Verificar correo
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const verificarCorreo = async (req, res) => {
+  try {
+    const token = req.params.token; // ⚠ token desde params
+    if (!token) {
+      return res.sendFile(
+        path.join(__dirname, "../views/verificacionFallida.html")
+      );
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const registro = await getAsync(
+      "SELECT * FROM tokens_verificacion WHERE token_hash = ?",
+      [tokenHash]
+    );
+
+    if (!registro || new Date(registro.expires_at) < new Date()) {
+      return res.sendFile(
+        path.join(__dirname, "../views/verificacionFallida.html")
+      );
+    }
+
+    await runAsync("UPDATE usuario SET verificado = 1 WHERE id = ?", [
+      registro.user_id,
+    ]);
+    await runAsync("DELETE FROM tokens_verificacion WHERE user_id = ?", [
+      registro.user_id,
+    ]);
+
+    return res.sendFile(
+      path.join(__dirname, "../views/verificacionExitosa.html")
+    );
+  } catch (err) {
+    console.error(err);
+    return res.sendFile(
+      path.join(__dirname, "../views/verificacionFallida.html")
+    );
   }
 };
 
@@ -73,7 +146,9 @@ export const actualizarUsuario = async (req, res) => {
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({ success: false, message: "La contraseña es obligatoria." });
+      return res
+        .status(400)
+        .json({ success: false, message: "La contraseña es obligatoria." });
     }
 
     const idFinal = id ? parseInt(id) : idToken;
@@ -81,7 +156,8 @@ export const actualizarUsuario = async (req, res) => {
     if (req.usuario.rol !== "admin" && idFinal !== idToken) {
       return res.status(403).json({
         success: false,
-        message: "No tienes permiso para actualizar la contraseña de este usuario.",
+        message:
+          "No tienes permiso para actualizar la contraseña de este usuario.",
       });
     }
 
@@ -93,12 +169,19 @@ export const actualizarUsuario = async (req, res) => {
     );
 
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, message: "Usuario no encontrado." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Usuario no encontrado." });
     }
 
-    res.json({ success: true, message: "Contraseña actualizada correctamente." });
+    res.json({
+      success: true,
+      message: "Contraseña actualizada correctamente.",
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al actualizar usuario" });
+    res
+      .status(500)
+      .json({ success: false, message: "Error al actualizar usuario" });
   }
 };
 
@@ -116,11 +199,15 @@ export const eliminarUsuario = async (req, res) => {
     const result = await runAsync("DELETE FROM usuario WHERE id = ?", [id]);
 
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, message: "Usuario no encontrado." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Usuario no encontrado." });
     }
 
     res.json({ success: true, message: "Usuario eliminado correctamente." });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al eliminar usuario" });
+    res
+      .status(500)
+      .json({ success: false, message: "Error al eliminar usuario" });
   }
 };

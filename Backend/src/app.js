@@ -6,6 +6,8 @@ import usuarioRoutes from "./routes/usuario.routes.js";
 import infoUsuarioRoutes from "./routes/infoUsuario.routes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 
@@ -28,5 +30,10 @@ app.use("/api/informacion_usuario", infoUsuarioRoutes);
 
 // Swagger docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Servir carpeta assets como estática
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 export default app;
