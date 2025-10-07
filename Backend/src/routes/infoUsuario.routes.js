@@ -68,7 +68,7 @@ router.get("/", verificarToken, obtenerInformacion);
  *       - **Cliente**: crea información asociada a su propio ID (se ignora `usuario_id` en este caso).
  *       - El campo `datos` acepta un **objeto JSON único** o un **array de objetos JSON**.
  *       - Los siguientes campos dentro de `datos` son **obligatorios**:
- *         `hostname`, `plataforma`, `marca_modelo`, `tipo`, `firmware_version`, `ubicacion`, `licenciamiento`.
+ *         `hostname`, `plataforma`, `"marca/modelo"`, `tipo`, `"firmware/version s.o"`, `ubicacion`, `licenciamiento`.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -88,9 +88,9 @@ router.get("/", verificarToken, obtenerInformacion);
  *                     required:
  *                       - hostname
  *                       - plataforma
- *                       - marca_modelo
+ *                       - "marca/modelo"
  *                       - tipo
- *                       - firmware_version
+ *                       - "firmware/version s.o"
  *                       - ubicacion
  *                       - licenciamiento
  *                     properties:
@@ -100,13 +100,13 @@ router.get("/", verificarToken, obtenerInformacion);
  *                       plataforma:
  *                         type: string
  *                         example: "Windows Server"
- *                       marca_modelo:
+ *                       "marca/modelo":
  *                         type: string
  *                         example: "Dell PowerEdge R740"
  *                       tipo:
  *                         type: string
  *                         example: "Servidor"
- *                       firmware_version:
+ *                       "firmware/version s.o":
  *                         type: string
  *                         example: "v2.4.1"
  *                       ubicacion:
@@ -121,9 +121,9 @@ router.get("/", verificarToken, obtenerInformacion);
  *                       required:
  *                         - hostname
  *                         - plataforma
- *                         - marca_modelo
+ *                         - "marca/modelo"
  *                         - tipo
- *                         - firmware_version
+ *                         - "firmware/version s.o"
  *                         - ubicacion
  *                         - licenciamiento
  *                       properties:
@@ -133,13 +133,13 @@ router.get("/", verificarToken, obtenerInformacion);
  *                         plataforma:
  *                           type: string
  *                           example: "Ubuntu Server"
- *                         marca_modelo:
+ *                         "marca/modelo":
  *                           type: string
  *                           example: "HP ProLiant DL380"
  *                         tipo:
  *                           type: string
  *                           example: "Servidor"
- *                         firmware_version:
+ *                         "firmware/version s.o":
  *                           type: string
  *                           example: "v3.0.5"
  *                         ubicacion:
@@ -165,9 +165,11 @@ router.post("/", verificarToken, crearInformacion);
  * /api/informacion_usuario:
  *   put:
  *     summary: Actualizar información de usuario
- *     description:
- *       - Si es **admin** puede actualizar información de cualquier usuario (validando pertenencia con `usuario_id`).
- *       - Si es **cliente** solo puede actualizar su propia información.
+ *     description: >
+ *       - **Admin**: puede actualizar información de cualquier usuario indicando `usuario_id`.
+ *       - **Cliente**: solo puede actualizar la información asociada a su propio ID (se ignora `usuario_id` en este caso).
+ *       - Los siguientes campos dentro de `datos` son **obligatorios**:
+ *         `hostname`, `plataforma`, `"marca/modelo"`, `tipo`, `"firmware/version s.o"`, `ubicacion`, `licenciamiento`.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -178,7 +180,7 @@ router.post("/", verificarToken, crearInformacion);
  *           schema:
  *             type: object
  *             required:
- *               - id
+ *               - info_id
  *               - datos
  *             properties:
  *               info_id:
@@ -189,14 +191,41 @@ router.post("/", verificarToken, crearInformacion);
  *                 example: 1
  *               datos:
  *                 type: object
- *                 example:
- *                   direccion: "Calle 456"
- *                   telefono: "3111111111"
+ *                 required:
+ *                   - hostname
+ *                   - plataforma
+ *                   - "marca/modelo"
+ *                   - tipo
+ *                   - "firmware/version s.o"
+ *                   - ubicacion
+ *                   - licenciamiento
+ *                 properties:
+ *                   hostname:
+ *                     type: string
+ *                     example: "ServidorPrincipal"
+ *                   plataforma:
+ *                     type: string
+ *                     example: "Windows Server"
+ *                   "marca/modelo":
+ *                     type: string
+ *                     example: "Dell PowerEdge R740"
+ *                   tipo:
+ *                     type: string
+ *                     example: "Servidor"
+ *                   "firmware/version s.o":
+ *                     type: string
+ *                     example: "v2.4.1"
+ *                   ubicacion:
+ *                     type: string
+ *                     example: "Bogotá - Centro de Datos"
+ *                   licenciamiento:
+ *                     type: string
+ *                     example: "Windows Server 2022 Standard"
  *     responses:
  *       200:
  *         description: Información actualizada correctamente
  *       400:
- *         description: Datos inválidos
+ *         description: Datos inválidos o incompletos
  *       403:
  *         description: Rol no autorizado o información no perteneciente
  *       404:

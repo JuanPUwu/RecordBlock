@@ -190,6 +190,53 @@ export const actualizarInformacion = async (req, res) => {
       });
     }
 
+    // ================= VALIDAR CAMPOS OBLIGATORIOS =================
+    const camposRequeridos = [
+      "hostname",
+      "plataforma",
+      "marca/modelo",
+      "tipo",
+      "firmware/version s.o",
+      "ubicacion",
+      "licenciamiento",
+    ];
+
+    // 🔹 Normalizador de texto (minúsculas y sin tildes)
+    const normalizar = (texto) =>
+      texto
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    // 🔹 Crear mapa de claves normalizadas
+    const clavesNormalizadas = Object.keys(datos).map((k) => normalizar(k));
+
+    // 🔹 Buscar campos faltantes o vacíos
+    const faltantes = camposRequeridos.filter((campo) => {
+      const campoNormalizado = normalizar(campo);
+      const index = clavesNormalizadas.indexOf(campoNormalizado);
+
+      if (index === -1) return true; // no existe
+
+      const valor = datos[Object.keys(datos)[index]];
+      return (
+        valor === null ||
+        valor === undefined ||
+        valor.toString().trim() === ""
+      );
+    });
+
+    if (faltantes.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Faltan o están vacíos los siguientes campos obligatorios: ${faltantes.join(
+          ", "
+        )}`,
+      });
+    }
+    // ================================================================
+
+    // Determinar el usuario que puede editar
     let userId;
     if (req.usuario.rol === "admin") {
       if (!usuario_id) {
@@ -207,6 +254,7 @@ export const actualizarInformacion = async (req, res) => {
         .json({ success: false, message: "Rol no autorizado." });
     }
 
+    // Verificar que la información exista y pertenezca al usuario
     const row = await getAsync(
       "SELECT * FROM informacion_usuario WHERE id = ? AND usuario_id = ?",
       [info_id, userId]
@@ -219,6 +267,7 @@ export const actualizarInformacion = async (req, res) => {
       });
     }
 
+    // Actualizar información
     await runAsync("UPDATE informacion_usuario SET datos = ? WHERE id = ?", [
       JSON.stringify(datos),
       info_id,
