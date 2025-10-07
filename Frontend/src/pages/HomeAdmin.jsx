@@ -213,12 +213,9 @@ export default function HomeAdmin() {
         },
       };
 
-      // 🔹 Descargar PDF
       pdfMake.createPdf(docDefinition).download("informe_infraestructura.pdf");
-
-      console.log("✅ PDF narrativo generado con agrupaciones");
     } catch (error) {
-      console.error("❌ Error exportando PDF:", error);
+      console.error("Error exportando PDF:", error);
     }
   };
 
@@ -631,8 +628,6 @@ export default function HomeAdmin() {
       usuario_id: clienteSeleccionado.value,
       datos: obj,
     };
-
-    console.log(nuevaInfo);
 
     const response = await crearInformacion(nuevaInfo);
 
