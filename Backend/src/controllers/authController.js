@@ -3,6 +3,9 @@ import { addToBlacklist } from "../config/blacklist.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { enviarCorreoRecuperacion } from "../utils/email.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
@@ -14,6 +17,10 @@ const TOKEN_CONFIG = {
   REFRESH_TOKEN_EXPIRY_MS: 7 * 24 * 60 * 60 * 1000, // 7 días en milisegundos
 };
 
+// ==================== UTILIDADES PARA RUTAS ABSOLUTAS ====================
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // ==================== LOGIN ====================
 export const loginUsuario = async (req, res) => {
   const { email, password } = req.body;
@@ -23,7 +30,9 @@ export const loginUsuario = async (req, res) => {
   }
 
   try {
-    const usuarios = await all("SELECT * FROM usuario WHERE email = ?", [email]);
+    const usuarios = await all("SELECT * FROM usuario WHERE email = ?", [
+      email,
+    ]);
     const usuario = usuarios[0];
 
     if (!usuario) {
@@ -80,7 +89,6 @@ export const loginUsuario = async (req, res) => {
     res.status(500).json({ error: "Error en el servidor" });
   }
 };
-
 
 // ==================== REFRESH TOKEN ====================
 export const refreshToken = async (req, res) => {
@@ -140,8 +148,8 @@ export const refreshToken = async (req, res) => {
         id: usuario.id,
         rol: usuario.rol,
         email: usuario.email,
-        nombre: usuario.nombre
-      }
+        nombre: usuario.nombre,
+      },
     });
   } catch (err) {
     console.error("Error en refresh:", err.message);
@@ -170,7 +178,10 @@ export const logout = async (req, res) => {
   if (accessToken) {
     try {
       // Ahora usa la configuración centralizada
-      await addToBlacklist(accessToken, TOKEN_CONFIG.ACCESS_TOKEN_EXPIRY_SECONDS);
+      await addToBlacklist(
+        accessToken,
+        TOKEN_CONFIG.ACCESS_TOKEN_EXPIRY_SECONDS
+      );
     } catch (err) {
       console.error("Error al agregar token a la blacklist:", err.message);
     }
@@ -184,4 +195,138 @@ export const logout = async (req, res) => {
   });
 
   return res.json({ message: "Sesión cerrada correctamente" });
+};
+
+// ==================== RECUPERAR CONTRASEÑA ====================
+
+// Paso 1: Usuario solicita restablecimiento
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const usuarios = await all("SELECT * FROM usuario WHERE email = ?", [
+      email,
+    ]);
+    const usuario = usuarios[0];
+
+    if (!usuario)
+      return res.status(404).json({ error: "Usuario no encontrado" });
+
+    // Verificar si el usuario está verificado
+    if (usuario.verificado !== 1)
+      return res.status(403).json({ error: "El correo no ha sido verificado" });
+
+    // Generar token
+    const token = jwt.sign({ email }, process.env.JWT_ACCESS_SECRET, {
+      expiresIn: "15m",
+    });
+
+    // Hashear el token y guardar en BD
+    const tokenHash = await bcrypt.hash(token, 10);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await run(
+      `INSERT INTO tokens_recuperacion (user_id, token_hash, expires_at, used)
+       VALUES (?, ?, ?, 0)`,
+      [usuario.id, tokenHash, expiresAt.toISOString()]
+    );
+
+    // Enviar correo solo si está verificado
+    await enviarCorreoRecuperacion(email, token);
+
+    console.log(`[auth] Token de recuperación creado para ${email}`);
+
+    return res.json({
+      success: true,
+      message: "Correo de recuperación enviado",
+    });
+  } catch (err) {
+    console.error("Error en forgotPassword:", err.message);
+    return res.status(500).json({ error: "Error interno" });
+  }
+};
+
+// Paso 2: Mostrar formulario HTML
+export const showResetPasswordPage = async (req, res) => {
+  const { token } = req.params;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+
+    // Buscar el token en la tabla y validar que no esté usado ni vencido
+    const tokens = await all(
+      "SELECT * FROM tokens_recuperacion WHERE used = 0 AND user_id = (SELECT id FROM usuario WHERE email = ?)",
+      [decoded.email]
+    );
+
+    if (!tokens.length) {
+      return res.sendFile(
+        path.join(__dirname, "../views/resetPasswordFallida.html")
+      );
+    }
+
+    // Validar que alguno coincida (bcrypt.compare)
+    const valido = await Promise.any(
+      tokens.map((t) => bcrypt.compare(token, t.token_hash))
+    ).catch(() => false);
+
+    if (!valido) {
+      return res.sendFile(
+        path.join(__dirname, "../views/verificacionFallida.html")
+      );
+    }
+
+    // Si todo bien, muestra formulario
+    res.sendFile(path.join(__dirname, "../views/resetPassword.html"));
+  } catch (err) {
+    console.error("Error en showResetPasswordPage:", err.message);
+    res.sendFile(path.join(__dirname, "../views/resetPasswordFallida.html"));
+  }
+};
+
+// Paso 3: Actualizar contraseña y marcar token como usado
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+
+    // Buscar tokens activos del usuario
+    const tokens = await all(
+      "SELECT * FROM tokens_recuperacion WHERE used = 0 AND user_id = (SELECT id FROM usuario WHERE email = ?)",
+      [decoded.email]
+    );
+
+    if (!tokens.length)
+      return res.sendFile(
+        path.join(__dirname, "../views/resetPasswordFallida.html")
+      );
+
+    // Verificar hash
+    const valido = await Promise.any(
+      tokens.map((t) => bcrypt.compare(token, t.token_hash))
+    ).catch(() => false);
+
+    if (!valido)
+      return res.sendFile(
+        path.join(__dirname, "../views/verificacionFallida.html")
+      );
+
+    // Actualizar contraseña
+    const hashed = await bcrypt.hash(password, 10);
+    await run("UPDATE usuario SET password = ? WHERE email = ?", [
+      hashed,
+      decoded.email,
+    ]);
+
+    // Marcar token como usado
+    await run(
+      "UPDATE tokens_recuperacion SET used = 1 WHERE user_id = (SELECT id FROM usuario WHERE email = ?)",
+      [decoded.email]
+    );
+
+    console.log(`[auth] Contraseña restablecida para ${decoded.email}`);
+    res.sendFile(path.join(__dirname, "../views/resetPasswordExitosa.html"));
+  } catch (err) {
+    console.error("Error en resetPassword:", err.message);
+    res.sendFile(path.join(__dirname, "../views/resetPasswordFallida.html"));
+  }
 };

@@ -34,6 +34,18 @@ db.serialize(async () => {
     )
   `);
 
+  // Crear tabla de recuperacion de contraseña
+  db.run(`
+  CREATE TABLE IF NOT EXISTS tokens_recuperacion (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token_hash TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used BOOLEAN DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES usuario(id)
+  )
+`);
+
   // Crear tabla de información de usuario
   db.run(`
     CREATE TABLE IF NOT EXISTS informacion_usuario (

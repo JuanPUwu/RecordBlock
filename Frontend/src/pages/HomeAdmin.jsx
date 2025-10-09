@@ -370,7 +370,7 @@ export default function HomeAdmin() {
     const { password2, ...usuario } = data;
     const response = await crearUsuario(usuario);
     if (response.success) {
-      toast.success("Cliente creado con exito, Verificación pendiente");
+      toast.success("Cliente creado con éxito\n¡Verificación pendiente!");
       obtenerClientes();
     } else {
       toast.error(response.error);
@@ -862,7 +862,10 @@ export default function HomeAdmin() {
       {/* Nav */}
       <Nav>
         <button
-          onClick={() => setPopUpUsuarios(true)}
+          onClick={() => {
+            obtenerClientes();
+            setPopUpUsuarios(true);
+          }}
           className="btn-nav"
           title="Gestión Usuarios"
         >

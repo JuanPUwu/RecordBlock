@@ -4,6 +4,9 @@ import {
   loginUsuario,
   refreshToken,
   logout,
+  forgotPassword,
+  showResetPasswordPage,
+  resetPassword,
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -54,5 +57,73 @@ router.post("/refresh", refreshToken);
  *     tags: [Auth]
  */
 router.post("/logout", logout);
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Enviar correo para recuperación de contraseña
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: juan@example.com
+ *     responses:
+ *       200:
+ *         description: Correo de recuperación enviado
+ */
+router.post("/forgot-password", forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password/{token}:
+ *   get:
+ *     summary: Página para restablecer contraseña
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Página HTML para restablecer contraseña
+ */
+router.get("/reset-password/:token", showResetPasswordPage);
+
+/**
+ * @swagger
+ * /api/auth/reset-password/{token}:
+ *   post:
+ *     summary: Restablecer contraseña del usuario
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 example: NuevaContraseña123@
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada exitosamente
+ */
+router.post("/reset-password/:token", resetPassword);
 
 export default router;

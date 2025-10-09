@@ -68,7 +68,6 @@ export const AuthProvider = ({ children }) => {
           error.response?.data?.error === "Refresh token inválido o expirado"
         ) {
           await logout();
-          toast.error("Sesión expirada, vuelve a iniciar sesión");
         }
 
         return Promise.reject(error);

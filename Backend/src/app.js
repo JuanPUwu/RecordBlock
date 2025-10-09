@@ -19,8 +19,9 @@ app.use(
   })
 );
 
-// Middleware para parsear JSON y cookies
+// Middleware para parsear JSON, UrlEncode y Cookies
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); // <--- AHORA req.cookies funcionará
 
 // Rutas
@@ -35,6 +36,5 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Servir carpeta assets como estática
 app.use("/assets", express.static(path.join(__dirname, "assets")));
-
 
 export default app;
