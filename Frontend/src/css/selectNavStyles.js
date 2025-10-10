@@ -4,6 +4,8 @@ const selectNavStyles = {
     height: "100%",
     width: "13%",
     minWidth: "4rem",
+    borderRadius: "0.5rem",
+    boxShadow: "0 3px 6px rgba(0, 0, 0, 0.1)",
   }),
   control: (base, state) => ({
     ...base,

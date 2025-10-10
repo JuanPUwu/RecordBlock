@@ -84,7 +84,13 @@ export const AuthProvider = ({ children }) => {
       setUser(usuario);
       setupInterceptors(token);
 
-      toast.success("Bienvenido " + usuario.nombre);
+      toast.success(
+        "Bienvenido " +
+          (usuario.nombre
+            ? usuario.nombre.charAt(0).toUpperCase() +
+              usuario.nombre.slice(1).toLowerCase()
+            : "")
+      );
       return { success: true, data: response.data };
     } catch (error) {
       const mensaje =

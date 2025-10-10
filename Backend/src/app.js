@@ -34,7 +34,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Servir carpeta assets como estática
+
+// Servir carpeta assets, css como estática
 app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use("/views", express.static(path.join(__dirname, "views")));
 
 export default app;

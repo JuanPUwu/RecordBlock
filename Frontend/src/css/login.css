@@ -121,10 +121,13 @@ input {
   margin-top: auto;
   cursor: pointer;
   border: none;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+  transition: 0.1s ease-in;
 }
 
 .cont-login form button:hover {
   text-decoration: underline;
+  background-color: #0060df;
 }
 
 .cont-login form span {

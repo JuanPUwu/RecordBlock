@@ -8,6 +8,7 @@
   height: 100%;
   width: 100%;
   margin: 0;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
 }
 
 .swal2-icon.swal2-warning {

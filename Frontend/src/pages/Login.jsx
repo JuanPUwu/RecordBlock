@@ -1,17 +1,26 @@
-//Hooks
+// Hooks
 import { useAuth } from "../context/AuthContext";
 
 // Estilos
 import "../css/login.css";
 
-// Librerias
+// Librerías
 import { useForm } from "react-hook-form";
-import toast, { Toaster } from "react-hot-toast";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import Popup from "reactjs-popup";
 import * as yup from "yup";
 
-// esquema de validación
+// Servicios
+import { useForgotPasswordService } from "../services/forgotPassService";
+
+// Imágenes
+import imgCandado from "../assets/img/candado.png";
+import imgCorreo from "../assets/img/correo.png";
+import imgLlave from "../assets/img/llave.png";
+
+// Esquema de validación para login
 const schema = yup.object().shape({
   email: yup
     .string()
@@ -20,14 +29,19 @@ const schema = yup.object().shape({
   password: yup.string().required("La contraseña es obligatoria"),
 });
 
-// Imagenes
-import imgCandado from "../assets/img/candado.png";
-import imgCorreo from "../assets/img/correo.png";
-import imgLlave from "../assets/img/llave.png";
+// Esquema de validación para forgot password
+const forgotSchema = yup.object().shape({
+  forgotEmail: yup
+    .string()
+    .email("Debe ser un correo válido")
+    .required("El correo es obligatorio"),
+});
 
 export default function Login() {
   const { login } = useAuth();
+  const { solicitarRecuperacion } = useForgotPasswordService();
 
+  // Form principal (login)
   const {
     register,
     handleSubmit,
@@ -37,14 +51,40 @@ export default function Login() {
     resolver: yupResolver(schema),
   });
 
-  // 🔹 Enfocar automáticamente el email
+  // Form secundario (forgot password)
+  const {
+    register: registerForgot,
+    handleSubmit: handleSubmitForgot,
+    formState: { errors: errorsForgot, isSubmitting: isSubmittingForgot },
+    reset: resetForgotForm,
+  } = useForm({
+    resolver: yupResolver(forgotSchema),
+  });
+
+  // Enfocar automáticamente el email
   useEffect(() => {
     setFocus("email");
   }, [setFocus]);
 
-  // 🔹 Envío del formulario
+  // 🔹 Login
   const iniciarSesion = async (data) => {
     await login(data.email, data.password);
+  };
+
+  // 🔹 Popup estado
+  const [popUpForgotPassword, setPopUpForgotPassword] = useState(false);
+
+  // 🔹 Forgot password
+  const onForgotPassword = async ({ forgotEmail }) => {
+    const { success, error } = await solicitarRecuperacion(forgotEmail);
+
+    if (success) {
+      toast.success("Se ha enviado un correo de recuperación");
+      resetForgotForm();
+      setPopUpForgotPassword(false);
+    } else {
+      toast.error(error || "No se pudo enviar el correo de recuperación");
+    }
   };
 
   return (
@@ -84,16 +124,7 @@ export default function Login() {
               placeholder="∗∗∗∗∗∗∗∗∗∗"
             />
           </div>
-          <a
-            onClick={() =>
-              toast(
-                "Contacta un administrador para restablecer tu contraseña",
-                {
-                  icon: "📞",
-                }
-              )
-            }
-          >
+          <a onClick={() => setPopUpForgotPassword(true)}>
             ¿Olvidaste tu contraseña?
           </a>
           <button type="submit" disabled={isSubmitting}>
@@ -101,6 +132,44 @@ export default function Login() {
           </button>
         </form>
       </div>
+
+      {/* 🔹 Popup para recuperación */}
+      <Popup
+        open={popUpForgotPassword}
+        onClose={() => {
+          setPopUpForgotPassword(false);
+          resetForgotForm();
+        }}
+        modal
+        nested
+      >
+        <div className="cont-popUp">
+          <h2>Restablecer contraseña</h2>
+          <form onSubmit={handleSubmitForgot(onForgotPassword)}>
+            <div className="cont-label">
+              <label>Correo asociado:</label>
+              {errorsForgot.forgotEmail && (
+                <span>{errorsForgot.forgotEmail.message}</span>
+              )}
+            </div>
+            <input
+              className="forgot-pass"
+              type="email"
+              placeholder="ejemplo@gmail.com"
+              {...registerForgot("forgotEmail")}
+            />
+            <div className="sep-hrz"></div>
+            <button
+              className="btn-forgot-pass"
+              type="submit"
+              disabled={isSubmittingForgot}
+            >
+              {isSubmittingForgot ? "Enviando..." : "Enviar"}
+            </button>
+          </form>
+        </div>
+      </Popup>
+
       <footer></footer>
     </div>
   );

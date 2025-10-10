@@ -55,6 +55,7 @@ router.post("/refresh", refreshToken);
  *   post:
  *     summary: Cerrar sesión y eliminar refresh token
  *     tags: [Auth]
+ *     security: []
  */
 router.post("/logout", logout);
 
@@ -64,6 +65,7 @@ router.post("/logout", logout);
  *   post:
  *     summary: Enviar correo para recuperación de contraseña
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:

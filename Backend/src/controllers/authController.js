@@ -209,7 +209,9 @@ export const forgotPassword = async (req, res) => {
     const usuario = usuarios[0];
 
     if (!usuario)
-      return res.status(404).json({ error: "Usuario no encontrado" });
+      return res.status(404).json({
+        error: "El correo no está asociado\na ningun usuario existente",
+      });
 
     // Verificar si el usuario está verificado
     if (usuario.verificado !== 1)
