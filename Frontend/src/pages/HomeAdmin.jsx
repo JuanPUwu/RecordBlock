@@ -875,6 +875,7 @@ export default function HomeAdmin() {
           styles={selectNavStyles}
           options={opcionesClientes}
           onChange={seleccionBusqueda}
+          onMenuOpen={() => obtenerClientes()}
           value={clienteSeleccionado}
           isSearchable={false}
           placeholder="Seleccione un cliente..."
