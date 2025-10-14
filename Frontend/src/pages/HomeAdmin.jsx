@@ -146,69 +146,42 @@ export default function HomeAdmin() {
       const marginY = 50;
       const usableWidth = pageWidth - marginX * 2;
 
-      let currentY = pageHeight - 80;
+      let y = pageHeight - 35;
       const baseRowHeight = 12; // menos espacio entre líneas
-      const fontSize = 8;
+      const fontSize = 6;
 
       // ===== 1️⃣ Título =====
       const title = "Inventario de equipos";
       const titleWidth = boldFont.widthOfTextAtSize(title, 16);
       page.drawText(title, {
         x: (pageWidth - titleWidth) / 2,
-        y: currentY,
+        y,
         size: 16,
         font: boldFont,
         color: textColor,
       });
 
-      currentY -= 25;
+      y -= 25;
 
-      // ===== 2️⃣ Info general (fecha y cliente dinámico) =====
+      // ===== 2️⃣ Info general (fecha) =====
       const fecha = new Date().toLocaleString();
 
-      // Tomar cliente del primer registro en whichInfo (puedes ajustar si hay varios)
-      const firstClienteId = whichInfo[0]?.usuario_id;
-      const clienteNombre =
-        opcionesClientes.find((c) => c.value === firstClienteId)?.label ||
-        firstClienteId ||
-        "Desconocido";
-
-      // "Fecha de reporte" en negrita
       page.drawText("Fecha de reporte: ", {
         x: marginX,
-        y: currentY,
+        y,
         size: 8,
         font: boldFont,
         color: textColor,
       });
       page.drawText(fecha, {
         x: marginX + boldFont.widthOfTextAtSize("Fecha de reporte: ", 8),
-        y: currentY,
+        y,
         size: 8,
         font,
         color: textColor,
       });
 
-      currentY -= 12;
-
-      // "Cliente" dinámico y en negrita
-      page.drawText("Cliente: ", {
-        x: marginX,
-        y: currentY,
-        size: 8,
-        font: boldFont,
-        color: textColor,
-      });
-      page.drawText(clienteNombre, {
-        x: marginX + boldFont.widthOfTextAtSize("Cliente: ", 8),
-        y: currentY,
-        size: 8,
-        font,
-        color: textColor,
-      });
-
-      // 🔹 espacio mínimo antes de la tabla
-      currentY -= 10;
+      y -= 15; // espacio antes de las tablas
 
       // ===== 3️⃣ Generar encabezados =====
       const allKeys = new Set();
@@ -231,18 +204,13 @@ export default function HomeAdmin() {
       const splitTextToLines = (text, width, font, fontSize) => {
         if (!text) return [""];
 
-        // Dividir primero por "/"
         const parts = text.split("/");
-
         const lines = [];
 
         parts.forEach((part, index) => {
           let currentLine = part.trim();
-
-          // Si no es la última parte, añadimos el "/" al final de la línea
           if (index < parts.length - 1) currentLine += "/";
 
-          // Hacer wrap si la línea sigue siendo muy larga
           let tempLine = "";
           for (let i = 0; i < currentLine.length; i++) {
             const testLine = tempLine + currentLine[i];
@@ -260,155 +228,148 @@ export default function HomeAdmin() {
         return lines;
       };
 
-      // ===== 6️⃣ Dibujar encabezados (wrap centrado) =====
-      let y = currentY;
-      let xPos = marginX;
-      let headerMaxLines = 1;
+      // ===== 6️⃣ Agrupar registros por cliente =====
+      const registrosPorCliente = whichInfo.reduce((acc, item) => {
+        const clienteId = item.usuario_id;
+        if (!acc[clienteId]) acc[clienteId] = [];
+        acc[clienteId].push(item);
+        return acc;
+      }, {});
 
-      const headerLines = headers.map((header) => {
-        const colWidth = getColWidth(header);
-        const lines = splitTextToLines(header, colWidth, boldFont, fontSize);
-        if (lines.length > headerMaxLines) headerMaxLines = lines.length;
-        return lines;
-      });
+      // ===== 7️⃣ Dibujar tablas por cliente =====
+      for (const clienteId in registrosPorCliente) {
+        const clienteNombre =
+          opcionesClientes.find(
+            (c) => c.value === registrosPorCliente[clienteId][0].usuario_id
+          )?.label || registrosPorCliente[clienteId][0].usuario_id;
 
-      const headerHeight = baseRowHeight * headerMaxLines;
-
-      headers.forEach((header, i) => {
-        const colWidth = getColWidth(header);
-        page.drawRectangle({
-          x: xPos,
-          y: y - headerHeight,
-          width: colWidth,
-          height: headerHeight,
-          color: headerColor,
-          borderColor: headerColor,
-          borderWidth: 0.5,
+        // Dibujar nombre del cliente
+        page.drawText("Cliente: ", {
+          x: marginX,
+          y,
+          size: 8,
+          font: boldFont,
+          color: textColor,
+        });
+        page.drawText(clienteNombre, {
+          x: marginX + boldFont.widthOfTextAtSize("Cliente: ", 8),
+          y,
+          size: 8,
+          font,
+          color: textColor,
         });
 
-        const lines = headerLines[i];
-        let textY = y - 10;
-        lines.forEach((line) => {
-          const textWidth = boldFont.widthOfTextAtSize(line, fontSize);
-          const centeredX = xPos + (colWidth - textWidth) / 2;
-          page.drawText(line, {
-            x: centeredX,
-            y: textY,
-            size: fontSize,
-            font: boldFont,
-            color: headerTextColor,
-          });
-          textY -= baseRowHeight;
+        y -= 15; // espacio antes de la tabla
+
+        // Dibujar encabezado
+        let xPos = marginX;
+        let headerMaxLines = 1;
+        const headerLines = headers.map((header) => {
+          const colWidth = getColWidth(header);
+          const lines = splitTextToLines(header, colWidth, boldFont, fontSize);
+          if (lines.length > headerMaxLines) headerMaxLines = lines.length;
+          return lines;
         });
 
-        xPos += colWidth;
-      });
+        const headerHeight = baseRowHeight * headerMaxLines;
 
-      y -= headerHeight;
-
-      // ===== 7️⃣ Dibujar filas =====
-      whichInfo.forEach((item) => {
-        item.datos.forEach((detalle) => {
-          const row = { "#": `°${item.info_id}`, ...detalle };
-
-          const cellLines = {};
-          let maxLines = 1;
-
-          headers.forEach((h) => {
-            const colWidth = getColWidth(h);
-            const value = String(row[h] ?? "");
-            const lines = splitTextToLines(value, colWidth, font, fontSize);
-            cellLines[h] = lines;
-            if (lines.length > maxLines) maxLines = lines.length;
+        headers.forEach((header, i) => {
+          const colWidth = getColWidth(header);
+          page.drawRectangle({
+            x: xPos,
+            y: y - headerHeight,
+            width: colWidth,
+            height: headerHeight,
+            color: headerColor,
+            borderColor: headerColor,
+            borderWidth: 0.5,
           });
 
-          const adjustedHeight = baseRowHeight * maxLines;
-
-          // Fondo + bordes
-          xPos = marginX;
-          headers.forEach((h) => {
-            const colWidth = getColWidth(h);
-            page.drawRectangle({
-              x: xPos,
-              y: y - adjustedHeight,
-              width: colWidth,
-              height: adjustedHeight,
-              color: cellBgColor,
-              borderColor: headerColor,
-              borderWidth: 0.5,
+          const lines = headerLines[i];
+          let textY = y - 10;
+          lines.forEach((line) => {
+            const textWidth = boldFont.widthOfTextAtSize(line, fontSize);
+            const centeredX = xPos + (colWidth - textWidth) / 2;
+            page.drawText(line, {
+              x: centeredX,
+              y: textY,
+              size: fontSize,
+              font: boldFont,
+              color: headerTextColor,
             });
-            xPos += colWidth;
+            textY -= baseRowHeight;
           });
+          xPos += colWidth;
+        });
 
-          // Texto de celdas
-          xPos = marginX;
-          headers.forEach((h) => {
-            const colWidth = getColWidth(h);
-            const lines = cellLines[h];
-            let textY = y - 10;
-            lines.forEach((line) => {
-              page.drawText(line, {
-                x: xPos + 3,
-                y: textY,
-                size: fontSize,
-                font,
-                color: textColor,
-              });
-              textY -= baseRowHeight;
+        y -= headerHeight;
+
+        // Dibujar filas del cliente
+        registrosPorCliente[clienteId].forEach((item) => {
+          item.datos.forEach((detalle) => {
+            const row = { "#": `°${item.info_id}`, ...detalle };
+            const cellLines = {};
+            let maxLines = 1;
+
+            headers.forEach((h) => {
+              const colWidth = getColWidth(h);
+              const value = String(row[h] ?? "");
+              const lines = splitTextToLines(value, colWidth, font, fontSize);
+              cellLines[h] = lines;
+              if (lines.length > maxLines) maxLines = lines.length;
             });
-            xPos += colWidth;
-          });
 
-          y -= adjustedHeight;
+            const adjustedHeight = baseRowHeight * maxLines;
 
-          // Nueva página si se llena
-          if (y < marginY) {
-            page = pdfDoc.addPage([pageWidth, pageHeight]);
-            y = pageHeight - 80;
-
-            // Redibujar encabezado centrado con wrap
+            // Dibujar celdas
             xPos = marginX;
-            headers.forEach((header, i) => {
-              const colWidth = getColWidth(header);
-              const lines = splitTextToLines(
-                header,
-                colWidth,
-                boldFont,
-                fontSize
-              );
-              let textY = y - 10 - (lines.length - 1) * baseRowHeight;
-
+            headers.forEach((h) => {
+              const colWidth = getColWidth(h);
               page.drawRectangle({
                 x: xPos,
-                y: y - headerHeight,
+                y: y - adjustedHeight,
                 width: colWidth,
-                height: headerHeight,
-                color: headerColor,
+                height: adjustedHeight,
+                color: cellBgColor,
                 borderColor: headerColor,
                 borderWidth: 0.5,
-              });
-
-              lines.forEach((line) => {
-                const textWidth = boldFont.widthOfTextAtSize(line, fontSize);
-                const centeredX = xPos + (colWidth - textWidth) / 2;
-                page.drawText(line, {
-                  x: centeredX,
-                  y: textY,
-                  size: fontSize,
-                  font: boldFont,
-                  color: headerTextColor,
-                });
-                textY -= baseRowHeight;
+                opacity: 0.7,
               });
               xPos += colWidth;
             });
 
-            y -= headerHeight;
-          }
-        });
-      });
+            // Dibujar texto de celdas
+            xPos = marginX;
+            headers.forEach((h) => {
+              const lines = cellLines[h];
+              let textY = y - 10;
+              lines.forEach((line) => {
+                page.drawText(line, {
+                  x: xPos + 3,
+                  y: textY,
+                  size: fontSize,
+                  font,
+                  color: textColor,
+                });
+                textY -= baseRowHeight;
+              });
+              xPos += getColWidth(h);
+            });
 
-      // ===== 8️⃣ Guardar =====
+            y -= adjustedHeight;
+
+            // Nueva página si se llena
+            if (y < marginY) {
+              page = pdfDoc.addPage([pageWidth, pageHeight]);
+              y = pageHeight - 80;
+            }
+          });
+        });
+
+        y -= 20; // espacio entre clientes
+      }
+
+      // ===== 8️⃣ Guardar PDF =====
       const pdfBytesOut = await pdfDoc.save();
       const blob = new Blob([pdfBytesOut], { type: "application/pdf" });
       saveAs(blob, `inventario de equipos ${fecha}.pdf`);
