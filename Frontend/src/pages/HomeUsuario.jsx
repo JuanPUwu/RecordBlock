@@ -57,16 +57,6 @@ export default function HomeUsuario() {
   // Todo Funciones Nav
 
   // ? Inicio Manejo formularios ->
-  // Formulario Crear Usuario
-  const {
-    register: registerCrear,
-    handleSubmit: handleSubmitCrear,
-    reset: resetCrear,
-    formState: { errors: errorsCrear, isSubmitting: isSubmittingCrear },
-  } = useForm({
-    resolver: yupResolver(schemaCrearUsuario),
-  });
-
   // Formulario Cambiar Contraseña
   const {
     register: registerCambiar,
@@ -829,95 +819,6 @@ export default function HomeUsuario() {
               <div className="tb-usuarios"></div>
             </div>
           </div>
-        </div>
-      </Popup>
-
-      {/* PopUp crear cliente */}
-      <Popup
-        open={popUpCrearCliente}
-        onClose={() => {
-          setPopUpCrearCliente(false);
-          resetCrear();
-        }}
-        modal
-        nested
-      >
-        <div className="cont-popUp">
-          <h2>Crear cliente</h2>
-          <form onSubmit={handleSubmitCrear(crearCliente)}>
-            {/* Nombre */}
-            <div className="cont-label">
-              <label>Nombre:</label>
-              {errorsCrear.nombre && <span>{errorsCrear.nombre.message}</span>}
-            </div>
-            <input
-              type="text"
-              {...registerCrear("nombre")}
-              placeholder="alpina"
-            />
-
-            {/* Email */}
-            <div className="cont-label">
-              <label>Correo:</label>
-              {errorsCrear.email && <span>{errorsCrear.email.message}</span>}
-            </div>
-            <input
-              type="text"
-              {...registerCrear("email")}
-              placeholder="alpina@example.com"
-            />
-
-            {/* Password */}
-            <div className="cont-label">
-              <label>Contraseña:</label>
-              {errorsCrear.password && (
-                <span>{errorsCrear.password.message}</span>
-              )}
-            </div>
-            <div className="cont-pass">
-              <input
-                type={verPassword}
-                {...registerCrear("password")}
-                placeholder="∗∗∗∗∗∗∗∗∗∗"
-              />
-              <button
-                type="button"
-                onMouseDown={() => setVerPassword("text")}
-                onMouseUp={() => setVerPassword("password")}
-                onMouseLeave={() => setVerPassword("password")}
-              >
-                <img src={imgVisibility} alt="" />
-              </button>
-            </div>
-
-            {/* Password2 */}
-            <div className="cont-label">
-              <label>Confirmar contraseña:</label>
-              {errorsCrear.password2 && (
-                <span>{errorsCrear.password2.message}</span>
-              )}
-            </div>
-            <div className="cont-pass">
-              <input
-                type={verPassword2}
-                {...registerCrear("password2")}
-                placeholder="∗∗∗∗∗∗∗∗∗∗"
-              />
-              <button
-                type="button"
-                onMouseDown={() => setVerPassword2("text")}
-                onMouseUp={() => setVerPassword2("password")}
-                onMouseLeave={() => setVerPassword2("password")}
-              >
-                <img src={imgVisibility} alt="" />
-              </button>
-            </div>
-            <SepHrz />
-            <button type="submit" disabled={isSubmittingCrear}>
-              <img src={imgCrearCliente} alt="" />
-              {isSubmittingCrear ? "Creando..." : "Crear"}
-            </button>
-          </form>
         </div>
       </Popup>
 
