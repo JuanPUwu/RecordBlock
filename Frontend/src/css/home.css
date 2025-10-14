@@ -468,6 +468,12 @@ section div {
   flex: 1;
 }
 
+.cont-dato .columna p {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
 .cont-popUp-editarInfo {
   width: auto;
   height: auto;
