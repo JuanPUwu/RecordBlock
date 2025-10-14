@@ -15,12 +15,6 @@ import swalStyles from "../css/swalStyles.js";
 import { useRef, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { saveAs } from "file-saver";
-import ExcelJS from "exceljs";
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-pdfMake.vfs = pdfFonts.vfs;
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import Popup from "reactjs-popup";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -30,6 +24,10 @@ import {
   schemaCrearUsuario,
   schemaCambiarContraseña,
 } from "../validations/eschemas";
+
+// Utils
+import { exportarPDF } from "../utils/pdfUtils.js";
+import { exportarExcel } from "../utils/excellUtils.js";
 
 // Componentes
 import Nav from "../components/Nav.jsx";
@@ -53,9 +51,6 @@ import imgAgregarFila from "../assets/img/agregarFila.png";
 import imgCrearRegistro from "../assets/img/flecha.png";
 import imgExcell from "../assets/img/excell.png";
 import imgPdf from "../assets/img/pdf.png";
-
-// Docs
-import plantillaPdf from "../assets/docs/Plantilla Documento Axity Horizontal.pdf";
 
 // Función para resaltar coincidencias
 const resaltarTexto = (texto, termino, esLlave = false) => {
@@ -124,321 +119,10 @@ export default function HomeAdmin() {
   });
 
   // Exportar como PDF
-  const exportarPDF = async () => {
-    try {
-      // 🔹 1. Cargar plantilla original
-      const response = await fetch(plantillaPdf);
-      const pdfBytes = await response.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(pdfBytes);
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-      // 🔹 PDF base para copiar páginas
-      const plantillaBase = await PDFDocument.load(pdfBytes);
-
-      // 🔹 Colores
-      const headerColor = rgb(54 / 255, 4 / 255, 78 / 255);
-      const cellBgColor = rgb(1, 1, 1);
-      const textColor = rgb(0, 0, 0);
-      const headerTextColor = rgb(1, 1, 1);
-
-      // 🔹 Dimensiones y márgenes
-      const pageWidth = pdfDoc.getPage(0).getWidth();
-      const pageHeight = pdfDoc.getPage(0).getHeight();
-      const marginSuperior = 40;
-      const marginInferior = 40;
-      const marginX = 40;
-      const usableWidth = pageWidth - marginX * 2;
-      const yInicial = pageHeight - marginSuperior;
-
-      // 🔹 Página inicial
-      let page = pdfDoc.getPage(0);
-      let y = yInicial;
-      const baseRowHeight = 12;
-      const fontSize = 6;
-
-      // ===== 1️⃣ Título y fecha =====
-      const title = "Inventario de equipos";
-      const titleWidth = boldFont.widthOfTextAtSize(title, 16);
-      page.drawText(title, {
-        x: (pageWidth - titleWidth) / 2,
-        y,
-        size: 16,
-        font: boldFont,
-        color: textColor,
-      });
-      y -= 25;
-
-      const fecha = new Date().toLocaleString();
-      page.drawText("Fecha de reporte: ", {
-        x: marginX,
-        y,
-        size: 8,
-        font: boldFont,
-        color: textColor,
-      });
-      page.drawText(fecha, {
-        x: marginX + boldFont.widthOfTextAtSize("Fecha de reporte: ", 8),
-        y,
-        size: 8,
-        font,
-        color: textColor,
-      });
-      y -= 15;
-
-      // ===== 2️⃣ Función para dividir texto en líneas =====
-      const splitTextToLines = (text, width, font, fontSize) => {
-        if (!text) return [""];
-        const parts = text.split("/");
-        const lines = [];
-        parts.forEach((part, index) => {
-          let currentLine = part.trim();
-          if (index < parts.length - 1) currentLine += "/";
-          let tempLine = "";
-          for (let i = 0; i < currentLine.length; i++) {
-            const testLine = tempLine + currentLine[i];
-            const textWidth = font.widthOfTextAtSize(testLine, fontSize);
-            if (textWidth > width - 4) {
-              lines.push(tempLine.trimEnd() + "-");
-              tempLine = currentLine[i];
-            } else {
-              tempLine = testLine;
-            }
-          }
-          if (tempLine) lines.push(tempLine);
-        });
-        return lines;
-      };
-
-      // ===== 3️⃣ Agrupar registros por cliente =====
-      const registrosPorCliente = whichInfo.reduce((acc, item) => {
-        const clienteId = item.usuario_id;
-        if (!acc[clienteId]) acc[clienteId] = [];
-        acc[clienteId].push(item);
-        return acc;
-      }, {});
-
-      // ===== 4️⃣ Dibujar tablas por cliente =====
-      for (const clienteId in registrosPorCliente) {
-        const clienteRegistros = registrosPorCliente[clienteId];
-
-        const clienteNombre =
-          opcionesClientes.find(
-            (c) => c.value === clienteRegistros[0].usuario_id
-          )?.label || clienteRegistros[0].usuario_id;
-
-        // Cliente
-        page.drawText("Cliente: ", {
-          x: marginX,
-          y,
-          size: 8,
-          font: boldFont,
-          color: textColor,
-        });
-        page.drawText(clienteNombre, {
-          x: marginX + boldFont.widthOfTextAtSize("Cliente: ", 8),
-          y,
-          size: 8,
-          font,
-          color: textColor,
-        });
-        y -= 15;
-
-        // Encabezados dinámicos SOLO para este cliente
-        const allKeysCliente = new Set();
-        allKeysCliente.add("#");
-        clienteRegistros.forEach((item) => {
-          item.datos.forEach((detalle) => {
-            Object.keys(detalle).forEach((k) => allKeysCliente.add(k));
-          });
-        });
-        const headers = Array.from(allKeysCliente);
-
-        const fixedHashWidth = 40;
-        const remainingCols = headers.length - 1;
-        const otherColWidth = (usableWidth - fixedHashWidth) / remainingCols;
-        const getColWidth = (header) =>
-          header === "#" ? fixedHashWidth : otherColWidth;
-
-        // Dibujar encabezado
-        let xPos = marginX;
-        let headerMaxLines = 1;
-        const headerLines = headers.map((header) => {
-          const colWidth = getColWidth(header);
-          const lines = splitTextToLines(header, colWidth, boldFont, fontSize);
-          if (lines.length > headerMaxLines) headerMaxLines = lines.length;
-          return lines;
-        });
-        const headerHeight = baseRowHeight * headerMaxLines;
-
-        headers.forEach((header, i) => {
-          const colWidth = getColWidth(header);
-          page.drawRectangle({
-            x: xPos,
-            y: y - headerHeight,
-            width: colWidth,
-            height: headerHeight,
-            color: headerColor,
-            borderColor: headerColor,
-            borderWidth: 0.5,
-          });
-
-          const lines = headerLines[i];
-          let textY = y - 10;
-          lines.forEach((line) => {
-            const textWidth = boldFont.widthOfTextAtSize(line, fontSize);
-            const centeredX = xPos + (colWidth - textWidth) / 2;
-            page.drawText(line, {
-              x: centeredX,
-              y: textY,
-              size: fontSize,
-              font: boldFont,
-              color: headerTextColor,
-            });
-            textY -= baseRowHeight;
-          });
-          xPos += colWidth;
-        });
-
-        y -= headerHeight;
-
-        // Dibujar filas
-        for (const item of clienteRegistros) {
-          for (const detalle of item.datos) {
-            const row = { "#": `°${item.info_id}`, ...detalle };
-            const cellLines = {};
-            let maxLines = 1;
-
-            headers.forEach((h) => {
-              const colWidth = getColWidth(h);
-              const value = String(row[h] ?? "");
-              const lines = splitTextToLines(value, colWidth, font, fontSize);
-              cellLines[h] = lines;
-              if (lines.length > maxLines) maxLines = lines.length;
-            });
-
-            const adjustedHeight = baseRowHeight * maxLines;
-
-            // Dibujar celdas
-            xPos = marginX;
-            headers.forEach((h) => {
-              const colWidth = getColWidth(h);
-              page.drawRectangle({
-                x: xPos,
-                y: y - adjustedHeight,
-                width: colWidth,
-                height: adjustedHeight,
-                color: cellBgColor,
-                borderColor: headerColor,
-                borderWidth: 0.5,
-                opacity: 0.7,
-              });
-              xPos += colWidth;
-            });
-
-            // Dibujar texto
-            xPos = marginX;
-            headers.forEach((h) => {
-              const lines = cellLines[h];
-              let textY = y - 10;
-              lines.forEach((line) => {
-                page.drawText(line, {
-                  x: xPos + 3,
-                  y: textY,
-                  size: fontSize,
-                  font,
-                  color: textColor,
-                });
-                textY -= baseRowHeight;
-              });
-              xPos += getColWidth(h);
-            });
-
-            y -= adjustedHeight;
-
-            // Nueva página si se llena
-            if (y - adjustedHeight < marginInferior) {
-              const [newPage] = await pdfDoc.copyPages(plantillaBase, [0]);
-              page = newPage;
-              pdfDoc.addPage(page);
-              y = yInicial;
-            }
-          }
-        }
-
-        y -= 20; // espacio entre clientes
-      }
-
-      // Guardar PDF
-      const pdfBytesOut = await pdfDoc.save();
-      const blob = new Blob([pdfBytesOut], { type: "application/pdf" });
-      saveAs(blob, `inventario de equipos ${fecha}.pdf`);
-    } catch (error) {
-      console.error("Error exportando PDF:", error);
-    }
-  };
-
+  const exportarComoPDF = () => exportarPDF(whichInfo, opcionesClientes);
 
   // Exportar como excell
-  const exportarExcell = async () => {
-    try {
-      // 🔹 1. Reunir todas las claves de manera dinámica
-      const allKeys = new Set();
-
-      whichInfo.forEach((item) => {
-        allKeys.add("# Registro");
-        allKeys.add("Cliente");
-
-        item.datos.forEach((detalle) => {
-          Object.keys(detalle).forEach((k) => allKeys.add(k));
-        });
-      });
-
-      const headers = Array.from(allKeys);
-
-      // 🔹 2. Crear workbook y worksheet
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Informe");
-
-      // Definir columnas dinámicamente
-      worksheet.columns = headers.map((h) => ({
-        header: h,
-        key: h,
-        width: Math.max(h.length + 5, 15),
-      }));
-
-      // 🔹 3. Agregar filas
-      whichInfo.forEach((item) => {
-        const clienteNombre =
-          opcionesClientes.find((c) => c.value === item.usuario_id)?.label ||
-          item.usuario_id;
-
-        item.datos.forEach((detalle) => {
-          const row = {
-            "# Registro": `°${item.info_id}`,
-            Cliente: clienteNombre,
-            ...detalle,
-          };
-          worksheet.addRow(row);
-        });
-      });
-
-      // 🔹 4. Dar estilo a los encabezados
-      worksheet.getRow(1).font = { bold: true };
-
-      // 🔹 5. Alinear columna "# Registro" a la izquierda
-      worksheet.getColumn("# Registro").alignment = { horizontal: "left" };
-
-      // 🔹 6. Exportar archivo
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      saveAs(blob, `inventario de equipos ${new Date().toLocaleString()}.xlsx`);
-    } catch (error) {
-      console.error("Error exportando Excel:", error);
-    }
-  };
+  const exportarComoExcell = () => exportarExcel(whichInfo, opcionesClientes);
   // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
@@ -1109,14 +793,14 @@ export default function HomeAdmin() {
           isDetalleValue={isDetalleValue}
         />
         <button
-          onClick={() => exportarPDF()}
+          onClick={() => exportarComoPDF()}
           className="btn-nav"
           title="Exportar a pdf"
         >
           <img src={imgPdf} alt="" />
         </button>
         <button
-          onClick={() => exportarExcell()}
+          onClick={() => exportarComoExcell()}
           className="btn-nav"
           title="Exportar a excel"
         >
