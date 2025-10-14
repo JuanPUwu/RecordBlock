@@ -538,22 +538,12 @@ export default function HomeUsuario() {
             // obtenerClientes();
             setPopUpUsuarios(true);
           }}
-          className="btn-nav"
+          className="btn-nav btn-user"
           title="Gestión Usuarios"
         >
           <img src={imgUsuario} alt="" />
+          <span>{user.nombre}</span>
         </button>
-        <Select
-          styles={selectNavStyles}
-          value={clienteSeleccionado}
-          isSearchable={false}
-          placeholder="Seleccione un cliente..."
-        />
-        <span>o</span>
-        <div className="cont-inpNav">
-          <input type="text" placeholder="Busque por cliente..." />
-          <img src={imgSearch} alt="" />
-        </div>
         <button
           onClick={() => {
             setClienteSeleccionado(null);
