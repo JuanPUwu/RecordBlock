@@ -20,6 +20,7 @@ import ExcelJS from "exceljs";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.vfs;
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import Popup from "reactjs-popup";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -52,6 +53,9 @@ import imgAgregarFila from "../assets/img/agregarFila.png";
 import imgCrearRegistro from "../assets/img/flecha.png";
 import imgExcell from "../assets/img/excell.png";
 import imgPdf from "../assets/img/pdf.png";
+
+// Docs
+import plantillaPdf from "../assets/docs/Plantilla Documento Axity Horizontal.pdf";
 
 // Función para resaltar coincidencias
 const resaltarTexto = (texto, termino, esLlave = false) => {
@@ -119,103 +123,295 @@ export default function HomeAdmin() {
     detalle: "",
   });
 
-  // exportar pdf
+  // Exportar como PDF
   const exportarPDF = async () => {
     try {
-      const content = [];
+      const response = await fetch(plantillaPdf);
+      const pdfBytes = await response.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(pdfBytes);
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-      // 🔹 Título principal
-      content.push({
-        text: "Inventario de equipos",
-        style: "title",
-        alignment: "center",
-        margin: [0, 0, 0, 20],
+      // ===== 🎨 Colores personalizados =====
+      const headerColor = rgb(54 / 255, 4 / 255, 78 / 255); // encabezado + bordes
+      const cellBgColor = rgb(1, 1, 1); // fondo de celdas
+      const textColor = rgb(0, 0, 0);
+      const headerTextColor = rgb(1, 1, 1);
+
+      // ===== Dimensiones y márgenes =====
+      let page = pdfDoc.getPage(0);
+      const pageWidth = page.getWidth();
+      const pageHeight = page.getHeight();
+      const marginX = 40;
+      const marginY = 50;
+      const usableWidth = pageWidth - marginX * 2;
+
+      let currentY = pageHeight - 80;
+      const baseRowHeight = 12; // menos espacio entre líneas
+      const fontSize = 8;
+
+      // ===== 1️⃣ Título =====
+      const title = "Inventario de equipos";
+      const titleWidth = boldFont.widthOfTextAtSize(title, 16);
+      page.drawText(title, {
+        x: (pageWidth - titleWidth) / 2,
+        y: currentY,
+        size: 16,
+        font: boldFont,
+        color: textColor,
       });
 
-      // 🔹 Agrupación por usuario
-      const usuarios = {};
+      currentY -= 25;
+
+      // ===== 2️⃣ Info general (fecha y cliente dinámico) =====
+      const fecha = new Date().toLocaleString();
+
+      // Tomar cliente del primer registro en whichInfo (puedes ajustar si hay varios)
+      const firstClienteId = whichInfo[0]?.usuario_id;
+      const clienteNombre =
+        opcionesClientes.find((c) => c.value === firstClienteId)?.label ||
+        firstClienteId ||
+        "Desconocido";
+
+      // "Fecha de reporte" en negrita
+      page.drawText("Fecha de reporte: ", {
+        x: marginX,
+        y: currentY,
+        size: 8,
+        font: boldFont,
+        color: textColor,
+      });
+      page.drawText(fecha, {
+        x: marginX + boldFont.widthOfTextAtSize("Fecha de reporte: ", 8),
+        y: currentY,
+        size: 8,
+        font,
+        color: textColor,
+      });
+
+      currentY -= 12;
+
+      // "Cliente" dinámico y en negrita
+      page.drawText("Cliente: ", {
+        x: marginX,
+        y: currentY,
+        size: 8,
+        font: boldFont,
+        color: textColor,
+      });
+      page.drawText(clienteNombre, {
+        x: marginX + boldFont.widthOfTextAtSize("Cliente: ", 8),
+        y: currentY,
+        size: 8,
+        font,
+        color: textColor,
+      });
+
+      // 🔹 espacio mínimo antes de la tabla
+      currentY -= 10;
+
+      // ===== 3️⃣ Generar encabezados =====
+      const allKeys = new Set();
       whichInfo.forEach((item) => {
-        if (!usuarios[item.usuario_id]) usuarios[item.usuario_id] = [];
-        usuarios[item.usuario_id].push(item);
-      });
-
-      Object.entries(usuarios).forEach(([usuarioId, registros]) => {
-        const usuarioLabel =
-          opcionesClientes.find((c) => c.value === Number(usuarioId))?.label ||
-          `Usuario ${usuarioId}`;
-
-        // 🔹 Sección de cliente
-        content.push({
-          text: `👤 Cliente: ${usuarioLabel}`,
-          style: "header",
-          margin: [0, 15, 0, 10],
-        });
-
-        // 🔹 Detalles de cada registro
-        registros.forEach((info) => {
-          content.push({
-            text: `Registro N°${info.info_id}`,
-            style: "subheader",
-            margin: [0, 10, 0, 5],
-          });
-
-          info.datos.forEach((detalle) => {
-            const detalleTexto = Object.entries(detalle)
-              .map(([k, v]) => `• ${k}: ${v}`)
-              .join("\n");
-
-            content.push({
-              text: detalleTexto,
-              margin: [20, 0, 0, 10],
-              fontSize: 10,
-            });
-          });
+        allKeys.add("#");
+        item.datos.forEach((detalle) => {
+          Object.keys(detalle).forEach((k) => allKeys.add(k));
         });
       });
+      const headers = Array.from(allKeys);
 
-      // 🔹 Definir documento
-      const docDefinition = {
-        pageMargins: [40, 60, 40, 60],
-        footer: function (currentPage, pageCount) {
-          return {
-            columns: [
-              {
-                text: `Página ${currentPage} de ${pageCount}`,
-                alignment: "left",
-                margin: [40, 0],
-              },
-              {
-                text: `Generado el: ${new Date().toLocaleString()}`,
-                alignment: "right",
-                margin: [0, 0, 40, 0],
-              },
-            ],
-            fontSize: 9,
-          };
-        },
-        content,
-        styles: {
-          title: {
-            fontSize: 20,
-            bold: true,
-            color: "#2c3e50",
-          },
-          header: {
-            fontSize: 14,
-            bold: true,
-            color: "#34495e",
-          },
-          subheader: {
-            fontSize: 12,
-            bold: true,
-            color: "#555555",
-          },
-        },
+      // ===== 4️⃣ Calcular anchos =====
+      const fixedHashWidth = 40;
+      const remainingCols = headers.length - 1;
+      const otherColWidth = (usableWidth - fixedHashWidth) / remainingCols;
+      const getColWidth = (header) =>
+        header === "#" ? fixedHashWidth : otherColWidth;
+
+      // ===== 5️⃣ Función wrap (texto y encabezado) =====
+      const splitTextToLines = (text, width, font, fontSize) => {
+        if (!text) return [""];
+
+        // Dividir primero por "/"
+        const parts = text.split("/");
+
+        const lines = [];
+
+        parts.forEach((part, index) => {
+          let currentLine = part.trim();
+
+          // Si no es la última parte, añadimos el "/" al final de la línea
+          if (index < parts.length - 1) currentLine += "/";
+
+          // Hacer wrap si la línea sigue siendo muy larga
+          let tempLine = "";
+          for (let i = 0; i < currentLine.length; i++) {
+            const testLine = tempLine + currentLine[i];
+            const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+            if (textWidth > width - 4) {
+              lines.push(tempLine.trimEnd() + "-");
+              tempLine = currentLine[i];
+            } else {
+              tempLine = testLine;
+            }
+          }
+          if (tempLine) lines.push(tempLine);
+        });
+
+        return lines;
       };
 
-      pdfMake
-        .createPdf(docDefinition)
-        .download(`inventario de equipos ${new Date().toLocaleString()}.pdf`);
+      // ===== 6️⃣ Dibujar encabezados (wrap centrado) =====
+      let y = currentY;
+      let xPos = marginX;
+      let headerMaxLines = 1;
+
+      const headerLines = headers.map((header) => {
+        const colWidth = getColWidth(header);
+        const lines = splitTextToLines(header, colWidth, boldFont, fontSize);
+        if (lines.length > headerMaxLines) headerMaxLines = lines.length;
+        return lines;
+      });
+
+      const headerHeight = baseRowHeight * headerMaxLines;
+
+      headers.forEach((header, i) => {
+        const colWidth = getColWidth(header);
+        page.drawRectangle({
+          x: xPos,
+          y: y - headerHeight,
+          width: colWidth,
+          height: headerHeight,
+          color: headerColor,
+          borderColor: headerColor,
+          borderWidth: 0.5,
+        });
+
+        const lines = headerLines[i];
+        let textY = y - 10;
+        lines.forEach((line) => {
+          const textWidth = boldFont.widthOfTextAtSize(line, fontSize);
+          const centeredX = xPos + (colWidth - textWidth) / 2;
+          page.drawText(line, {
+            x: centeredX,
+            y: textY,
+            size: fontSize,
+            font: boldFont,
+            color: headerTextColor,
+          });
+          textY -= baseRowHeight;
+        });
+
+        xPos += colWidth;
+      });
+
+      y -= headerHeight;
+
+      // ===== 7️⃣ Dibujar filas =====
+      whichInfo.forEach((item) => {
+        item.datos.forEach((detalle) => {
+          const row = { "#": `°${item.info_id}`, ...detalle };
+
+          const cellLines = {};
+          let maxLines = 1;
+
+          headers.forEach((h) => {
+            const colWidth = getColWidth(h);
+            const value = String(row[h] ?? "");
+            const lines = splitTextToLines(value, colWidth, font, fontSize);
+            cellLines[h] = lines;
+            if (lines.length > maxLines) maxLines = lines.length;
+          });
+
+          const adjustedHeight = baseRowHeight * maxLines;
+
+          // Fondo + bordes
+          xPos = marginX;
+          headers.forEach((h) => {
+            const colWidth = getColWidth(h);
+            page.drawRectangle({
+              x: xPos,
+              y: y - adjustedHeight,
+              width: colWidth,
+              height: adjustedHeight,
+              color: cellBgColor,
+              borderColor: headerColor,
+              borderWidth: 0.5,
+            });
+            xPos += colWidth;
+          });
+
+          // Texto de celdas
+          xPos = marginX;
+          headers.forEach((h) => {
+            const colWidth = getColWidth(h);
+            const lines = cellLines[h];
+            let textY = y - 10;
+            lines.forEach((line) => {
+              page.drawText(line, {
+                x: xPos + 3,
+                y: textY,
+                size: fontSize,
+                font,
+                color: textColor,
+              });
+              textY -= baseRowHeight;
+            });
+            xPos += colWidth;
+          });
+
+          y -= adjustedHeight;
+
+          // Nueva página si se llena
+          if (y < marginY) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            y = pageHeight - 80;
+
+            // Redibujar encabezado centrado con wrap
+            xPos = marginX;
+            headers.forEach((header, i) => {
+              const colWidth = getColWidth(header);
+              const lines = splitTextToLines(
+                header,
+                colWidth,
+                boldFont,
+                fontSize
+              );
+              let textY = y - 10 - (lines.length - 1) * baseRowHeight;
+
+              page.drawRectangle({
+                x: xPos,
+                y: y - headerHeight,
+                width: colWidth,
+                height: headerHeight,
+                color: headerColor,
+                borderColor: headerColor,
+                borderWidth: 0.5,
+              });
+
+              lines.forEach((line) => {
+                const textWidth = boldFont.widthOfTextAtSize(line, fontSize);
+                const centeredX = xPos + (colWidth - textWidth) / 2;
+                page.drawText(line, {
+                  x: centeredX,
+                  y: textY,
+                  size: fontSize,
+                  font: boldFont,
+                  color: headerTextColor,
+                });
+                textY -= baseRowHeight;
+              });
+              xPos += colWidth;
+            });
+
+            y -= headerHeight;
+          }
+        });
+      });
+
+      // ===== 8️⃣ Guardar =====
+      const pdfBytesOut = await pdfDoc.save();
+      const blob = new Blob([pdfBytesOut], { type: "application/pdf" });
+      saveAs(blob, `inventario de equipos ${fecha}.pdf`);
     } catch (error) {
       console.error("Error exportando PDF:", error);
     }
@@ -228,15 +424,15 @@ export default function HomeAdmin() {
       const allKeys = new Set();
 
       whichInfo.forEach((item) => {
-        allKeys.add("info_id");
-        allKeys.add("usuario"); // 👈 cambiamos usuario_id por usuario (label)
+        allKeys.add("# Registro");
+        allKeys.add("Cliente");
 
         item.datos.forEach((detalle) => {
           Object.keys(detalle).forEach((k) => allKeys.add(k));
         });
       });
 
-      const headers = Array.from(allKeys); // convierte Set en array
+      const headers = Array.from(allKeys);
 
       // 🔹 2. Crear workbook y worksheet
       const workbook = new ExcelJS.Workbook();
@@ -251,14 +447,14 @@ export default function HomeAdmin() {
 
       // 🔹 3. Agregar filas
       whichInfo.forEach((item) => {
-        const usuarioLabel =
+        const clienteNombre =
           opcionesClientes.find((c) => c.value === item.usuario_id)?.label ||
           item.usuario_id;
 
         item.datos.forEach((detalle) => {
           const row = {
-            info_id: `Registro °${item.info_id}`,
-            usuario: usuarioLabel,
+            "# Registro": `°${item.info_id}`,
+            Cliente: clienteNombre,
             ...detalle,
           };
           worksheet.addRow(row);
@@ -268,7 +464,10 @@ export default function HomeAdmin() {
       // 🔹 4. Dar estilo a los encabezados
       worksheet.getRow(1).font = { bold: true };
 
-      // 🔹 5. Exportar archivo
+      // 🔹 5. Alinear columna "# Registro" a la izquierda
+      worksheet.getColumn("# Registro").alignment = { horizontal: "left" };
+
+      // 🔹 6. Exportar archivo
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
