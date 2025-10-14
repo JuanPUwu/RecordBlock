@@ -535,7 +535,6 @@ export default function HomeUsuario() {
       <Nav>
         <button
           onClick={() => {
-            // obtenerClientes();
             setPopUpUsuarios(true);
           }}
           className="btn-nav btn-user"
@@ -549,16 +548,14 @@ export default function HomeUsuario() {
             setClienteSeleccionado(null);
             refBusquedaCliente.current.value = "";
           }}
-          className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
+          className="btn-nav"
           title="Restablecer cliente seleccionado"
-          disabled={!clienteSeleccionado}
         >
           <img src={imgLimpiar} alt="" />
         </button>
         <button
-          className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
+          className="btn-nav"
           title="Crear registro"
-          disabled={!clienteSeleccionado}
           onClick={() => {
             setDraftCrear([
               { key: "Hostname", value: "" },
@@ -722,24 +719,7 @@ export default function HomeUsuario() {
               setUsuarioSeleccionado(user);
             }}
           />
-          <div className="cont-tb-usuarios">
-            <div className="cont-search-new">
-              <label className="cont-searcher">
-                <input type="text" placeholder="Buscar usuario/cliente..." />
-                <img src={imgSearch} alt="" />
-              </label>
-              <button
-                className="newUsuario"
-                title="Crear usuario"
-                onClick={() => setPopUpCrearCliente(true)}
-              >
-                <img src={imgCrearCliente} alt="" />
-              </button>
-            </div>
-            <div className="tb-overflow-scroll-hiden">
-              <div className="tb-usuarios"></div>
-            </div>
-          </div>
+          <input className="inp-hiden" />
         </div>
       </Popup>
 
