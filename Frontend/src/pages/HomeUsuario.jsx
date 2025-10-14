@@ -87,39 +87,10 @@ export default function HomeUsuario() {
   const exportarComoPDF = () => exportarPDF(whichInfo, user);
   // Exportar como excell
   const exportarComoExcell = () => exportarExcel(whichInfo, user);
-  // ? <- Fin utils
 
-  // * <-------------------------------------------------------------------------------->
-
-  // ? Inicio traer clientes/acciones ->
-  // ? <- Fin traer clientes/acciones
-
-  // * <-------------------------------------------------------------------------------->
-
-  // ? Inicio crear cliente/acciones ->
-  // Estado popUp formulario crear cliente
-  const [popUpCrearCliente, setPopUpCrearCliente] = useState(false);
-
-  // Estado para ver las contraseñas
   const [verPassword, setVerPassword] = useState("password");
   const [verPassword2, setVerPassword2] = useState("password");
-
-  // Crear cliente
-  const { crearUsuario } = useUsuarioService();
-  const crearCliente = async (data) => {
-    // Quitamos password2 antes de enviar
-    const { password2, ...usuario } = data;
-    const response = await crearUsuario(usuario);
-    if (response.success) {
-      toast.success("Cliente creado con éxito\n¡Verificación pendiente!");
-      // obtenerClientes();
-    } else {
-      toast.error(response.error);
-      return;
-    }
-    setPopUpCrearCliente(false);
-  };
-  // ? <- Fin Crear cliente/acciones
+  // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
 
