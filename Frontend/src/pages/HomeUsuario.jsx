@@ -102,74 +102,6 @@ export default function HomeUsuario() {
   // * <-------------------------------------------------------------------------------->
 
   // ? Inicio traer clientes/acciones ->
-  // traer clientes
-  const [clientes, setClientes] = useState([]);
-  const [opcionesClientes, setOpcionesClientes] = useState([]);
-  const { obtenerUsuarios } = useUsuarioService();
-  const obtenerClientes = async () => {
-    const response = await obtenerUsuarios();
-    setClientes(response.data.data);
-    setOpcionesClientes(
-      response.data.data
-        .filter((c) => c.verificado === 1) // solo clientes verificados
-        .map((c) => ({
-          value: c.id,
-          label: c.nombre,
-        }))
-    );
-    setOpcionesClientesTabla(response.data.data);
-  };
-
-  useEffect(() => {
-    obtenerClientes();
-  }, []);
-
-  // Buscar clientes nav
-  const [resultadosBusquedaClientes, setResultadosBusquedaClientes] = useState(
-    []
-  );
-  const buscarCliente = async (e) => {
-    if (e.target.value === "") {
-      setResultadosBusquedaClientes([]);
-      return;
-    }
-    const resultados = opcionesClientes.filter((o) =>
-      o.label.toLowerCase().includes(e.target.value.toLowerCase())
-    );
-    setResultadosBusquedaClientes(resultados);
-  };
-
-  // Buscar clientes tabla usuarios
-  const [opcionesClientesTabla, setOpcionesClientesTabla] = useState([]);
-  const buscarClienteTabla = async (e) => {
-    const valor = e.target.value.toLowerCase();
-
-    if (valor === "") {
-      setOpcionesClientesTabla(clientes);
-      return;
-    }
-
-    const resultados = clientes.filter(
-      (c) =>
-        c.nombre.toLowerCase().includes(valor) ||
-        c.email.toLowerCase().includes(valor)
-    );
-
-    setOpcionesClientesTabla(resultados);
-  };
-
-  // Accion al selecionar un cliente en select o busqueda
-  const refBusquedaCliente = useRef();
-  const seleccionBusqueda = (cliente) => {
-    if (clienteSeleccionado === cliente) {
-      refBusquedaCliente.current.value = "";
-      setResultadosBusquedaClientes([]);
-      return;
-    }
-    refBusquedaCliente.current.value = "";
-    setResultadosBusquedaClientes([]);
-    setClienteSeleccionado(cliente);
-  };
   // ? <- Fin traer clientes/acciones
 
   // * <-------------------------------------------------------------------------------->
@@ -190,7 +122,7 @@ export default function HomeUsuario() {
     const response = await crearUsuario(usuario);
     if (response.success) {
       toast.success("Cliente creado con éxito\n¡Verificación pendiente!");
-      obtenerClientes();
+      // obtenerClientes();
     } else {
       toast.error(response.error);
       return;
@@ -244,7 +176,7 @@ export default function HomeUsuario() {
 
       if (response.success) {
         toast.success(`Cliente ${cliente.nombre} eliminado`);
-        obtenerClientes();
+        // obtenerClientes();
         if (clienteSeleccionado?.id === cliente.id) {
           setClienteSeleccionado(null);
         }
@@ -682,7 +614,7 @@ export default function HomeUsuario() {
       <Nav>
         <button
           onClick={() => {
-            obtenerClientes();
+            // obtenerClientes();
             setPopUpUsuarios(true);
           }}
           className="btn-nav"
@@ -692,37 +624,19 @@ export default function HomeUsuario() {
         </button>
         <Select
           styles={selectNavStyles}
-          options={opcionesClientes}
-          onChange={seleccionBusqueda}
-          onMenuOpen={() => obtenerClientes()}
           value={clienteSeleccionado}
           isSearchable={false}
           placeholder="Seleccione un cliente..."
         />
         <span>o</span>
         <div className="cont-inpNav">
-          <input
-            type="text"
-            placeholder="Busque por cliente..."
-            onInput={(e) => buscarCliente(e)}
-            ref={refBusquedaCliente}
-          />
+          <input type="text" placeholder="Busque por cliente..." />
           <img src={imgSearch} alt="" />
-          {resultadosBusquedaClientes.length > 0 && (
-            <div>
-              {resultadosBusquedaClientes.map((c) => (
-                <button key={c.value} onClick={() => seleccionBusqueda(c)}>
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
         <button
           onClick={() => {
             setClienteSeleccionado(null);
             refBusquedaCliente.current.value = "";
-            setResultadosBusquedaClientes([]);
           }}
           className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
           title="Restablecer cliente seleccionado"
@@ -814,11 +728,7 @@ export default function HomeUsuario() {
                       <img src={imgEditar} alt="" />
                     </button>
                     {`
-                      ${
-                        opcionesClientes.find(
-                          (c) => c.value === info.usuario_id
-                        )?.label
-                      } - Registro °${info.info_id}
+                      ${user.nombre} - Registro °${info.info_id}
                     `}
                     <button onClick={() => eliminarInformacionCliente(info)}>
                       <img src={imgBorrar} alt="" />
@@ -904,11 +814,7 @@ export default function HomeUsuario() {
           <div className="cont-tb-usuarios">
             <div className="cont-search-new">
               <label className="cont-searcher">
-                <input
-                  type="text"
-                  placeholder="Buscar usuario/cliente..."
-                  onInput={buscarClienteTabla}
-                />
+                <input type="text" placeholder="Buscar usuario/cliente..." />
                 <img src={imgSearch} alt="" />
               </label>
               <button
@@ -920,21 +826,7 @@ export default function HomeUsuario() {
               </button>
             </div>
             <div className="tb-overflow-scroll-hiden">
-              <div className="tb-usuarios">
-                {opcionesClientesTabla.map((cliente) => (
-                  <CardUsuario
-                    key={cliente.id}
-                    nameUsuario={cliente.nombre}
-                    correoUsuario={cliente.email}
-                    estado={cliente.verificado ? "" : "(No verificado)"}
-                    onClick1={() => {
-                      setPopUpEditarContrasena(true);
-                      setUsuarioSeleccionado(cliente);
-                    }}
-                    onClick2={() => eliminarCliente(cliente)}
-                  />
-                ))}
-              </div>
+              <div className="tb-usuarios"></div>
             </div>
           </div>
         </div>
@@ -1116,13 +1008,7 @@ export default function HomeUsuario() {
         nested
       >
         <div className="cont-popUp-editarInfo">
-          <h2>
-            {`${
-              opcionesClientes.find(
-                (c) => c.value === clienteSeleccionado?.value
-              )?.label
-            } - Nuevo registro`}
-          </h2>
+          <h2>{`${user.nombre} - Nuevo registro`}</h2>
 
           <div ref={scrollCrearRef}>
             {draftCrear.map(({ key, value }, i, array) => {
@@ -1187,10 +1073,7 @@ export default function HomeUsuario() {
       >
         <div className="cont-popUp-editarInfo">
           <h2>
-            {` ${
-              opcionesClientes.find((c) => c.value === infoAEditar?.usuario_id)
-                ?.label
-            } -
+            {` ${user.nombre} -
       Registro °${infoAEditar?.info_id}`}
           </h2>
 
