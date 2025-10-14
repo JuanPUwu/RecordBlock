@@ -133,8 +133,8 @@ export default function HomeAdmin() {
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-      // 🔹 Crear un PDF de plantilla limpia para copiar páginas
-      const plantillaBase = await PDFDocument.load(pdfBytes); // PDF limpio
+      // 🔹 PDF base para copiar páginas
+      const plantillaBase = await PDFDocument.load(pdfBytes);
 
       // 🔹 Colores
       const headerColor = rgb(54 / 255, 4 / 255, 78 / 255);
@@ -145,20 +145,24 @@ export default function HomeAdmin() {
       // 🔹 Dimensiones
       const pageWidth = pdfDoc.getPage(0).getWidth();
       const pageHeight = pdfDoc.getPage(0).getHeight();
+
+      // 🔹 Márgenes configurables
+      const marginSuperior = 40; // espacio desde arriba
+      const marginInferior = 40; // espacio desde abajo
       const marginX = 40;
-      const marginY = 50;
       const usableWidth = pageWidth - marginX * 2;
 
-      // 🔹 Crear primera página desde plantilla limpia
-      const [firstPage] = await pdfDoc.copyPages(plantillaBase, [0]);
-      let page = firstPage;
-      pdfDoc.addPage(page);
+      // 🔹 Altura inicial y útil
+      const yInicial = pageHeight - marginSuperior;
+      const pageHeightUtil = pageHeight - marginSuperior - marginInferior;
 
-      let y = pageHeight - 35;
+      // 🔹 Primera página
+      let page = pdfDoc.getPage(0);
+      let y = yInicial;
       const baseRowHeight = 12;
       const fontSize = 6;
 
-      // ===== 1️⃣ Título =====
+      // ===== 1️⃣ Título y fecha (solo primera página) =====
       const title = "Inventario de equipos";
       const titleWidth = boldFont.widthOfTextAtSize(title, 16);
       page.drawText(title, {
@@ -170,7 +174,6 @@ export default function HomeAdmin() {
       });
       y -= 25;
 
-      // ===== 2️⃣ Info general (fecha) =====
       const fecha = new Date().toLocaleString();
       page.drawText("Fecha de reporte: ", {
         x: marginX,
@@ -188,7 +191,7 @@ export default function HomeAdmin() {
       });
       y -= 15;
 
-      // ===== 3️⃣ Generar encabezados =====
+      // ===== 2️⃣ Encabezados dinámicos =====
       const allKeys = new Set();
       whichInfo.forEach((item) => {
         allKeys.add("#");
@@ -198,14 +201,12 @@ export default function HomeAdmin() {
       });
       const headers = Array.from(allKeys);
 
-      // ===== 4️⃣ Calcular anchos =====
       const fixedHashWidth = 40;
       const remainingCols = headers.length - 1;
       const otherColWidth = (usableWidth - fixedHashWidth) / remainingCols;
       const getColWidth = (header) =>
         header === "#" ? fixedHashWidth : otherColWidth;
 
-      // ===== 5️⃣ Función wrap (texto y encabezado) =====
       const splitTextToLines = (text, width, font, fontSize) => {
         if (!text) return [""];
         const parts = text.split("/");
@@ -229,7 +230,7 @@ export default function HomeAdmin() {
         return lines;
       };
 
-      // ===== 6️⃣ Agrupar registros por cliente =====
+      // ===== 3️⃣ Agrupar registros por cliente =====
       const registrosPorCliente = whichInfo.reduce((acc, item) => {
         const clienteId = item.usuario_id;
         if (!acc[clienteId]) acc[clienteId] = [];
@@ -237,14 +238,14 @@ export default function HomeAdmin() {
         return acc;
       }, {});
 
-      // ===== 7️⃣ Dibujar tablas por cliente =====
+      // ===== 4️⃣ Dibujar tablas =====
       for (const clienteId in registrosPorCliente) {
         const clienteNombre =
           opcionesClientes.find(
             (c) => c.value === registrosPorCliente[clienteId][0].usuario_id
           )?.label || registrosPorCliente[clienteId][0].usuario_id;
 
-        // Dibujar nombre del cliente
+        // Cliente
         page.drawText("Cliente: ", {
           x: marginX,
           y,
@@ -261,7 +262,7 @@ export default function HomeAdmin() {
         });
         y -= 15;
 
-        // Dibujar encabezado
+        // Encabezado
         let xPos = marginX;
         let headerMaxLines = 1;
         const headerLines = headers.map((header) => {
@@ -270,7 +271,6 @@ export default function HomeAdmin() {
           if (lines.length > headerMaxLines) headerMaxLines = lines.length;
           return lines;
         });
-
         const headerHeight = baseRowHeight * headerMaxLines;
 
         headers.forEach((header, i) => {
@@ -304,7 +304,7 @@ export default function HomeAdmin() {
 
         y -= headerHeight;
 
-        // Dibujar filas del cliente
+        // Filas
         for (const item of registrosPorCliente[clienteId]) {
           for (const detalle of item.datos) {
             const row = { "#": `°${item.info_id}`, ...detalle };
@@ -321,7 +321,6 @@ export default function HomeAdmin() {
 
             const adjustedHeight = baseRowHeight * maxLines;
 
-            // Dibujar celdas
             xPos = marginX;
             headers.forEach((h) => {
               const colWidth = getColWidth(h);
@@ -338,7 +337,6 @@ export default function HomeAdmin() {
               xPos += colWidth;
             });
 
-            // Dibujar texto de celdas
             xPos = marginX;
             headers.forEach((h) => {
               const lines = cellLines[h];
@@ -358,39 +356,12 @@ export default function HomeAdmin() {
 
             y -= adjustedHeight;
 
-            // 🔹 Nueva página si se llena
-            if (y < marginY) {
-              const [newPage] = await pdfDoc.copyPages(plantillaBase, [0]); // copiar plantilla limpia
+            // Nueva página si se llena respetando margen inferior
+            if (y - adjustedHeight < marginInferior) {
+              const [newPage] = await pdfDoc.copyPages(plantillaBase, [0]);
               page = newPage;
               pdfDoc.addPage(page);
-              y = pageHeight - 80;
-
-              // Volver a dibujar título y fecha en la nueva página
-              const titleWidth = boldFont.widthOfTextAtSize(title, 16);
-              page.drawText(title, {
-                x: (pageWidth - titleWidth) / 2,
-                y: pageHeight - 35,
-                size: 16,
-                font: boldFont,
-                color: textColor,
-              });
-              page.drawText("Fecha de reporte: ", {
-                x: marginX,
-                y: pageHeight - 60,
-                size: 8,
-                font: boldFont,
-                color: textColor,
-              });
-              page.drawText(fecha, {
-                x:
-                  marginX + boldFont.widthOfTextAtSize("Fecha de reporte: ", 8),
-                y: pageHeight - 60,
-                size: 8,
-                font,
-                color: textColor,
-              });
-
-              y = pageHeight - 80; // resetear posición debajo del título/fecha
+              y = yInicial;
             }
           }
         }
@@ -398,7 +369,7 @@ export default function HomeAdmin() {
         y -= 20; // espacio entre clientes
       }
 
-      // ===== 8️⃣ Guardar PDF =====
+      // Guardar PDF
       const pdfBytesOut = await pdfDoc.save();
       const blob = new Blob([pdfBytesOut], { type: "application/pdf" });
       saveAs(blob, `inventario de equipos ${fecha}.pdf`);
