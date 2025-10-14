@@ -58,11 +58,17 @@
   position: absolute;
   background-color: transparent;
   border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .cont-searchNav label button img {
   opacity: 0.6;
   transition: 0.1s ease-in;
+  filter: invert(0);
 }
 
 .cont-searchNav label button:hover img {
