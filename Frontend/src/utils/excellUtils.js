@@ -3,6 +3,11 @@ import { saveAs } from "file-saver";
 
 export const exportarExcel = async (whichInfo, opcionesClientes) => {
   try {
+    // 🔹 Asegurar que opcionesClientes sea un array
+    const clientesArray = Array.isArray(opcionesClientes)
+      ? opcionesClientes
+      : [opcionesClientes];
+
     // 🔹 1. Reunir todas las claves de manera dinámica
     const allKeys = new Set();
 
@@ -30,9 +35,14 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
 
     // 🔹 3. Agregar filas
     whichInfo.forEach((item) => {
+      const clienteObj = clientesArray.find(
+        (c) =>
+          (c.value !== undefined && c.value === item.usuario_id) ||
+          (c.id !== undefined && c.id === item.usuario_id)
+      );
+
       const clienteNombre =
-        opcionesClientes.find((c) => c.value === item.usuario_id)?.label ||
-        item.usuario_id;
+        clienteObj?.label ?? clienteObj?.nombre ?? item.usuario_id;
 
       item.datos.forEach((detalle) => {
         const row = {

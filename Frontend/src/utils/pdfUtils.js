@@ -100,9 +100,23 @@ export const exportarPDF = async (whichInfo, opcionesClientes) => {
     for (const clienteId in registrosPorCliente) {
       const clienteRegistros = registrosPorCliente[clienteId];
 
+      // 🔹 Normalizar opcionesClientes como array
+      const clientesArray = Array.isArray(opcionesClientes)
+        ? opcionesClientes
+        : [opcionesClientes];
+
+      // 🔹 Buscar cliente compatible con ambos formatos
+      const clienteObj = clientesArray.find(
+        (c) =>
+          (c.value !== undefined &&
+            c.value === clienteRegistros[0].usuario_id) ||
+          (c.id !== undefined && c.id === clienteRegistros[0].usuario_id)
+      );
+
       const clienteNombre =
-        opcionesClientes.find((c) => c.value === clienteRegistros[0].usuario_id)
-          ?.label || clienteRegistros[0].usuario_id;
+        clienteObj?.label ??
+        clienteObj?.nombre ??
+        clienteRegistros[0].usuario_id;
 
       // Cliente
       page.drawText("Cliente: ", {

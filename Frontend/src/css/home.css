@@ -109,6 +109,22 @@
   background-color: #007afb;
 }
 
+.btn-nav.btn-user {
+  width: 10%;
+  justify-content: flex-start;
+  padding: 0 0.6rem;
+  gap: 0.6rem;
+  font-size: 1rem;
+  color: white;
+}
+
+.btn-nav.btn-user span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
 .btn-nav[title="Gestión Usuarios"]:hover {
   background-color: #0066d6;
 }

@@ -95,7 +95,6 @@ export default function HomeAdmin() {
 
   // Exportar como PDF
   const exportarComoPDF = () => exportarPDF(whichInfo, opcionesClientes);
-
   // Exportar como excell
   const exportarComoExcell = () => exportarExcel(whichInfo, opcionesClientes);
   // ? <- Fin utils
