@@ -8,6 +8,7 @@ import { useInfoUsuarioService } from "../services/infoUsuarioServices.js";
 // Estilos
 import "../css/home.css";
 import "../css/swalStyles.css";
+import selectNavStyles from "../css/selectNavStyles.js";
 import swalStyles from "../css/swalStyles.js";
 
 // Librerias
@@ -19,7 +20,10 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
 // Eschemas
-import { schemaCambiarContraseña } from "../validations/eschemas";
+import {
+  schemaCrearUsuario,
+  schemaCambiarContraseña,
+} from "../validations/eschemas";
 
 // Utils
 import { exportarPDF } from "../utils/pdfUtils.js";
@@ -29,14 +33,18 @@ import { resaltarTexto } from "../utils/textUtils.jsx";
 // Componentes
 import Nav from "../components/Nav.jsx";
 import SepHrz from "../components/SepHrz.jsx";
+import Select from "react-select";
 import SearchNav from "../components/SearchNav.jsx";
 import CardAdmin from "../components/CardAdmin.jsx";
+import CardUsuario from "../components/CardUsuario.jsx";
 
 // Imagenes
+import imgCrearCliente from "../assets/img/añadir.png";
 import imgSalir from "../assets/img/salir.png";
 import imgUsuario from "../assets/img/usuario.png";
 import imgVisibility from "../assets/img/ojo.png";
 import imgLimpiar from "../assets/img/reset.png";
+import imgSearch from "../assets/img/busqueda.png";
 import imgCandado from "../assets/img/candado.png";
 import imgBorrar from "../assets/img/basura.png";
 import imgEditar from "../assets/img/editar.png";
@@ -45,10 +53,20 @@ import imgCrearRegistro from "../assets/img/flecha.png";
 import imgExcell from "../assets/img/excell.png";
 import imgPdf from "../assets/img/pdf.png";
 
-export default function HomeUsuario() {
+export default function HomeAdmin() {
   // Todo Funciones Nav
 
   // ? Inicio Manejo formularios ->
+  // Formulario Crear Usuario
+  const {
+    register: registerCrear,
+    handleSubmit: handleSubmitCrear,
+    reset: resetCrear,
+    formState: { errors: errorsCrear, isSubmitting: isSubmittingCrear },
+  } = useForm({
+    resolver: yupResolver(schemaCrearUsuario),
+  });
+
   // Formulario Cambiar Contraseña
   const {
     register: registerCambiar,
@@ -63,6 +81,9 @@ export default function HomeUsuario() {
   // * <-------------------------------------------------------------------------------->
 
   // ? -> Inicio utils
+  // Estado del cliente actualmente seleccionado
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+
   // Usuario actual
   const { user } = useAuth();
 
@@ -73,27 +94,126 @@ export default function HomeUsuario() {
   });
 
   // Exportar como PDF
-  const exportarComoPDF = () => exportarPDF(whichInfo, user);
+  const exportarComoPDF = () => exportarPDF(whichInfo, opcionesClientes);
   // Exportar como excell
-  const exportarComoExcell = () => exportarExcel(whichInfo, user);
+  const exportarComoExcell = () => exportarExcel(whichInfo, opcionesClientes);
+  // ? <- Fin utils
+
+  // * <-------------------------------------------------------------------------------->
+
+  // ? Inicio traer clientes/acciones ->
+  // traer clientes
+  const [clientes, setClientes] = useState([]);
+  const [opcionesClientes, setOpcionesClientes] = useState([]);
+  const { obtenerUsuarios } = useUsuarioService();
+  const obtenerClientes = async () => {
+    const response = await obtenerUsuarios();
+    setClientes(response.data.data);
+    setOpcionesClientes(
+      response.data.data
+        .filter((c) => c.verificado === 1) // solo clientes verificados
+        .map((c) => ({
+          value: c.id,
+          label: c.nombre,
+        }))
+    );
+    setOpcionesClientesTabla(response.data.data);
+  };
+
+  useEffect(() => {
+    obtenerClientes();
+  }, []);
+
+  // Buscar clientes nav
+  const [resultadosBusquedaClientes, setResultadosBusquedaClientes] = useState(
+    []
+  );
+  const buscarCliente = async (e) => {
+    if (e.target.value === "") {
+      setResultadosBusquedaClientes([]);
+      return;
+    }
+    const resultados = opcionesClientes.filter((o) =>
+      o.label.toLowerCase().includes(e.target.value.toLowerCase())
+    );
+    setResultadosBusquedaClientes(resultados);
+  };
+
+  // Buscar clientes tabla usuarios
+  const [opcionesClientesTabla, setOpcionesClientesTabla] = useState([]);
+  const buscarClienteTabla = async (e) => {
+    const valor = e.target.value.toLowerCase();
+
+    if (valor === "") {
+      setOpcionesClientesTabla(clientes);
+      return;
+    }
+
+    const resultados = clientes.filter(
+      (c) =>
+        c.nombre.toLowerCase().includes(valor) ||
+        c.email.toLowerCase().includes(valor)
+    );
+
+    setOpcionesClientesTabla(resultados);
+  };
+
+  // Accion al selecionar un cliente en select o busqueda
+  const refBusquedaCliente = useRef();
+  const seleccionBusqueda = (cliente) => {
+    if (clienteSeleccionado === cliente) {
+      refBusquedaCliente.current.value = "";
+      setResultadosBusquedaClientes([]);
+      return;
+    }
+    refBusquedaCliente.current.value = "";
+    setResultadosBusquedaClientes([]);
+    setClienteSeleccionado(cliente);
+  };
+  // ? <- Fin traer clientes/acciones
+
+  // * <-------------------------------------------------------------------------------->
+
+  // ? Inicio crear cliente/acciones ->
+  // Estado popUp formulario crear cliente
+  const [popUpCrearCliente, setPopUpCrearCliente] = useState(false);
 
   // Estado para ver las contraseñas
   const [verPassword, setVerPassword] = useState("password");
   const [verPassword2, setVerPassword2] = useState("password");
-  // ? <- Fin utils
+
+  // Crear cliente
+  const { crearUsuario } = useUsuarioService();
+  const crearCliente = async (data) => {
+    // Quitamos password2 antes de enviar
+    const { password2, ...usuario } = data;
+    const response = await crearUsuario(usuario);
+    if (response.success) {
+      toast.success("Cliente creado con éxito\n¡Verificación pendiente!");
+      obtenerClientes();
+    } else {
+      toast.error(response.error);
+      return;
+    }
+    setPopUpCrearCliente(false);
+  };
+  // ? <- Fin Crear cliente/acciones
 
   // * <-------------------------------------------------------------------------------->
 
   // ? Inicio editar contraseña cliente/acciones ->
   const [popUpUsuarios, setPopUpUsuarios] = useState(false);
   const [popUpEditarContrasena, setPopUpEditarContrasena] = useState(false);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const { actualizarUsuario } = useUsuarioService();
   const editarContraseña = async (data) => {
-    console.log(user.id);
-    console.log(data);
-    const response = await actualizarUsuario(user.id, data.password);
+    const response = await actualizarUsuario(
+      usuarioSeleccionado.id,
+      data.password
+    );
     if (response.success) {
       toast.success("Contraseña cambiada con exito");
+      setUsuarioSeleccionado(null);
       setPopUpEditarContrasena(false);
     } else {
       toast.error(response.error);
@@ -104,6 +224,37 @@ export default function HomeUsuario() {
 
   // * <-------------------------------------------------------------------------------->
 
+  // ? -> Inicio eliminar cliente/acciones
+  const { eliminarUsuario } = useUsuarioService();
+  const eliminarCliente = async (cliente) => {
+    // Mostramos el confirmador
+    const result = await Swal.fire({
+      title: `¿Eliminar cliente ${cliente.nombre}?`,
+      text: "Esta acción es irreversible",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      ...swalStyles,
+    });
+
+    if (result.isConfirmed) {
+      // Si el usuario confirma, eliminamos el cliente
+      const response = await eliminarUsuario(cliente.id);
+
+      if (response.success) {
+        toast.success(`Cliente ${cliente.nombre} eliminado`);
+        obtenerClientes();
+        if (clienteSeleccionado?.id === cliente.id) {
+          setClienteSeleccionado(null);
+        }
+      } else {
+        toast.error(response.error || "No se pudo eliminar el cliente");
+      }
+    }
+  };
+  // ? <- Fin eliminar cliente/acciones
+
   // Todo Funciones section
 
   // ? -> Inicio ver info cliente
@@ -111,14 +262,14 @@ export default function HomeUsuario() {
   const [whichInfo, setWhichInfo] = useState([]);
   const refInformacion = useRef(null);
   const cargarInformacion = async () => {
-    const response = await obtenerInformacion(user.id);
+    const response = await obtenerInformacion(clienteSeleccionado?.value);
     refInformacion.current = response.data.data;
     filtroInformacion();
   };
 
   useEffect(() => {
     cargarInformacion();
-  }, []);
+  }, [clienteSeleccionado]);
 
   // Filtrador de informacion
   const refDato = useRef();
@@ -177,6 +328,15 @@ export default function HomeUsuario() {
   // ? -> Inicio crear info cliente
   const [popUpCrearInfo, setPopUpCrearInfo] = useState(false);
   const [draftCrear, setDraftCrear] = useState([]);
+  const camposObligatorios = [
+    "Hostname",
+    "Plataforma",
+    "Marca/Modelo",
+    "Tipo",
+    "Firmware/Versión S.O",
+    "Ubicación",
+    "Licenciamiento",
+  ];
 
   const { crearInformacion } = useInfoUsuarioService();
 
@@ -288,7 +448,7 @@ export default function HomeUsuario() {
 
     // Crear payload
     const nuevaInfo = {
-      usuario_id: user.id,
+      usuario_id: clienteSeleccionado.value,
       datos: obj,
     };
 
@@ -522,27 +682,58 @@ export default function HomeUsuario() {
       <Nav>
         <button
           onClick={() => {
+            obtenerClientes();
             setPopUpUsuarios(true);
           }}
-          className="btn-nav btn-user"
+          className="btn-nav"
           title="Gestión Usuarios"
         >
           <img src={imgUsuario} alt="" />
-          <span>{user.nombre}</span>
         </button>
+        <Select
+          styles={selectNavStyles}
+          options={opcionesClientes}
+          onChange={seleccionBusqueda}
+          onMenuOpen={() => obtenerClientes()}
+          value={clienteSeleccionado}
+          isSearchable={false}
+          placeholder="Seleccione un cliente..."
+        />
+        <span>o</span>
+        <div className="cont-inpNav">
+          <input
+            type="text"
+            placeholder="Busque por cliente..."
+            onInput={(e) => buscarCliente(e)}
+            ref={refBusquedaCliente}
+          />
+          <img src={imgSearch} alt="" />
+          {resultadosBusquedaClientes.length > 0 && (
+            <div>
+              {resultadosBusquedaClientes.map((c) => (
+                <button key={c.value} onClick={() => seleccionBusqueda(c)}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           onClick={() => {
-            cargarInformacion();
+            setClienteSeleccionado(null);
+            refBusquedaCliente.current.value = "";
+            setResultadosBusquedaClientes([]);
           }}
-          className="btn-nav"
+          className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
           title="Restablecer cliente seleccionado"
+          disabled={!clienteSeleccionado}
         >
           <img src={imgLimpiar} alt="" />
         </button>
         <button
-          className={`btn-nav ${!user ? "btn-disabled" : ""}`}
+          className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
           title="Crear registro"
-          disabled={!user}
+          disabled={!clienteSeleccionado}
           onClick={() => {
             setDraftCrear([
               { key: "Hostname", value: "" },
@@ -623,7 +814,11 @@ export default function HomeUsuario() {
                       <img src={imgEditar} alt="" />
                     </button>
                     {`
-                      Registro °${info.info_id}
+                      ${
+                        opcionesClientes.find(
+                          (c) => c.value === info.usuario_id
+                        )?.label
+                      } - Registro °${info.info_id}
                     `}
                     <button onClick={() => eliminarInformacionCliente(info)}>
                       <img src={imgBorrar} alt="" />
@@ -691,19 +886,146 @@ export default function HomeUsuario() {
         open={popUpUsuarios}
         onClose={() => {
           setPopUpUsuarios(false);
+          setUsuarioSeleccionado(null);
         }}
         modal
         nested
       >
         <div className="cont-popUp">
-          <h2>Gestión de usuario</h2>
+          <h2>Gestión de usuarios</h2>
           <CardAdmin
             nameAdmin={user.nombre}
             rolAdmin={user.rol}
             onClick={() => {
               setPopUpEditarContrasena(true);
+              setUsuarioSeleccionado(user);
             }}
           />
+          <div className="cont-tb-usuarios">
+            <div className="cont-search-new">
+              <label className="cont-searcher">
+                <input
+                  type="text"
+                  placeholder="Buscar usuario/cliente..."
+                  onInput={buscarClienteTabla}
+                />
+                <img src={imgSearch} alt="" />
+              </label>
+              <button
+                className="newUsuario"
+                title="Crear usuario"
+                onClick={() => setPopUpCrearCliente(true)}
+              >
+                <img src={imgCrearCliente} alt="" />
+              </button>
+            </div>
+            <div className="tb-overflow-scroll-hiden">
+              <div className="tb-usuarios">
+                {opcionesClientesTabla.map((cliente) => (
+                  <CardUsuario
+                    key={cliente.id}
+                    nameUsuario={cliente.nombre}
+                    correoUsuario={cliente.email}
+                    estado={cliente.verificado ? "" : "(No verificado)"}
+                    onClick1={() => {
+                      setPopUpEditarContrasena(true);
+                      setUsuarioSeleccionado(cliente);
+                    }}
+                    onClick2={() => eliminarCliente(cliente)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Popup>
+
+      {/* PopUp crear cliente */}
+      <Popup
+        open={popUpCrearCliente}
+        onClose={() => {
+          setPopUpCrearCliente(false);
+          resetCrear();
+        }}
+        modal
+        nested
+      >
+        <div className="cont-popUp">
+          <h2>Crear cliente</h2>
+          <form onSubmit={handleSubmitCrear(crearCliente)}>
+            {/* Nombre */}
+            <div className="cont-label">
+              <label>Nombre:</label>
+              {errorsCrear.nombre && <span>{errorsCrear.nombre.message}</span>}
+            </div>
+            <input
+              type="text"
+              {...registerCrear("nombre")}
+              placeholder="alpina"
+            />
+
+            {/* Email */}
+            <div className="cont-label">
+              <label>Correo:</label>
+              {errorsCrear.email && <span>{errorsCrear.email.message}</span>}
+            </div>
+            <input
+              type="text"
+              {...registerCrear("email")}
+              placeholder="alpina@example.com"
+            />
+
+            {/* Password */}
+            <div className="cont-label">
+              <label>Contraseña:</label>
+              {errorsCrear.password && (
+                <span>{errorsCrear.password.message}</span>
+              )}
+            </div>
+            <div className="cont-pass">
+              <input
+                type={verPassword}
+                {...registerCrear("password")}
+                placeholder="∗∗∗∗∗∗∗∗∗∗"
+              />
+              <button
+                type="button"
+                onMouseDown={() => setVerPassword("text")}
+                onMouseUp={() => setVerPassword("password")}
+                onMouseLeave={() => setVerPassword("password")}
+              >
+                <img src={imgVisibility} alt="" />
+              </button>
+            </div>
+
+            {/* Password2 */}
+            <div className="cont-label">
+              <label>Confirmar contraseña:</label>
+              {errorsCrear.password2 && (
+                <span>{errorsCrear.password2.message}</span>
+              )}
+            </div>
+            <div className="cont-pass">
+              <input
+                type={verPassword2}
+                {...registerCrear("password2")}
+                placeholder="∗∗∗∗∗∗∗∗∗∗"
+              />
+              <button
+                type="button"
+                onMouseDown={() => setVerPassword2("text")}
+                onMouseUp={() => setVerPassword2("password")}
+                onMouseLeave={() => setVerPassword2("password")}
+              >
+                <img src={imgVisibility} alt="" />
+              </button>
+            </div>
+            <SepHrz />
+            <button type="submit" disabled={isSubmittingCrear}>
+              <img src={imgCrearCliente} alt="" />
+              {isSubmittingCrear ? "Creando..." : "Crear"}
+            </button>
+          </form>
         </div>
       </Popup>
 
@@ -722,7 +1044,7 @@ export default function HomeUsuario() {
           <h2>
             Cambio contraseña
             <br />
-            de usuario{" "}
+            {usuarioSeleccionado?.nombre}
           </h2>
           <form onSubmit={handleSubmitCambiar(editarContraseña)}>
             {/* Password 1*/}
@@ -794,7 +1116,13 @@ export default function HomeUsuario() {
         nested
       >
         <div className="cont-popUp-editarInfo">
-          <h2>{`${user.nombre} - Nuevo registro`}</h2>
+          <h2>
+            {`${
+              opcionesClientes.find(
+                (c) => c.value === clienteSeleccionado?.value
+              )?.label
+            } - Nuevo registro`}
+          </h2>
 
           <div ref={scrollCrearRef}>
             {draftCrear.map(({ key, value }, i, array) => {
@@ -859,7 +1187,10 @@ export default function HomeUsuario() {
       >
         <div className="cont-popUp-editarInfo">
           <h2>
-            {` ${user.nombre} -
+            {` ${
+              opcionesClientes.find((c) => c.value === infoAEditar?.usuario_id)
+                ?.label
+            } -
       Registro °${infoAEditar?.info_id}`}
           </h2>
 
