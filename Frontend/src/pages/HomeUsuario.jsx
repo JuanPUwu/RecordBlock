@@ -117,37 +117,6 @@ export default function HomeUsuario() {
 
   // * <-------------------------------------------------------------------------------->
 
-  // ? -> Inicio eliminar cliente/acciones
-  const { eliminarUsuario } = useUsuarioService();
-  const eliminarCliente = async (cliente) => {
-    // Mostramos el confirmador
-    const result = await Swal.fire({
-      title: `¿Eliminar cliente ${cliente.nombre}?`,
-      text: "Esta acción es irreversible",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
-      ...swalStyles,
-    });
-
-    if (result.isConfirmed) {
-      // Si el usuario confirma, eliminamos el cliente
-      const response = await eliminarUsuario(cliente.id);
-
-      if (response.success) {
-        toast.success(`Cliente ${cliente.nombre} eliminado`);
-        // obtenerClientes();
-        if (clienteSeleccionado?.id === cliente.id) {
-          setClienteSeleccionado(null);
-        }
-      } else {
-        toast.error(response.error || "No se pudo eliminar el cliente");
-      }
-    }
-  };
-  // ? <- Fin eliminar cliente/acciones
-
   // Todo Funciones section
 
   // ? -> Inicio ver info cliente
@@ -221,15 +190,6 @@ export default function HomeUsuario() {
   // ? -> Inicio crear info cliente
   const [popUpCrearInfo, setPopUpCrearInfo] = useState(false);
   const [draftCrear, setDraftCrear] = useState([]);
-  const camposObligatorios = [
-    "Hostname",
-    "Plataforma",
-    "Marca/Modelo",
-    "Tipo",
-    "Firmware/Versión S.O",
-    "Ubicación",
-    "Licenciamiento",
-  ];
 
   const { crearInformacion } = useInfoUsuarioService();
 
