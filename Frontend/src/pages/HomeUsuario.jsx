@@ -53,7 +53,7 @@ import imgCrearRegistro from "../assets/img/flecha.png";
 import imgExcell from "../assets/img/excell.png";
 import imgPdf from "../assets/img/pdf.png";
 
-export default function HomeAdmin() {
+export default function HomeUsuario() {
   // Todo Funciones Nav
 
   // ? Inicio Manejo formularios ->
@@ -94,9 +94,9 @@ export default function HomeAdmin() {
   });
 
   // Exportar como PDF
-  const exportarComoPDF = () => exportarPDF(whichInfo, opcionesClientes);
+  const exportarComoPDF = () => exportarPDF(whichInfo, user);
   // Exportar como excell
-  const exportarComoExcell = () => exportarExcel(whichInfo, opcionesClientes);
+  const exportarComoExcell = () => exportarExcel(whichInfo, user);
   // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
