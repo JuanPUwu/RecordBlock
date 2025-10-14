@@ -126,28 +126,36 @@ export default function HomeAdmin() {
   // Exportar como PDF
   const exportarPDF = async () => {
     try {
+      // 🔹 1. Cargar plantilla original
       const response = await fetch(plantillaPdf);
       const pdfBytes = await response.arrayBuffer();
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-      // ===== 🎨 Colores personalizados =====
-      const headerColor = rgb(54 / 255, 4 / 255, 78 / 255); // encabezado + bordes
-      const cellBgColor = rgb(1, 1, 1); // fondo de celdas
+      // 🔹 Crear un PDF de plantilla limpia para copiar páginas
+      const plantillaBase = await PDFDocument.load(pdfBytes); // PDF limpio
+
+      // 🔹 Colores
+      const headerColor = rgb(54 / 255, 4 / 255, 78 / 255);
+      const cellBgColor = rgb(1, 1, 1);
       const textColor = rgb(0, 0, 0);
       const headerTextColor = rgb(1, 1, 1);
 
-      // ===== Dimensiones y márgenes =====
-      let page = pdfDoc.getPage(0);
-      const pageWidth = page.getWidth();
-      const pageHeight = page.getHeight();
+      // 🔹 Dimensiones
+      const pageWidth = pdfDoc.getPage(0).getWidth();
+      const pageHeight = pdfDoc.getPage(0).getHeight();
       const marginX = 40;
       const marginY = 50;
       const usableWidth = pageWidth - marginX * 2;
 
+      // 🔹 Crear primera página desde plantilla limpia
+      const [firstPage] = await pdfDoc.copyPages(plantillaBase, [0]);
+      let page = firstPage;
+      pdfDoc.addPage(page);
+
       let y = pageHeight - 35;
-      const baseRowHeight = 12; // menos espacio entre líneas
+      const baseRowHeight = 12;
       const fontSize = 6;
 
       // ===== 1️⃣ Título =====
@@ -160,12 +168,10 @@ export default function HomeAdmin() {
         font: boldFont,
         color: textColor,
       });
-
       y -= 25;
 
       // ===== 2️⃣ Info general (fecha) =====
       const fecha = new Date().toLocaleString();
-
       page.drawText("Fecha de reporte: ", {
         x: marginX,
         y,
@@ -180,8 +186,7 @@ export default function HomeAdmin() {
         font,
         color: textColor,
       });
-
-      y -= 15; // espacio antes de las tablas
+      y -= 15;
 
       // ===== 3️⃣ Generar encabezados =====
       const allKeys = new Set();
@@ -203,14 +208,11 @@ export default function HomeAdmin() {
       // ===== 5️⃣ Función wrap (texto y encabezado) =====
       const splitTextToLines = (text, width, font, fontSize) => {
         if (!text) return [""];
-
         const parts = text.split("/");
         const lines = [];
-
         parts.forEach((part, index) => {
           let currentLine = part.trim();
           if (index < parts.length - 1) currentLine += "/";
-
           let tempLine = "";
           for (let i = 0; i < currentLine.length; i++) {
             const testLine = tempLine + currentLine[i];
@@ -224,7 +226,6 @@ export default function HomeAdmin() {
           }
           if (tempLine) lines.push(tempLine);
         });
-
         return lines;
       };
 
@@ -258,8 +259,7 @@ export default function HomeAdmin() {
           font,
           color: textColor,
         });
-
-        y -= 15; // espacio antes de la tabla
+        y -= 15;
 
         // Dibujar encabezado
         let xPos = marginX;
@@ -305,8 +305,8 @@ export default function HomeAdmin() {
         y -= headerHeight;
 
         // Dibujar filas del cliente
-        registrosPorCliente[clienteId].forEach((item) => {
-          item.datos.forEach((detalle) => {
+        for (const item of registrosPorCliente[clienteId]) {
+          for (const detalle of item.datos) {
             const row = { "#": `°${item.info_id}`, ...detalle };
             const cellLines = {};
             let maxLines = 1;
@@ -358,13 +358,42 @@ export default function HomeAdmin() {
 
             y -= adjustedHeight;
 
-            // Nueva página si se llena
+            // 🔹 Nueva página si se llena
             if (y < marginY) {
-              page = pdfDoc.addPage([pageWidth, pageHeight]);
+              const [newPage] = await pdfDoc.copyPages(plantillaBase, [0]); // copiar plantilla limpia
+              page = newPage;
+              pdfDoc.addPage(page);
               y = pageHeight - 80;
+
+              // Volver a dibujar título y fecha en la nueva página
+              const titleWidth = boldFont.widthOfTextAtSize(title, 16);
+              page.drawText(title, {
+                x: (pageWidth - titleWidth) / 2,
+                y: pageHeight - 35,
+                size: 16,
+                font: boldFont,
+                color: textColor,
+              });
+              page.drawText("Fecha de reporte: ", {
+                x: marginX,
+                y: pageHeight - 60,
+                size: 8,
+                font: boldFont,
+                color: textColor,
+              });
+              page.drawText(fecha, {
+                x:
+                  marginX + boldFont.widthOfTextAtSize("Fecha de reporte: ", 8),
+                y: pageHeight - 60,
+                size: 8,
+                font,
+                color: textColor,
+              });
+
+              y = pageHeight - 80; // resetear posición debajo del título/fecha
             }
-          });
-        });
+          }
+        }
 
         y -= 20; // espacio entre clientes
       }
