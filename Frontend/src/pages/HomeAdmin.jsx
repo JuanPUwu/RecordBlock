@@ -28,6 +28,7 @@ import {
 // Utils
 import { exportarPDF } from "../utils/pdfUtils.js";
 import { exportarExcel } from "../utils/excellUtils.js";
+import { resaltarTexto } from "../utils/textUtils.jsx";
 
 // Componentes
 import Nav from "../components/Nav.jsx";
@@ -51,32 +52,6 @@ import imgAgregarFila from "../assets/img/agregarFila.png";
 import imgCrearRegistro from "../assets/img/flecha.png";
 import imgExcell from "../assets/img/excell.png";
 import imgPdf from "../assets/img/pdf.png";
-
-// Función para resaltar coincidencias
-const resaltarTexto = (texto, termino, esLlave = false) => {
-  if (!termino || !texto) return String(texto); // <-- asegurar string
-
-  if (!String(texto).toLowerCase().includes(termino.toLowerCase())) {
-    return String(texto); // <-- asegurar string
-  }
-
-  const regex = new RegExp(
-    `(${termino.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-    "gi"
-  );
-  const partes = String(texto).split(regex);
-
-  return partes.map((parte, index) => {
-    if (regex.test(parte)) {
-      return (
-        <span key={index} className={esLlave ? "highlight-key" : "highlight"}>
-          {parte}
-        </span>
-      );
-    }
-    return parte;
-  });
-};
 
 export default function HomeAdmin() {
   // Todo Funciones Nav
