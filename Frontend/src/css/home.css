@@ -95,6 +95,14 @@
   background-color: #7a7980;
 }
 
+.btn-nav[title="Refrescar información"] {
+  background-color: #8d8c91;
+}
+
+.btn-nav[title="Refrescar información"]:hover {
+  background-color: #7a7980;
+}
+
 .btn-nav[title="Crear registro"],
 .btn-nav[title="Exportar a excel"] {
   background-color: #37c45d;
@@ -154,6 +162,7 @@
 .btn-nav img {
   height: 50%;
   filter: invert(100%);
+  transition: 0.1s ease-in;
 }
 
 .popup-overlay {

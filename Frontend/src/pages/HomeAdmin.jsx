@@ -723,6 +723,7 @@ export default function HomeAdmin() {
             setClienteSeleccionado(null);
             refBusquedaCliente.current.value = "";
             setResultadosBusquedaClientes([]);
+            toast.success("Cliente restablecido");
           }}
           className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
           title="Restablecer cliente seleccionado"

@@ -8,7 +8,6 @@ import { useInfoUsuarioService } from "../services/infoUsuarioServices.js";
 // Estilos
 import "../css/home.css";
 import "../css/swalStyles.css";
-import selectNavStyles from "../css/selectNavStyles.js";
 import swalStyles from "../css/swalStyles.js";
 
 // Librerias
@@ -20,10 +19,7 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
 // Eschemas
-import {
-  schemaCrearUsuario,
-  schemaCambiarContraseña,
-} from "../validations/eschemas";
+import { schemaCambiarContraseña } from "../validations/eschemas";
 
 // Utils
 import { exportarPDF } from "../utils/pdfUtils.js";
@@ -33,13 +29,10 @@ import { resaltarTexto } from "../utils/textUtils.jsx";
 // Componentes
 import Nav from "../components/Nav.jsx";
 import SepHrz from "../components/SepHrz.jsx";
-import Select from "react-select";
 import SearchNav from "../components/SearchNav.jsx";
 import CardAdmin from "../components/CardAdmin.jsx";
-import CardUsuario from "../components/CardUsuario.jsx";
 
 // Imagenes
-import imgCrearCliente from "../assets/img/añadir.png";
 import imgSalir from "../assets/img/salir.png";
 import imgUsuario from "../assets/img/usuario.png";
 import imgVisibility from "../assets/img/ojo.png";
@@ -71,9 +64,6 @@ export default function HomeUsuario() {
   // * <-------------------------------------------------------------------------------->
 
   // ? -> Inicio utils
-  // Estado del cliente actualmente seleccionado
-  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-
   // Usuario actual
   const { user } = useAuth();
 
@@ -90,6 +80,16 @@ export default function HomeUsuario() {
 
   const [verPassword, setVerPassword] = useState("password");
   const [verPassword2, setVerPassword2] = useState("password");
+
+  const [isRefrescarInfo, setIsRefrescarInfo] = useState(false);
+  function refrescarInfo() {
+    setIsRefrescarInfo(true);
+    cargarInformacion();
+    toast.success("Información refrescada");
+    setTimeout(() => {
+      setIsRefrescarInfo(false);
+    }, 300);
+  }
   // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
@@ -124,14 +124,14 @@ export default function HomeUsuario() {
   const [whichInfo, setWhichInfo] = useState([]);
   const refInformacion = useRef(null);
   const cargarInformacion = async () => {
-    const response = await obtenerInformacion(clienteSeleccionado?.value);
+    const response = await obtenerInformacion(user?.value);
     refInformacion.current = response.data.data;
     filtroInformacion();
   };
 
   useEffect(() => {
     cargarInformacion();
-  }, [clienteSeleccionado]);
+  }, []);
 
   // Filtrador de informacion
   const refDato = useRef();
@@ -301,7 +301,7 @@ export default function HomeUsuario() {
 
     // Crear payload
     const nuevaInfo = {
-      usuario_id: clienteSeleccionado.value,
+      usuario_id: user.id,
       datos: obj,
     };
 
@@ -544,12 +544,10 @@ export default function HomeUsuario() {
           <span>{user.nombre}</span>
         </button>
         <button
-          onClick={() => {
-            setClienteSeleccionado(null);
-            refBusquedaCliente.current.value = "";
-          }}
-          className="btn-nav"
-          title="Restablecer cliente seleccionado"
+          onClick={() => refrescarInfo()}
+          className={`btn-nav ${isRefrescarInfo ? "btn-disabled" : ""}`}
+          disabled={isRefrescarInfo}
+          title="Refrescar información"
         >
           <img src={imgLimpiar} alt="" />
         </button>
@@ -635,9 +633,7 @@ export default function HomeUsuario() {
                     >
                       <img src={imgEditar} alt="" />
                     </button>
-                    {`
-                      ${user.nombre} - Registro °${info.info_id}
-                    `}
+                    {`Registro °${info.info_id}`}
                     <button onClick={() => eliminarInformacionCliente(info)}>
                       <img src={imgBorrar} alt="" />
                     </button>
@@ -810,8 +806,7 @@ export default function HomeUsuario() {
         nested
       >
         <div className="cont-popUp-editarInfo">
-          <h2>{`${user.nombre} - Nuevo registro`}</h2>
-
+          <h2>Nuevo registro</h2>
           <div ref={scrollCrearRef}>
             {draftCrear.map(({ key, value }, i, array) => {
               const esObligatorio = i < 7;
@@ -874,10 +869,7 @@ export default function HomeUsuario() {
         nested
       >
         <div className="cont-popUp-editarInfo">
-          <h2>
-            {` ${user.nombre} -
-      Registro °${infoAEditar?.info_id}`}
-          </h2>
+          <h2>{`Registro °${infoAEditar?.info_id}`}</h2>
 
           <div ref={scrollRef}>
             {draftDatos.map(({ key, value }, i, array) => {
