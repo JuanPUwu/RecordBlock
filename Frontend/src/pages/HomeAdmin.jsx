@@ -142,27 +142,22 @@ export default function HomeAdmin() {
       const textColor = rgb(0, 0, 0);
       const headerTextColor = rgb(1, 1, 1);
 
-      // 🔹 Dimensiones
+      // 🔹 Dimensiones y márgenes
       const pageWidth = pdfDoc.getPage(0).getWidth();
       const pageHeight = pdfDoc.getPage(0).getHeight();
-
-      // 🔹 Márgenes configurables
-      const marginSuperior = 40; // espacio desde arriba
-      const marginInferior = 40; // espacio desde abajo
+      const marginSuperior = 40;
+      const marginInferior = 40;
       const marginX = 40;
       const usableWidth = pageWidth - marginX * 2;
-
-      // 🔹 Altura inicial y útil
       const yInicial = pageHeight - marginSuperior;
-      const pageHeightUtil = pageHeight - marginSuperior - marginInferior;
 
-      // 🔹 Primera página
+      // 🔹 Página inicial
       let page = pdfDoc.getPage(0);
       let y = yInicial;
       const baseRowHeight = 12;
       const fontSize = 6;
 
-      // ===== 1️⃣ Título y fecha (solo primera página) =====
+      // ===== 1️⃣ Título y fecha =====
       const title = "Inventario de equipos";
       const titleWidth = boldFont.widthOfTextAtSize(title, 16);
       page.drawText(title, {
@@ -191,22 +186,7 @@ export default function HomeAdmin() {
       });
       y -= 15;
 
-      // ===== 2️⃣ Encabezados dinámicos =====
-      const allKeys = new Set();
-      whichInfo.forEach((item) => {
-        allKeys.add("#");
-        item.datos.forEach((detalle) => {
-          Object.keys(detalle).forEach((k) => allKeys.add(k));
-        });
-      });
-      const headers = Array.from(allKeys);
-
-      const fixedHashWidth = 40;
-      const remainingCols = headers.length - 1;
-      const otherColWidth = (usableWidth - fixedHashWidth) / remainingCols;
-      const getColWidth = (header) =>
-        header === "#" ? fixedHashWidth : otherColWidth;
-
+      // ===== 2️⃣ Función para dividir texto en líneas =====
       const splitTextToLines = (text, width, font, fontSize) => {
         if (!text) return [""];
         const parts = text.split("/");
@@ -238,12 +218,14 @@ export default function HomeAdmin() {
         return acc;
       }, {});
 
-      // ===== 4️⃣ Dibujar tablas =====
+      // ===== 4️⃣ Dibujar tablas por cliente =====
       for (const clienteId in registrosPorCliente) {
+        const clienteRegistros = registrosPorCliente[clienteId];
+
         const clienteNombre =
           opcionesClientes.find(
-            (c) => c.value === registrosPorCliente[clienteId][0].usuario_id
-          )?.label || registrosPorCliente[clienteId][0].usuario_id;
+            (c) => c.value === clienteRegistros[0].usuario_id
+          )?.label || clienteRegistros[0].usuario_id;
 
         // Cliente
         page.drawText("Cliente: ", {
@@ -262,7 +244,23 @@ export default function HomeAdmin() {
         });
         y -= 15;
 
-        // Encabezado
+        // Encabezados dinámicos SOLO para este cliente
+        const allKeysCliente = new Set();
+        allKeysCliente.add("#");
+        clienteRegistros.forEach((item) => {
+          item.datos.forEach((detalle) => {
+            Object.keys(detalle).forEach((k) => allKeysCliente.add(k));
+          });
+        });
+        const headers = Array.from(allKeysCliente);
+
+        const fixedHashWidth = 40;
+        const remainingCols = headers.length - 1;
+        const otherColWidth = (usableWidth - fixedHashWidth) / remainingCols;
+        const getColWidth = (header) =>
+          header === "#" ? fixedHashWidth : otherColWidth;
+
+        // Dibujar encabezado
         let xPos = marginX;
         let headerMaxLines = 1;
         const headerLines = headers.map((header) => {
@@ -304,8 +302,8 @@ export default function HomeAdmin() {
 
         y -= headerHeight;
 
-        // Filas
-        for (const item of registrosPorCliente[clienteId]) {
+        // Dibujar filas
+        for (const item of clienteRegistros) {
           for (const detalle of item.datos) {
             const row = { "#": `°${item.info_id}`, ...detalle };
             const cellLines = {};
@@ -321,6 +319,7 @@ export default function HomeAdmin() {
 
             const adjustedHeight = baseRowHeight * maxLines;
 
+            // Dibujar celdas
             xPos = marginX;
             headers.forEach((h) => {
               const colWidth = getColWidth(h);
@@ -337,6 +336,7 @@ export default function HomeAdmin() {
               xPos += colWidth;
             });
 
+            // Dibujar texto
             xPos = marginX;
             headers.forEach((h) => {
               const lines = cellLines[h];
@@ -356,7 +356,7 @@ export default function HomeAdmin() {
 
             y -= adjustedHeight;
 
-            // Nueva página si se llena respetando margen inferior
+            // Nueva página si se llena
             if (y - adjustedHeight < marginInferior) {
               const [newPage] = await pdfDoc.copyPages(plantillaBase, [0]);
               page = newPage;
@@ -377,6 +377,7 @@ export default function HomeAdmin() {
       console.error("Error exportando PDF:", error);
     }
   };
+
 
   // Exportar como excell
   const exportarExcell = async () => {
