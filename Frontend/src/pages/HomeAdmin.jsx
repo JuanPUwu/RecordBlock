@@ -956,7 +956,7 @@ export default function HomeAdmin() {
           <form onSubmit={handleSubmitCrear(crearCliente)}>
             {/* Nombre */}
             <div className="cont-label">
-              <label>Nombre:</label>
+              <label>Nombre de usuario:</label>
               {errorsCrear.nombre && <span>{errorsCrear.nombre.message}</span>}
             </div>
             <input

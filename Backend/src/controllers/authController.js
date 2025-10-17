@@ -13,8 +13,8 @@ dotenv.config();
 const TOKEN_CONFIG = {
   ACCESS_TOKEN_EXPIRY: "15m",
   ACCESS_TOKEN_EXPIRY_SECONDS: 15 * 60, // 15 minutos en segundos
-  REFRESH_TOKEN_EXPIRY: "7d",
-  REFRESH_TOKEN_EXPIRY_MS: 7 * 24 * 60 * 60 * 1000, // 7 días en milisegundos
+  REFRESH_TOKEN_EXPIRY: "8h",
+  REFRESH_TOKEN_EXPIRY_MS: 8 * 60 * 60 * 1000, // 8 horas en milisegundos
 };
 
 // ==================== UTILIDADES PARA RUTAS ABSOLUTAS ====================

@@ -30,7 +30,7 @@ const router = express.Router();
  *             properties:
  *               email:
  *                 type: string
- *                 example: juan@example.com
+ *                 example: admin@example.com
  *               password:
  *                 type: string
  *                 example: Contraseña123@

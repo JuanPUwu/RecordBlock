@@ -124,9 +124,12 @@ export default function Login() {
               placeholder="∗∗∗∗∗∗∗∗∗∗"
             />
           </div>
-          <a onClick={() => setPopUpForgotPassword(true)}>
+          <button
+            className="btn-forgot-pass"
+            onClick={() => setPopUpForgotPassword(true)}
+          >
             ¿Olvidaste tu contraseña?
-          </a>
+          </button>
           <button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Ingresando..." : "Ingresar"}
           </button>

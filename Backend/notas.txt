@@ -1,0 +1,7 @@
+.env
+
+JWT_ACCESS_SECRET=*clave*
+JWT_REFRESH_SECRET=*clave para refresh*
+EMAIL_USER=*correo desde donde se enviaran las verificaciones de cuenta y recuperacion de contraseña*
+EMAIL_PASS=*clave unica*
+BACKEND_URL=http://localhost:3000

@@ -5,12 +5,6 @@ const db = new sqlite3.Database("database.db");
 
 // Crear tablas (reinicio)
 db.serialize(async () => {
-  // Borrar tablas si existen
-  /*
-  db.run("DROP TABLE IF EXISTS informacion_usuario");
-  db.run("DROP TABLE IF EXISTS usuario");
-  db.run("DROP TABLE IF EXISTS token_blacklist");
-  */
 
   // Crear tabla de usuarios
   db.run(`
@@ -71,32 +65,31 @@ db.serialize(async () => {
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash("Contraseña123@", saltRounds);
 
-  db.run(
+  /* db.run(
     `INSERT INTO usuario (nombre, email, password, rol, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    ["Juan Pérez", "juan@example.com", hashedPassword, "admin", 1],
+    ["Administrador", "admin@example.com", hashedPassword, "admin", 1],
     function (err) {
       if (err) {
         console.error("Error al crear usuario admin:", err.message);
       } else {
-        console.log("Usuario admin creado: juan@example.com (Contraseña123@)");
+        console.log("Usuario admin creado: admin@example.com (Contraseña123@)");
       }
     }
-  );
+  ); */
 
-  // Cliente
-  db.run(
+  /* db.run(
     `INSERT INTO usuario (nombre, email, password, rol, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    ["Maria Martinez", "maria@example.com", hashedPassword, "cliente", 1],
+    ["Alpina", "alpina@example.com", hashedPassword, "cliente", 1],
     function (err) {
       if (err) {
-        console.error("Error al crear usuario admin:", err.message);
+        console.error("Error al crear usuario cliente:", err.message);
       } else {
-        console.log("Usuario admin creado: juan@example.com (Contraseña123@)");
+        console.log("Usuario cliente creado: alpina@example.com (Contraseña123@)");
       }
     }
-  );
+  ); */
 });
 
 // ✅ Wrappers para Promises

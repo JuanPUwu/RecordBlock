@@ -99,19 +99,22 @@ input {
   outline: none;
 }
 
-.cont-login form a {
+.cont-login form .btn-forgot-pass {
   color: #0060df;
   margin-left: 0.5rem;
   font-size: 1.1rem;
   text-decoration: none;
   cursor: pointer;
+  background-color: transparent;
+  border: none;
+  text-align: start;
 }
 
-.cont-login form a:hover {
+.cont-login form .btn-forgot-pass:hover {
   text-decoration: underline;
 }
 
-.cont-login form button {
+.cont-login form button:not(.btn-forgot-pass) {
   color: #ffffff;
   padding: 0.8rem;
   font-size: 1rem;
@@ -125,7 +128,7 @@ input {
   transition: 0.1s ease-in;
 }
 
-.cont-login form button:hover {
+.cont-login form button:hover:not(.btn-forgot-pass) {
   text-decoration: underline;
   background-color: #0060df;
 }
