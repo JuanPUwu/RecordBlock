@@ -17,18 +17,20 @@ export default function AppRouter() {
           </PublicRoute>
         }
       />
+
       <Route
         path="/homeAdmin"
         element={
-          <PrivateRoute>
+          <PrivateRoute roles={["admin"]}>
             <HomeAdmin />
           </PrivateRoute>
         }
       />
+
       <Route
         path="/homeUsuario"
         element={
-          <PrivateRoute>
+          <PrivateRoute roles={["cliente"]}>
             <HomeUsuario />
           </PrivateRoute>
         }

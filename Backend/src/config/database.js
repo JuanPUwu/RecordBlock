@@ -9,11 +9,11 @@ db.run("PRAGMA foreign_keys = ON");
 // Crear tablas (reinicio)
 db.serialize(async () => {
   // Borrar tablas relacionadas primero
-  // db.run(`DROP TABLE IF EXISTS tokens_verificacion`);
-  // db.run(`DROP TABLE IF EXISTS tokens_recuperacion`);
-  // db.run(`DROP TABLE IF EXISTS informacion_usuario`);
-  // db.run(`DROP TABLE IF EXISTS token_blacklist`);
-  // db.run(`DROP TABLE IF EXISTS usuario`);
+  db.run(`DROP TABLE IF EXISTS tokens_verificacion`);
+  db.run(`DROP TABLE IF EXISTS tokens_recuperacion`);
+  db.run(`DROP TABLE IF EXISTS informacion_usuario`);
+  db.run(`DROP TABLE IF EXISTS token_blacklist`);
+  db.run(`DROP TABLE IF EXISTS usuario`);
 
   // Crear tabla de usuarios
   db.run(`
@@ -89,7 +89,120 @@ db.serialize(async () => {
   db.run(
     `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    ["Bavaria", "bavaria@example.com", hashedPassword, "cliente", 1]
+    ["Compensar", "compensar@example.com", hashedPassword, "cliente", 1]
+  );
+
+  // Insertar información para Alpina y Compensar
+  db.all(
+    `SELECT id, nombre FROM usuario WHERE nombre IN ('Alpina', 'Compensar')`,
+    async (err, users) => {
+      if (err) {
+        console.error("Error obteniendo usuarios:", err);
+        return;
+      }
+
+      const infoEjemplos = [
+        {
+          Hostname: "ServidorPrincipal",
+          Plataforma: "Windows Server",
+          "Marca/Modelo": "Dell PowerEdge R740",
+          Tipo: "Servidor",
+          "Firmware/Versión S.O": "v2.4.1",
+          Ubicación: "Bogotá - Centro de Datos",
+          Licenciamiento: "Windows Server 2022 Standard",
+        },
+        {
+          Hostname: "ServidorBackup01",
+          Plataforma: "Linux Ubuntu Server",
+          "Marca/Modelo": "HP ProLiant DL380 Gen10",
+          Tipo: "Servidor de Respaldo",
+          "Firmware/Versión S.O": "Ubuntu 20.04",
+          Ubicación: "Medellín - DataCenter Secundario",
+          Licenciamiento: "GNU/Linux Open Source",
+        },
+        {
+          Hostname: "WebNode01",
+          Plataforma: "Windows Server",
+          "Marca/Modelo": "Dell PowerEdge T640",
+          Tipo: "Servidor Web",
+          "Firmware/Versión S.O": "Windows Server 2019",
+          Ubicación: "Bogotá - Torre Central",
+          Licenciamiento: "Windows Server 2019 Standard",
+        },
+        {
+          Hostname: "DB-Cluster-01",
+          Plataforma: "Red Hat Enterprise Linux",
+          "Marca/Modelo": "Lenovo ThinkSystem SR650",
+          Tipo: "Base de Datos",
+          "Firmware/Versión S.O": "RHEL 8.6",
+          Ubicación: "Cali - Planta de Datos",
+          Licenciamiento: "RHEL Enterprise Subscription",
+        },
+        {
+          Hostname: "Proxy01",
+          Plataforma: "Linux Debian",
+          "Marca/Modelo": "Cisco UCS C220",
+          Tipo: "Proxy/Firewall",
+          "Firmware/Versión S.O": "Debian 11",
+          Ubicación: "Bogotá - Red Perimetral",
+          Licenciamiento: "Software Libre",
+        },
+        {
+          Hostname: "MailServer",
+          Plataforma: "Windows Server",
+          "Marca/Modelo": "Dell EMC R540",
+          Tipo: "Correo Corporativo",
+          "Firmware/Versión S.O": "Exchange Server 2019",
+          Ubicación: "Bogotá - Edificio Norte",
+          Licenciamiento: "Microsoft Exchange",
+        },
+        {
+          Hostname: "VPN-Gateway",
+          Plataforma: "Linux CentOS",
+          "Marca/Modelo": "HP ProLiant DL360",
+          Tipo: "VPN Empresarial",
+          "Firmware/Versión S.O": "CentOS 7",
+          Ubicación: "Medellín - Seguridad",
+          Licenciamiento: "OpenVPN",
+        },
+        {
+          Hostname: "StorageNAS01",
+          Plataforma: "FreeNAS",
+          "Marca/Modelo": "QNAP TS-1685",
+          Tipo: "Almacenamiento NAS",
+          "Firmware/Versión S.O": "FreeNAS 11.3",
+          Ubicación: "Bogotá - Cuarto de Redes",
+          Licenciamiento: "BSD Open Source",
+        },
+        {
+          Hostname: "BackupCloud",
+          Plataforma: "Linux Ubuntu",
+          "Marca/Modelo": "Custom Server",
+          Tipo: "Respaldo Nube",
+          "Firmware/Versión S.O": "Ubuntu 22.04",
+          Ubicación: "AWS - us-east-1",
+          Licenciamiento: "AWS Subscription",
+        },
+        {
+          Hostname: "DevOpsNode",
+          Plataforma: "Linux Fedora",
+          "Marca/Modelo": "Dell Precision",
+          Tipo: "Automatización CI/CD",
+          "Firmware/Versión S.O": "Fedora 35",
+          Ubicación: "Bogotá - Área Desarrollo",
+          Licenciamiento: "Software Libre",
+        },
+      ];
+
+      users.forEach((user) => {
+        infoEjemplos.forEach((info) => {
+          db.run(
+            `INSERT INTO informacion_usuario (usuario_id, datos) VALUES (?, ?)`,
+            [user.id, JSON.stringify(info)]
+          );
+        });
+      });
+    }
   );
 });
 
