@@ -125,6 +125,7 @@ export default function Login() {
             />
           </div>
           <button
+            type="button"
             className="btn-forgot-pass"
             onClick={() => setPopUpForgotPassword(true)}
           >

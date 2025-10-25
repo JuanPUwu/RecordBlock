@@ -95,11 +95,11 @@
   background-color: #7a7980;
 }
 
-.btn-nav[title="Refrescar información"] {
+.btn-nav[title="Refrescar registros"] {
   background-color: #8d8c91;
 }
 
-.btn-nav[title="Refrescar información"]:hover {
+.btn-nav[title="Refrescar registros"]:hover {
   background-color: #7a7980;
 }
 
@@ -113,7 +113,8 @@
   background-color: #2fa84d;
 }
 
-.btn-nav[title="Gestión Usuarios"] {
+.btn-nav[title="Gestión de usuarios"],
+.btn-nav[title="Gestión de usuario"] {
   background-color: #007afb;
 }
 
@@ -133,7 +134,8 @@
   display: inline-block;
 }
 
-.btn-nav[title="Gestión Usuarios"]:hover {
+.btn-nav[title="Gestión de usuarios"]:hover,
+.btn-nav[title="Gestión de usuario"]:hover {
   background-color: #0066d6;
 }
 

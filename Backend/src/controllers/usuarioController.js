@@ -4,7 +4,11 @@ import validator from "validator"; // para validar email
 import path from "path";
 import { fileURLToPath } from "url";
 import { runAsync, getAsync, allAsync } from "../utils/dbHelpers.js";
-import { enviarCorreoVerificacion } from "../utils/email.js";
+import {
+  enviarCorreoVerificacion,
+  enviarCorreoCambioPasswordAdmin,
+  enviarCorreoCambioPasswordPropio,
+} from "../utils/email.js";
 
 // Obtener todos los usuarios con rol "cliente" (solo admin)
 export const obtenerUsuarios = async (req, res) => {
@@ -72,7 +76,7 @@ export const crearUsuario = async (req, res) => {
     // Generar token único
     const token = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
     await runAsync(
       "INSERT INTO tokens_verificacion (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
@@ -141,18 +145,21 @@ export const verificarCorreo = async (req, res) => {
 // Actualizar solo la contraseña de un usuario (admin o el mismo cliente)
 export const actualizarUsuario = async (req, res) => {
   try {
-    const { id } = req.params; // id de la URL
-    const idToken = req.usuario.id; // id del usuario del token
+    const { id } = req.params; // ID que viene por parámetro (solo lo usa admin)
+    const idToken = req.usuario.id; // ID que viene en el token
     const { password } = req.body;
 
     if (!password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "La contraseña es obligatoria." });
+      return res.status(400).json({
+        success: false,
+        message: "La contraseña es obligatoria.",
+      });
     }
 
+    // Si viene ID en params lo usa (admin), si no, usa el ID del token (usuario común)
     const idFinal = id ? parseInt(id) : idToken;
 
+    // Validar que un usuario común no modifique a otro usuario
     if (req.usuario.rol !== "admin" && idFinal !== idToken) {
       return res.status(403).json({
         success: false,
@@ -161,27 +168,72 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
+    // Obtener info del usuario para enviar correo
+    const usuario = await getAsync(
+      "SELECT email, nombre FROM usuario WHERE id = ?",
+      [idFinal]
+    );
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado.",
+      });
+    }
+
+    // Encriptar nueva contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Actualizar contraseña en BD
     const result = await runAsync(
       "UPDATE usuario SET password = ? WHERE id = ?",
       [hashedPassword, idFinal]
     );
 
     if (result.changes === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Usuario no encontrado." });
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado.",
+      });
+    }
+
+    // ✅ Obtener fecha actual Formato C
+    const fecha = new Date().toLocaleString("es-ES", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // ✅ Enviar email según quién cambió
+    if (req.usuario.rol === "admin" && idFinal !== idToken) {
+      // Un admin cambió la contraseña
+      await enviarCorreoCambioPasswordAdmin(
+        usuario.email,
+        usuario.nombre,
+        fecha
+      );
+    } else {
+      // El usuario cambió su propia contraseña
+      await enviarCorreoCambioPasswordPropio(
+        usuario.email,
+        usuario.nombre,
+        fecha
+      );
     }
 
     res.json({
       success: true,
-      message: "Contraseña actualizada correctamente.",
+      message:
+        "Contraseña actualizada correctamente. Se envió notificación por correo.",
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Error al actualizar usuario" });
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error al actualizar contraseña.",
+    });
   }
 };
 

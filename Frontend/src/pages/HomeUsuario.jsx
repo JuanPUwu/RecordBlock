@@ -85,7 +85,7 @@ export default function HomeUsuario() {
   function refrescarInfo() {
     setIsRefrescarInfo(true);
     cargarInformacion();
-    toast.success("Información refrescada");
+    toast.success("Registros refrescados");
     setTimeout(() => {
       setIsRefrescarInfo(false);
     }, 300);
@@ -105,7 +105,7 @@ export default function HomeUsuario() {
       data.password
     );
     if (response.success) {
-      toast.success("Contraseña cambiada con exito");
+      toast.success("Contraseña cambiada con éxito");
       setUsuarioSeleccionado(null);
       setPopUpEditarContrasena(false);
     } else {
@@ -165,20 +165,18 @@ export default function HomeUsuario() {
     }
 
     const filtrados = refInformacion.current.filter((info) => {
-      const dataObj = info.datos[0] || {}; // extraemos el primer objeto de datos
+      const dataObj = info.datos[0] || {};
       const keys = Object.keys(dataObj);
 
-      // Filtrado por clave (dato)
-      const datoMatch = dato
-        ? keys.some((k) => k.toLowerCase().includes(dato))
-        : true;
+      return keys.some((k) => {
+        const keyLower = k.toLowerCase();
+        const valueLower = String(dataObj[k]).toLowerCase();
 
-      // Filtrado por valor (detalle)
-      const detalleMatch = detalle
-        ? keys.some((k) => String(dataObj[k]).toLowerCase().includes(detalle))
-        : true;
+        const matchDato = dato ? keyLower.includes(dato) : true;
+        const matchDetalle = detalle ? valueLower.includes(detalle) : true;
 
-      return datoMatch && detalleMatch;
+        return matchDato && matchDetalle;
+      });
     });
 
     setWhichInfo(filtrados);
@@ -308,7 +306,7 @@ export default function HomeUsuario() {
     const response = await crearInformacion(nuevaInfo);
 
     if (response.success) {
-      toast.success(`Información creada con éxito`);
+      toast.success(`Registro creado con éxito`);
       cargarInformacion();
       setPopUpCrearInfo(false);
     } else {
@@ -463,7 +461,7 @@ export default function HomeUsuario() {
     // 🔹 Enviar actualización
     const response = await actualizarInformacion(infoActualizada);
     if (response.success) {
-      toast.success(`Información °${infoActualizada.info_id} actualizada`);
+      toast.success(`Registro °${infoActualizada.info_id} actualizado`);
       cargarInformacion();
       setPopUpEditarInfo(false);
     } else {
@@ -482,7 +480,7 @@ export default function HomeUsuario() {
       text: "Esta acción es irreversible",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: "Sí, Eliminar",
       cancelButtonText: "Cancelar",
       ...swalStyles,
     });
@@ -512,8 +510,8 @@ export default function HomeUsuario() {
   const { logout } = useAuth();
   const cerrarSesion = async () => {
     const result = await Swal.fire({
-      title: "¿Estas seguro de cerrar sesión?",
-      text: "Tendrás que iniciar sesion nuevamente",
+      title: "¿Estás seguro de cerrar sesión?",
+      text: "Tendrás que iniciar sesión nuevamente",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Sí, Salir",
@@ -538,7 +536,7 @@ export default function HomeUsuario() {
             setPopUpUsuarios(true);
           }}
           className="btn-nav btn-user"
-          title="Gestión Usuarios"
+          title="Gestión de usuario"
         >
           <img src={imgUsuario} alt="" />
           <span>{user.nombre}</span>
@@ -547,7 +545,7 @@ export default function HomeUsuario() {
           onClick={() => refrescarInfo()}
           className={`btn-nav ${isRefrescarInfo ? "btn-disabled" : ""}`}
           disabled={isRefrescarInfo}
-          title="Refrescar información"
+          title="Refrescar registros"
         >
           <img src={imgLimpiar} alt="" />
         </button>
@@ -706,7 +704,7 @@ export default function HomeUsuario() {
         nested
       >
         <div className="cont-popUp">
-          <h2>Gestión de usuarios</h2>
+          <h2>Gestión de usuario</h2>
           <CardAdmin
             nameAdmin={user.nombre}
             rolAdmin={user.rol}
@@ -731,11 +729,7 @@ export default function HomeUsuario() {
         nested
       >
         <div className="cont-popUp">
-          <h2>
-            Cambio contraseña
-            <br />
-            {usuarioSeleccionado?.nombre}
-          </h2>
+          <h2>Cambio de contraseña</h2>
           <form onSubmit={handleSubmitCambiar(editarContraseña)}>
             {/* Password 1*/}
             <div className="cont-label">
@@ -787,6 +781,7 @@ export default function HomeUsuario() {
               className="btn-cambio-contraseña"
               type="submit"
               disabled={isSubmittingCambiar}
+              title="Cambiar contraseña"
             >
               <img src={imgCandado} alt="" />
               {isSubmittingCambiar ? "Cambiando..." : "Cambiar"}
@@ -834,7 +829,11 @@ export default function HomeUsuario() {
                   />
 
                   {!esObligatorio && (
-                    <button type="button" onClick={() => eliminarDatoCrear(i)}>
+                    <button
+                      type="button"
+                      onClick={() => eliminarDatoCrear(i)}
+                      title="Eliminar campo"
+                    >
                       <img src={imgBorrar} alt="Eliminar" />
                     </button>
                   )}
@@ -845,11 +844,20 @@ export default function HomeUsuario() {
 
           <div className="sep-hrz"></div>
           <div className="cont-btns">
-            <button type="button" onClick={agregarDatoCrear}>
+            <button
+              type="button"
+              onClick={agregarDatoCrear}
+              title="Agregar campo"
+            >
               <img src={imgAgregarFila} alt="" />
               Agregar campo
             </button>
-            <button type="button" className="btn-crear" onClick={crearRegistro}>
+            <button
+              type="button"
+              className="btn-crear"
+              onClick={crearRegistro}
+              title="Crear registro"
+            >
               <img src={imgCrearRegistro} alt="" />
               Crear
             </button>
@@ -898,7 +906,11 @@ export default function HomeUsuario() {
                   />
 
                   {!esObligatorio && (
-                    <button type="button" onClick={() => eliminarDatoDraft(i)}>
+                    <button
+                      type="button"
+                      onClick={() => eliminarDatoDraft(i)}
+                      title="Eliminar campo"
+                    >
                       <img src={imgBorrar} alt="Eliminar" />
                     </button>
                   )}
@@ -908,11 +920,19 @@ export default function HomeUsuario() {
           </div>
           <div className="sep-hrz"></div>
           <div className="cont-btns">
-            <button type="button" onClick={agregarDatoDraft}>
+            <button
+              type="button"
+              onClick={agregarDatoDraft}
+              title="Agregar campo"
+            >
               <img src={imgAgregarFila} alt="" />
               Agregar campo
             </button>
-            <button type="button" onClick={editarRegistro}>
+            <button
+              type="button"
+              onClick={editarRegistro}
+              title="Guardar registro"
+            >
               <img src={imgEditar} alt="" />
               Guardar
             </button>

@@ -60,6 +60,16 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
     // 🔹 5. Alinear columna "# Registro" a la izquierda
     worksheet.getColumn("# Registro").alignment = { horizontal: "left" };
 
+    // 🔹 5.5 Ajustar ancho de columnas automáticamente
+    worksheet.columns.forEach((column) => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const cellValue = cell.value ? cell.value.toString() : "";
+        maxLength = Math.max(maxLength, cellValue.length);
+      });
+      column.width = maxLength < 15 ? 15 : maxLength;
+    });
+
     // 🔹 6. Exportar archivo
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {

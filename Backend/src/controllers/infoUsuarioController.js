@@ -51,9 +51,13 @@ export const obtenerInformacion = async (req, res) => {
       return res.json({ success: true, data: resultados });
     }
 
-    return res.status(403).json({ success: false, message: "Rol no autorizado." });
+    return res
+      .status(403)
+      .json({ success: false, message: "Rol no autorizado." });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al obtener información" });
+    res
+      .status(500)
+      .json({ success: false, message: "Error al obtener información" });
   }
 };
 
@@ -68,8 +72,27 @@ export const crearInformacion = async (req, res) => {
   try {
     let usuario_id, datos;
 
+    // Rol admin puede elegir usuario_id, cliente usa el suyo del token
     if (req.usuario.rol === "admin") {
       ({ usuario_id, datos } = req.body);
+
+      // ✅ Bloquear intento de asociar información a un usuario admin
+      const usuarioDestino = await getAsync(
+        "SELECT rol FROM usuario WHERE id = ?",
+        [usuario_id]
+      );
+      if (!usuarioDestino) {
+        return res.status(404).json({
+          success: false,
+          message: "El usuario destino no existe.",
+        });
+      }
+      if (usuarioDestino.rol === "admin") {
+        return res.status(400).json({
+          success: false,
+          message: "No puedes crear información para un usuario administrador.",
+        });
+      }
     } else if (req.usuario.rol === "cliente") {
       usuario_id = req.usuario.id;
       ({ datos } = req.body);
@@ -98,12 +121,11 @@ export const crearInformacion = async (req, res) => {
       "licenciamiento",
     ];
 
-    // 🔹 Función para normalizar textos (sin tildes ni mayúsculas)
     const normalizar = (texto) =>
       texto
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, ""); // elimina acentos
+        .replace(/[\u0300-\u036f]/g, "");
 
     for (const registro of registros) {
       if (typeof registro !== "object") {
@@ -113,17 +135,13 @@ export const crearInformacion = async (req, res) => {
         });
       }
 
-      // 🔹 Crear un mapa normalizado de claves
       const clavesNormalizadas = Object.keys(registro).map((k) =>
         normalizar(k)
       );
 
-      // 🔹 Buscar campos faltantes o vacíos
       const faltantes = camposRequeridos.filter((campo) => {
         const campoNormalizado = normalizar(campo);
         const index = clavesNormalizadas.indexOf(campoNormalizado);
-
-        // No existe
         if (index === -1) return true;
 
         const valor = registro[Object.keys(registro)[index]];
@@ -166,9 +184,10 @@ export const crearInformacion = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Error al crear información" });
+    res.status(500).json({
+      success: false,
+      message: "Error al crear información",
+    });
   }
 };
 
@@ -201,28 +220,23 @@ export const actualizarInformacion = async (req, res) => {
       "licenciamiento",
     ];
 
-    // 🔹 Normalizador de texto (minúsculas y sin tildes)
     const normalizar = (texto) =>
       texto
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 
-    // 🔹 Crear mapa de claves normalizadas
     const clavesNormalizadas = Object.keys(datos).map((k) => normalizar(k));
 
-    // 🔹 Buscar campos faltantes o vacíos
     const faltantes = camposRequeridos.filter((campo) => {
       const campoNormalizado = normalizar(campo);
       const index = clavesNormalizadas.indexOf(campoNormalizado);
 
-      if (index === -1) return true; // no existe
+      if (index === -1) return true;
 
       const valor = datos[Object.keys(datos)[index]];
       return (
-        valor === null ||
-        valor === undefined ||
-        valor.toString().trim() === ""
+        valor === null || valor === undefined || valor.toString().trim() === ""
       );
     });
 
@@ -236,7 +250,7 @@ export const actualizarInformacion = async (req, res) => {
     }
     // ================================================================
 
-    // Determinar el usuario que puede editar
+    // Determinar el usuario dueño de la información
     let userId;
     if (req.usuario.rol === "admin") {
       if (!usuario_id) {
@@ -245,6 +259,28 @@ export const actualizarInformacion = async (req, res) => {
           message: "El campo 'usuario_id' es obligatorio para admin",
         });
       }
+
+      // ✅ Verificar que el usuario_id no sea admin
+      const usuarioDestino = await getAsync(
+        "SELECT rol FROM usuario WHERE id = ?",
+        [usuario_id]
+      );
+
+      if (!usuarioDestino) {
+        return res.status(404).json({
+          success: false,
+          message: "El usuario destino no existe.",
+        });
+      }
+
+      if (usuarioDestino.rol === "admin") {
+        return res.status(400).json({
+          success: false,
+          message:
+            "No puedes actualizar información de un usuario administrador.",
+        });
+      }
+
       userId = usuario_id;
     } else if (req.usuario.rol === "cliente") {
       userId = req.usuario.id;
@@ -254,7 +290,7 @@ export const actualizarInformacion = async (req, res) => {
         .json({ success: false, message: "Rol no autorizado." });
     }
 
-    // Verificar que la información exista y pertenezca al usuario
+    // Verificar que exista esa información y le pertenezca
     const row = await getAsync(
       "SELECT * FROM informacion_usuario WHERE id = ? AND usuario_id = ?",
       [info_id, userId]
@@ -297,7 +333,9 @@ export const eliminarInformacion = async (req, res) => {
     } else if (req.usuario.rol === "cliente") {
       condicionUsuario = req.usuario.id;
     } else {
-      return res.status(403).json({ success: false, message: "Rol no autorizado." });
+      return res
+        .status(403)
+        .json({ success: false, message: "Rol no autorizado." });
     }
 
     const row = await getAsync(
@@ -306,15 +344,21 @@ export const eliminarInformacion = async (req, res) => {
     );
 
     if (!row) {
-      return res
-        .status(404)
-        .json({ success: false, message: "La información no pertenece o no existe." });
+      return res.status(404).json({
+        success: false,
+        message: "La información no pertenece o no existe.",
+      });
     }
 
     await runAsync("DELETE FROM informacion_usuario WHERE id = ?", [info_id]);
 
-    res.json({ success: true, message: "Información eliminada correctamente." });
+    res.json({
+      success: true,
+      message: "Información eliminada correctamente.",
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Error al eliminar información" });
+    res
+      .status(500)
+      .json({ success: false, message: "Error al eliminar información" });
   }
 };

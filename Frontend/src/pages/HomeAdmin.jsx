@@ -212,7 +212,7 @@ export default function HomeAdmin() {
       data.password
     );
     if (response.success) {
-      toast.success("Contraseña cambiada con exito");
+      toast.success("Contraseña cambiada con éxito");
       setUsuarioSeleccionado(null);
       setPopUpEditarContrasena(false);
     } else {
@@ -233,7 +233,7 @@ export default function HomeAdmin() {
       text: "Esta acción es irreversible",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: "Sí, Eliminar",
       cancelButtonText: "Cancelar",
       ...swalStyles,
     });
@@ -245,6 +245,7 @@ export default function HomeAdmin() {
       if (response.success) {
         toast.success(`Cliente ${cliente.nombre} eliminado`);
         obtenerClientes();
+        cargarInformacion();
         if (clienteSeleccionado?.id === cliente.id) {
           setClienteSeleccionado(null);
         }
@@ -303,20 +304,18 @@ export default function HomeAdmin() {
     }
 
     const filtrados = refInformacion.current.filter((info) => {
-      const dataObj = info.datos[0] || {}; // extraemos el primer objeto de datos
+      const dataObj = info.datos[0] || {};
       const keys = Object.keys(dataObj);
 
-      // Filtrado por clave (dato)
-      const datoMatch = dato
-        ? keys.some((k) => k.toLowerCase().includes(dato))
-        : true;
+      return keys.some((k) => {
+        const keyLower = k.toLowerCase();
+        const valueLower = String(dataObj[k]).toLowerCase();
 
-      // Filtrado por valor (detalle)
-      const detalleMatch = detalle
-        ? keys.some((k) => String(dataObj[k]).toLowerCase().includes(detalle))
-        : true;
+        const matchDato = dato ? keyLower.includes(dato) : true;
+        const matchDetalle = detalle ? valueLower.includes(detalle) : true;
 
-      return datoMatch && detalleMatch;
+        return matchDato && matchDetalle;
+      });
     });
 
     setWhichInfo(filtrados);
@@ -455,7 +454,7 @@ export default function HomeAdmin() {
     const response = await crearInformacion(nuevaInfo);
 
     if (response.success) {
-      toast.success(`Información creada con éxito`);
+      toast.success(`Registro creado con éxito`);
       cargarInformacion();
       setPopUpCrearInfo(false);
     } else {
@@ -610,7 +609,7 @@ export default function HomeAdmin() {
     // 🔹 Enviar actualización
     const response = await actualizarInformacion(infoActualizada);
     if (response.success) {
-      toast.success(`Información °${infoActualizada.info_id} actualizada`);
+      toast.success(`Registro °${infoActualizada.info_id} actualizado`);
       cargarInformacion();
       setPopUpEditarInfo(false);
     } else {
@@ -629,7 +628,7 @@ export default function HomeAdmin() {
       text: "Esta acción es irreversible",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: "Sí, Eliminar",
       cancelButtonText: "Cancelar",
       ...swalStyles,
     });
@@ -659,8 +658,8 @@ export default function HomeAdmin() {
   const { logout } = useAuth();
   const cerrarSesion = async () => {
     const result = await Swal.fire({
-      title: "¿Estas seguro de cerrar sesión?",
-      text: "Tendrás que iniciar sesion nuevamente",
+      title: "¿Estás seguro de cerrar sesión?",
+      text: "Tendrás que iniciar sesión nuevamente",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Sí, Salir",
@@ -686,7 +685,7 @@ export default function HomeAdmin() {
             setPopUpUsuarios(true);
           }}
           className="btn-nav"
-          title="Gestión Usuarios"
+          title="Gestión de usuarios"
         >
           <img src={imgUsuario} alt="" />
         </button>
@@ -1022,7 +1021,11 @@ export default function HomeAdmin() {
               </button>
             </div>
             <SepHrz />
-            <button type="submit" disabled={isSubmittingCrear}>
+            <button
+              type="submit"
+              disabled={isSubmittingCrear}
+              title="Crear cliente"
+            >
               <img src={imgCrearCliente} alt="" />
               {isSubmittingCrear ? "Creando..." : "Crear"}
             </button>
@@ -1043,7 +1046,7 @@ export default function HomeAdmin() {
       >
         <div className="cont-popUp">
           <h2>
-            Cambio contraseña
+            Cambio de contraseña
             <br />
             {usuarioSeleccionado?.nombre}
           </h2>
@@ -1098,6 +1101,7 @@ export default function HomeAdmin() {
               className="btn-cambio-contraseña"
               type="submit"
               disabled={isSubmittingCambiar}
+              title="Cambiar contraseña"
             >
               <img src={imgCandado} alt="" />
               {isSubmittingCambiar ? "Cambiando..." : "Cambiar"}
@@ -1152,7 +1156,11 @@ export default function HomeAdmin() {
                   />
 
                   {!esObligatorio && (
-                    <button type="button" onClick={() => eliminarDatoCrear(i)}>
+                    <button
+                      type="button"
+                      onClick={() => eliminarDatoCrear(i)}
+                      title="Eliminar campo"
+                    >
                       <img src={imgBorrar} alt="Eliminar" />
                     </button>
                   )}
@@ -1163,11 +1171,20 @@ export default function HomeAdmin() {
 
           <div className="sep-hrz"></div>
           <div className="cont-btns">
-            <button type="button" onClick={agregarDatoCrear}>
+            <button
+              type="button"
+              onClick={agregarDatoCrear}
+              title="Agregar campo"
+            >
               <img src={imgAgregarFila} alt="" />
               Agregar campo
             </button>
-            <button type="button" className="btn-crear" onClick={crearRegistro}>
+            <button
+              type="button"
+              className="btn-crear"
+              onClick={crearRegistro}
+              title="Crear registro"
+            >
               <img src={imgCrearRegistro} alt="" />
               Crear
             </button>
@@ -1222,7 +1239,11 @@ export default function HomeAdmin() {
                   />
 
                   {!esObligatorio && (
-                    <button type="button" onClick={() => eliminarDatoDraft(i)}>
+                    <button
+                      type="button"
+                      onClick={() => eliminarDatoDraft(i)}
+                      title="Eliminar campo"
+                    >
                       <img src={imgBorrar} alt="Eliminar" />
                     </button>
                   )}
@@ -1232,11 +1253,19 @@ export default function HomeAdmin() {
           </div>
           <div className="sep-hrz"></div>
           <div className="cont-btns">
-            <button type="button" onClick={agregarDatoDraft}>
+            <button
+              type="button"
+              onClick={agregarDatoDraft}
+              title="Agregar campo"
+            >
               <img src={imgAgregarFila} alt="" />
               Agregar campo
             </button>
-            <button type="button" onClick={editarRegistro}>
+            <button
+              type="button"
+              onClick={editarRegistro}
+              title="Guardar registro"
+            >
               <img src={imgEditar} alt="" />
               Guardar
             </button>
