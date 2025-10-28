@@ -10,6 +10,14 @@ import { fileURLToPath } from "url";
 dotenv.config();
 
 // ==================== CONFIGURACIÓN DE TOKENS ====================
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+const COOKIE_CONFIG = {
+  httpOnly: true,
+  secure: IS_PRODUCTION, // Solo TRUE cuando está en producción
+  sameSite: IS_PRODUCTION ? "none" : "lax",
+};
+
 const TOKEN_CONFIG = {
   ACCESS_TOKEN_EXPIRY: "15m",
   ACCESS_TOKEN_EXPIRY_SECONDS: 15 * 60, // 15 minutos en segundos
@@ -73,9 +81,7 @@ export const loginUsuario = async (req, res) => {
 
     // Mandar refresh token como cookie httpOnly
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false, // true solo en producción con HTTPS
-      sameSite: "lax",
+      ...COOKIE_CONFIG,
       maxAge: TOKEN_CONFIG.REFRESH_TOKEN_EXPIRY_MS,
     });
 
@@ -135,9 +141,7 @@ export const refreshToken = async (req, res) => {
 
     // Mandar nuevo refresh token en cookie
     res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      ...COOKIE_CONFIG,
       maxAge: TOKEN_CONFIG.REFRESH_TOKEN_EXPIRY_MS,
     });
 
@@ -189,9 +193,7 @@ export const logout = async (req, res) => {
 
   // Limpiar cookie de refresh token
   res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    ...COOKIE_CONFIG,
   });
 
   return res.json({ message: "Sesión cerrada correctamente" });

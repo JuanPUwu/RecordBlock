@@ -13,7 +13,11 @@ import toast from "react-hot-toast";
 import Spinner from "../components/Spinner";
 
 const AuthContext = createContext();
-const API_BASE_URL = "http://localhost:3000/api";
+
+const API_BASE_URL =
+  import.meta.env.VITE_NODE_ENV === "production"
+    ? `${import.meta.env.VITE_BACKEND_URL}/api`
+    : "http://localhost:3000/api";
 
 // axios instance base
 const api = axios.create({
