@@ -15,6 +15,9 @@ import * as yup from "yup";
 // Servicios
 import { useForgotPasswordService } from "../services/forgotPassService";
 
+// Componentes
+import Spinner from "../components/Spinner";
+
 // Imágenes
 import imgCandado from "../assets/img/candado.png";
 import imgCorreo from "../assets/img/correo.png";
@@ -131,8 +134,8 @@ export default function Login() {
           >
             ¿Olvidaste tu contraseña?
           </button>
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Ingresando..." : "Ingresar"}
+          <button type="submit" disabled={isSubmitting} className="btn-login">
+            {isSubmitting ? <Spinner /> : "Ingresar"}
           </button>
         </form>
       </div>
