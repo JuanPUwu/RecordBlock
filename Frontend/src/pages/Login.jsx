@@ -1,8 +1,8 @@
-// Hooks
-import { useAuth } from "../context/AuthContext";
-
 // Estilos
 import "../css/login.css";
+
+// Hooks
+import { useAuth } from "../context/AuthContext";
 
 // Librerías
 import { useForm } from "react-hook-form";
@@ -93,7 +93,16 @@ export default function Login() {
   return (
     <div className="fondo-login">
       <div className="cont-login">
-        <img src={imgCandado} alt="" />
+        <div
+          style={{
+            width: "48px",
+            height: "48px",
+            minHeight: "48px",
+            margin: "32px 0 16px 0",
+          }}
+        >
+          <img src={imgCandado} alt="Logo RecordBlock" />
+        </div>
         <h1>Iniciar sesión</h1>
         <h2>
           Accede a tu cuenta para poder gestionar <br /> tus registros de manera
@@ -106,7 +115,7 @@ export default function Login() {
             {errors.email && <span>{errors.email.message}</span>}
           </div>
           <div className="cont-input">
-            <img src={imgCorreo} alt="" />
+            <img src={imgCorreo} alt="Correo electrónico" />
             <input
               type="email"
               {...register("email")}
@@ -120,7 +129,7 @@ export default function Login() {
             {errors.password && <span>{errors.password.message}</span>}
           </div>
           <div className="cont-input">
-            <img src={imgLlave} alt="" />
+            <img src={imgLlave} alt="Contraseña" />
             <input
               type="password"
               {...register("password")}
@@ -135,7 +144,8 @@ export default function Login() {
             ¿Olvidaste tu contraseña?
           </button>
           <button type="submit" disabled={isSubmitting} className="btn-login">
-            {isSubmitting ? <Spinner /> : "Ingresar"}
+            Ingresar
+            {isSubmitting && <Spinner />}
           </button>
         </form>
       </div>
@@ -171,7 +181,8 @@ export default function Login() {
               type="submit"
               disabled={isSubmittingForgot}
             >
-              {isSubmittingForgot ? "Enviando..." : "Enviar"}
+              Enviar
+              {isSubmittingForgot && <Spinner />}
             </button>
           </form>
         </div>

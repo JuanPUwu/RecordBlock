@@ -273,7 +273,7 @@ export const showResetPasswordPage = async (req, res) => {
 
     if (!valido) {
       return res.sendFile(
-        path.join(__dirname, "../views/verificacionFallida.html")
+        path.join(__dirname, "../views/resetPasswordFallida.html")
       );
     }
 
@@ -293,6 +293,22 @@ export const resetPassword = async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
+    // Validar complejidad de la contraseña
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      return res.status(400).send(`
+        <h2>La contraseña no cumple con los requisitos mínimos:</h2>
+        <ul>
+          <li>Mínimo 8 caracteres</li>
+          <li>Al menos una letra mayúscula</li>
+          <li>Al menos una letra minúscula</li>
+          <li>Al menos un número</li>
+          <li>Al menos un carácter especial</li>
+        </ul>
+      `);
+    }
+
     // Buscar tokens activos del usuario
     const tokens = await all(
       "SELECT * FROM tokens_recuperacion WHERE used = 0 AND user_id = (SELECT id FROM usuario WHERE email = ?)",
@@ -311,7 +327,7 @@ export const resetPassword = async (req, res) => {
 
     if (!valido)
       return res.sendFile(
-        path.join(__dirname, "../views/verificacionFallida.html")
+        path.join(__dirname, "../views/resetPasswordFallida.html")
       );
 
     // Actualizar contraseña

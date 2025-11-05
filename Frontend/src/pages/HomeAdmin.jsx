@@ -1,3 +1,9 @@
+// Estilos
+import "../css/home.css";
+import "../css/swalStyles.css";
+import selectNavStyles from "../css/selectNavStyles.js";
+import swalStyles from "../css/swalStyles.js";
+
 // Hooks
 import { useAuth } from "../context/AuthContext";
 
@@ -5,15 +11,9 @@ import { useAuth } from "../context/AuthContext";
 import { useUsuarioService } from "../services/usuarioService.js";
 import { useInfoUsuarioService } from "../services/infoUsuarioServices.js";
 
-// Estilos
-import "../css/home.css";
-import "../css/swalStyles.css";
-import selectNavStyles from "../css/selectNavStyles.js";
-import swalStyles from "../css/swalStyles.js";
-
 // Librerias
 import { useRef, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { set, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Popup from "reactjs-popup";
 import toast from "react-hot-toast";
@@ -37,6 +37,7 @@ import Select from "react-select";
 import SearchNav from "../components/SearchNav.jsx";
 import CardAdmin from "../components/CardAdmin.jsx";
 import CardUsuario from "../components/CardUsuario.jsx";
+import Spinner from "../components/Spinner.jsx";
 
 // Imagenes
 import imgCrearCliente from "../assets/img/añadir.png";
@@ -97,6 +98,8 @@ export default function HomeAdmin() {
   const exportarComoPDF = () => exportarPDF(whichInfo, opcionesClientes);
   // Exportar como excell
   const exportarComoExcell = () => exportarExcel(whichInfo, opcionesClientes);
+
+  const [isLoading, setIsLoading] = useState(false);
   // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
@@ -607,13 +610,16 @@ export default function HomeAdmin() {
     }
 
     // 🔹 Enviar actualización
+    setIsLoading(true);
     const response = await actualizarInformacion(infoActualizada);
     if (response.success) {
       toast.success(`Registro °${infoActualizada.info_id} actualizado`);
       cargarInformacion();
       setPopUpEditarInfo(false);
+      setIsLoading(false);
     } else {
       toast.error(response.error);
+      setIsLoading(false);
     }
   };
   // ? <- Fin editar info cliente
@@ -668,15 +674,23 @@ export default function HomeAdmin() {
     });
 
     if (result.isConfirmed) {
-      setTimeout(() => {
-        logout();
-      }, 150);
+      try {
+        setIsLoading(true);
+        await logout();
+      } catch (error) {
+        console.error("Error en logout:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
   // ? <- Fin logout/acciones
 
   return (
     <>
+      {/* Loader */}
+      {isLoading && <Spinner />}
+
       {/* Nav */}
       <Nav>
         <button
@@ -887,6 +901,7 @@ export default function HomeAdmin() {
         onClose={() => {
           setPopUpUsuarios(false);
           setUsuarioSeleccionado(null);
+          obtenerClientes();
         }}
         modal
         nested
@@ -1027,7 +1042,8 @@ export default function HomeAdmin() {
               title="Crear cliente"
             >
               <img src={imgCrearCliente} alt="" />
-              {isSubmittingCrear ? "Creando..." : "Crear"}
+              Crear
+              {isSubmittingCrear ? <Spinner /> : "Crear"}
             </button>
           </form>
         </div>

@@ -21,9 +21,8 @@
 }
 
 .cont-login img {
-  width: 3rem;
-  object-fit: cover;
-  margin: 2rem 0 1rem 0;
+  height: 100%;
+  aspect-ratio: 1/1;
 }
 
 .cont-login h1 {
@@ -80,9 +79,10 @@ label {
 }
 
 .cont-input img {
-  height: 50%;
-  object-fit: contain;
+  height: 100%;
+  aspect-ratio: 1/1;
   margin: 0;
+  padding: 0.7rem;
 }
 
 .cont-input:last-of-type img {
@@ -131,6 +131,10 @@ input {
 .cont-login form button:hover:not(.btn-forgot-pass) {
   text-decoration: underline;
   background-color: #0060df;
+}
+
+.btn-login {
+  height: 2.787rem;
 }
 
 .cont-login form span {

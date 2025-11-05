@@ -1,7 +1,11 @@
 .env
 
-JWT_ACCESS_SECRET=*clave*
-JWT_REFRESH_SECRET=*clave para refresh*
-EMAIL_USER=*correo desde donde se enviaran las verificaciones de cuenta y recuperacion de contraseña*
-EMAIL_PASS=*clave unica*
-BACKEND_URL=http://localhost:3000
+JWT_ACCESS_SECRET=tu_clave_ultra_segura_para_access
+JWT_REFRESH_SECRET=tu_clave_ultra_segura_para_refresh
+EMAIL_USER=pablys8@gmail.com
+EMAIL_PASS=drnf kkds frxs dedn
+BACKEND_URL=https://consist-border-request-entertaining.trycloudflare.com
+FRONTEND_URL=https://activities-davis-announce-urban.trycloudflare.com
+NODE_ENV=production
+
+cloudflared tunnel --url http://localhost:3000

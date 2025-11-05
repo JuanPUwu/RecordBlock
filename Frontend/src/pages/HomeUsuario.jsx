@@ -1,14 +1,14 @@
+// Estilos
+import "../css/home.css";
+import "../css/swalStyles.css";
+import swalStyles from "../css/swalStyles.js";
+
 // Hooks
 import { useAuth } from "../context/AuthContext";
 
 // Servicios
 import { useUsuarioService } from "../services/usuarioService.js";
 import { useInfoUsuarioService } from "../services/infoUsuarioServices.js";
-
-// Estilos
-import "../css/home.css";
-import "../css/swalStyles.css";
-import swalStyles from "../css/swalStyles.js";
 
 // Librerias
 import { useRef, useEffect, useState } from "react";
@@ -31,6 +31,7 @@ import Nav from "../components/Nav.jsx";
 import SepHrz from "../components/SepHrz.jsx";
 import SearchNav from "../components/SearchNav.jsx";
 import CardAdmin from "../components/CardAdmin.jsx";
+import Spinner from "../components/Spinner.jsx";
 
 // Imagenes
 import imgSalir from "../assets/img/salir.png";
@@ -90,6 +91,8 @@ export default function HomeUsuario() {
       setIsRefrescarInfo(false);
     }, 300);
   }
+
+  const [isLoading, setIsLoading] = useState(false);
   // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
@@ -520,15 +523,23 @@ export default function HomeUsuario() {
     });
 
     if (result.isConfirmed) {
-      setTimeout(() => {
-        logout();
-      }, 150);
+      try {
+        setIsLoading(true);
+        await logout();
+      } catch (error) {
+        console.error("Error en logout:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
   // ? <- Fin logout/acciones
 
   return (
     <>
+      {/* Loader */}
+      {isLoading && <Spinner />}
+
       {/* Nav */}
       <Nav>
         <button
