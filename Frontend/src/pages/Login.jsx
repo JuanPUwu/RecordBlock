@@ -19,9 +19,9 @@ import { useForgotPasswordService } from "../services/forgotPassService";
 import Spinner from "../components/Spinner";
 
 // Imágenes
-import imgCandado from "../assets/img/candado.png";
-import imgCorreo from "../assets/img/correo.png";
-import imgLlave from "../assets/img/llave.png";
+import imgCandado from "../assets/img/candado.webp";
+import imgCorreo from "../assets/img/correo.webp";
+import imgLlave from "../assets/img/llave.webp";
 
 // Esquema de validación para login
 const schema = yup.object().shape({

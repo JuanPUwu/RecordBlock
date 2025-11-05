@@ -1,7 +1,7 @@
 import "../css/card.css";
 
-import imgLlave from "../assets/img/candado.png";
-import imgBorrar from "../assets/img/eliminar.png";
+import imgLlave from "../assets/img/candado.webp";
+import imgBorrar from "../assets/img/eliminar.webp";
 
 export default function CardUsuario({
   nameUsuario,

@@ -40,19 +40,19 @@ import CardUsuario from "../components/CardUsuario.jsx";
 import Spinner from "../components/Spinner.jsx";
 
 // Imagenes
-import imgCrearCliente from "../assets/img/añadir.png";
-import imgSalir from "../assets/img/salir.png";
-import imgUsuario from "../assets/img/usuario.png";
-import imgVisibility from "../assets/img/ojo.png";
-import imgLimpiar from "../assets/img/reset.png";
-import imgSearch from "../assets/img/busqueda.png";
-import imgCandado from "../assets/img/candado.png";
-import imgBorrar from "../assets/img/basura.png";
-import imgEditar from "../assets/img/editar.png";
-import imgAgregarFila from "../assets/img/agregarFila.png";
-import imgCrearRegistro from "../assets/img/flecha.png";
-import imgExcell from "../assets/img/excell.png";
-import imgPdf from "../assets/img/pdf.png";
+import imgCrearCliente from "../assets/img/añadir.webp";
+import imgSalir from "../assets/img/salir.webp";
+import imgUsuario from "../assets/img/usuario.webp";
+import imgVisibility from "../assets/img/ojo.webp";
+import imgLimpiar from "../assets/img/reset.webp";
+import imgSearch from "../assets/img/busqueda.webp";
+import imgCandado from "../assets/img/candado.webp";
+import imgBorrar from "../assets/img/basura.webp";
+import imgEditar from "../assets/img/editar.webp";
+import imgAgregarFila from "../assets/img/agregarFila.webp";
+import imgCrearRegistro from "../assets/img/flecha.webp";
+import imgExcell from "../assets/img/excell.webp";
+import imgPdf from "../assets/img/pdf.webp";
 
 export default function HomeAdmin() {
   // Todo Funciones Nav

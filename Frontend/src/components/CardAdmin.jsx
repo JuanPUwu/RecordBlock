@@ -1,6 +1,6 @@
 import "../css/card.css";
 
-import imgLlave from "../assets/img/candado.png";
+import imgLlave from "../assets/img/candado.webp";
 
 export default function CardAdmin({ nameAdmin, rolAdmin, onClick }) {
   return (
