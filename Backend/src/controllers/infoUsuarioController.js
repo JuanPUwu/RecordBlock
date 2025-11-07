@@ -14,7 +14,7 @@ export const obtenerInformacion = async (req, res) => {
 
     if (req.usuario.rol === "admin") {
       let query = `
-        SELECT iu.id, iu.usuario_id, iu.datos
+        SELECT iu.id, iu.usuario_id, iu.datos, u.nombre AS usuario_nombre
         FROM informacion_usuario iu
         JOIN usuario u ON iu.usuario_id = u.id
         WHERE u.rol = 'cliente'
@@ -26,10 +26,13 @@ export const obtenerInformacion = async (req, res) => {
         params.push(usuario_id);
       }
 
+      query += ";";
+
       const rows = await allAsync(query, params);
       const resultados = rows.map((row) => ({
         info_id: row.id,
         usuario_id: row.usuario_id,
+        usuario_nombre: row.usuario_nombre,
         datos: [JSON.parse(row.datos)],
       }));
 
@@ -55,9 +58,11 @@ export const obtenerInformacion = async (req, res) => {
       .status(403)
       .json({ success: false, message: "Rol no autorizado." });
   } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Error al obtener información" });
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener información",
+      error: err.message,
+    });
   }
 };
 

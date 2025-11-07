@@ -49,9 +49,12 @@ const selectNavStyles = {
     backgroundColor: state.isSelected
       ? "#ebebeb"
       : state.isFocused
-      ? "#ebebeb"
+      ? "#f5f5f5"
       : "white",
     color: "#000",
+    ":active": {
+      backgroundColor: "#d6d6d6", // <- color cuando mantienes presionado el click
+    },
   }),
 };
 
