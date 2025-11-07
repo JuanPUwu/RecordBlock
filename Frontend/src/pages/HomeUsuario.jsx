@@ -118,15 +118,18 @@ export default function HomeUsuario() {
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const { actualizarUsuario } = useUsuarioService();
   const editarContraseña = async (data) => {
+    setIsLoading(true);
     const response = await actualizarUsuario(
       usuarioSeleccionado.id,
       data.password
     );
     if (response.success) {
+      setIsLoading(false);
       toast.success("Contraseña cambiada con éxito");
       setUsuarioSeleccionado(null);
       setPopUpEditarContrasena(false);
     } else {
+      setIsLoading(false);
       toast.error(response.error);
       return;
     }
@@ -524,11 +527,14 @@ export default function HomeUsuario() {
         usuario_id: info.usuario_id,
       };
 
+      setIsLoading(true);
       const response = await eliminarInformacion(infoEliminar);
       if (response.success) {
+        setIsLoading(false);
         toast.success(`Información °${info.info_id} eliminada`);
         cargarInformacion();
       } else {
+        setIsLoading(false);
         toast.error(response.error);
       }
     }

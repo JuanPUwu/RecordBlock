@@ -116,7 +116,7 @@ export const AuthProvider = ({ children }) => {
       navigate(getHomeRoute());
       spinnerTimeoutRef.current = setTimeout(
         () => setShowSpinnerOverlay(false),
-        750
+        1000
       );
     } else {
       setShowSpinnerOverlay(false);
@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }) => {
     navigate("/");
     spinnerTimeoutRef.current = setTimeout(
       () => setShowSpinnerOverlay(false),
-      750
+      1000
     );
   };
 
@@ -151,7 +151,7 @@ export const AuthProvider = ({ children }) => {
                 usuario.nombre.slice(1).toLowerCase()
               : "")
         );
-      }, 850);
+      }, 1100);
       return { success: true, data: response.data };
     } catch (error) {
       const mensaje =
@@ -174,7 +174,7 @@ export const AuthProvider = ({ children }) => {
       setupInterceptors(null);
       setTimeout(() => {
         toast.success("Sesión cerrada");
-      }, 850);
+      }, 1100);
     }
   };
 

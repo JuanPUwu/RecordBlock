@@ -226,15 +226,18 @@ export default function HomeAdmin() {
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const { actualizarUsuario } = useUsuarioService();
   const editarContraseña = async (data) => {
+    setIsLoading(true);
     const response = await actualizarUsuario(
       usuarioSeleccionado.id,
       data.password
     );
     if (response.success) {
+      setIsLoading(false);
       toast.success("Contraseña cambiada con éxito");
       setUsuarioSeleccionado(null);
       setPopUpEditarContrasena(false);
     } else {
+      setIsLoading(false);
       toast.error(response.error);
       return;
     }
@@ -263,10 +266,12 @@ export default function HomeAdmin() {
     });
 
     if (result.isConfirmed) {
+      setIsLoading(true);
       // Si el usuario confirma, eliminamos el cliente
       const response = await eliminarUsuario(cliente.id);
 
       if (response.success) {
+        setIsLoading(false);
         toast.success(`Cliente ${cliente.nombre} eliminado`);
         obtenerClientes();
         cargarInformacion();
@@ -274,6 +279,7 @@ export default function HomeAdmin() {
           setClienteSeleccionado(null);
         }
       } else {
+        setIsLoading(false);
         toast.error(response.error || "No se pudo eliminar el cliente");
       }
     }
@@ -669,11 +675,14 @@ export default function HomeAdmin() {
         usuario_id: info.usuario_id,
       };
 
+      setIsLoading(true);
       const response = await eliminarInformacion(infoEliminar);
       if (response.success) {
+        setIsLoading(false);
         toast.success(`Información °${info.info_id} eliminada`);
         cargarInformacion();
       } else {
+        setIsLoading(false);
         toast.error(response.error);
       }
     }
@@ -1102,7 +1111,7 @@ export default function HomeAdmin() {
             >
               <img src={imgCrearCliente} alt="" />
               Crear
-              {isSubmittingCrear ? <Spinner /> : "Crear"}
+              {isSubmittingCrear && <Spinner />}
             </button>
           </form>
         </div>
@@ -1179,7 +1188,8 @@ export default function HomeAdmin() {
               title="Cambiar contraseña"
             >
               <img src={imgCandado} alt="" />
-              {isSubmittingCambiar ? "Cambiando..." : "Cambiar"}
+              Cambiar
+              {isSubmittingCambiar && <Spinner />}
             </button>
           </form>
         </div>
