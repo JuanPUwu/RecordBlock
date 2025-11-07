@@ -1,18 +1,16 @@
-// routes/AppRouter.jsx
 import { Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { PublicRoute } from "../components/PublicRoute.jsx";
 import { PrivateRoute } from "../components/PrivateRoute.jsx";
-import Spinner from "../components/Spinner.jsx";
+import SpinnerPages from "../components/SpinnerPages.jsx";
 
-// 🧠 Lazy imports (solo cargan al entrar a la ruta)
 const Login = lazy(() => import("../pages/Login.jsx"));
 const HomeAdmin = lazy(() => import("../pages/HomeAdmin.jsx"));
 const HomeUsuario = lazy(() => import("../pages/HomeUsuario.jsx"));
 
 export default function AppRouter() {
   return (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<SpinnerPages />}>
       <Routes>
         <Route
           path="/"
@@ -22,7 +20,6 @@ export default function AppRouter() {
             </PublicRoute>
           }
         />
-
         <Route
           path="/homeAdmin"
           element={
@@ -31,7 +28,6 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
-
         <Route
           path="/homeUsuario"
           element={

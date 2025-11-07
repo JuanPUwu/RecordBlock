@@ -876,6 +876,7 @@ export default function HomeAdmin() {
                       <div className="item" key={info.info_id}>
                         <h3>
                           <button
+                            aria-label="Editar registro"
                             onClick={() => {
                               setInfoSeleccionada(info);
                               setInfoAEditar({
@@ -889,6 +890,7 @@ export default function HomeAdmin() {
                           </button>
                           {`${info.usuario_nombre} - Registro °${info.info_id}`}
                           <button
+                            aria-label="Eliminar registro"
                             onClick={() => eliminarInformacionCliente(info)}
                           >
                             <img src={imgBorrar} alt="" />

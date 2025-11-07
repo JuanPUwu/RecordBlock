@@ -1,6 +1,5 @@
 // Estilos
 import "../css/login.css";
-import "../css/home.css";
 
 // Hooks
 import { useAuth } from "../context/AuthContext";
