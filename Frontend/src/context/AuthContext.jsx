@@ -124,8 +124,21 @@ export const AuthProvider = ({ children }) => {
     if (isRefreshing.current) return null;
     isRefreshing.current = true;
 
+    // ✅ Evitar petición si no hay sesión activa (sin cookie ni accessToken)
+    const hasRefreshCookie = document.cookie.includes("refreshToken=");
+    const hasAccessToken = !!accessToken;
+
+    if (!hasRefreshCookie && !hasAccessToken) {
+      isRefreshing.current = false;
+      return null;
+    }
+
     try {
-      const response = await api.post("/auth/refresh");
+      const response = await api.post(
+        "/auth/refresh",
+        {},
+        { withCredentials: true }
+      );
       const { accessToken: newToken, usuario } = response.data;
 
       setAccessToken(newToken);
@@ -176,12 +189,29 @@ export const AuthProvider = ({ children }) => {
   // 🔹 Inicialización al montar el contexto
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const token = await refreshToken();
-      setupInterceptors(token);
+      const hasRefreshCookie = document.cookie.includes("refreshToken=");
+
+      if (hasRefreshCookie) {
+        try {
+          const token = await refreshToken();
+          setupInterceptors(token);
+        } catch (err) {
+          console.error("Error al refrescar token:", err);
+          setupInterceptors(null);
+        }
+      } else {
+        // ✅ No hay cookie → sesión no iniciada, continuar normalmente
+        setupInterceptors(null);
+      }
+
+      // 🔹 Asegura que el spinner se detenga siempre
       isInicializing.current = false;
+      forceRender();
     };
+
     checkAuthStatus();
   }, []);
+
 
   if (isInicializing.current) return <Spinner />;
 

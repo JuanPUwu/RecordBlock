@@ -100,7 +100,7 @@ input {
 }
 
 .cont-login form .btn-forgot-pass {
-  color: #0060df;
+  color: #0053b3;
   margin-left: 0.5rem;
   font-size: 1.1rem;
   text-decoration: none;
@@ -116,11 +116,10 @@ input {
 
 .cont-login form button:not(.btn-forgot-pass) {
   color: #ffffff;
-  padding: 0.8rem;
   font-size: 1rem;
   font-weight: 500;
   border-radius: 0.6rem;
-  background-color: #007ef9;
+  background-color: #0053b3;
   margin-top: auto;
   cursor: pointer;
   border: none;
@@ -130,7 +129,7 @@ input {
 
 .cont-login form button:hover:not(.btn-forgot-pass) {
   text-decoration: underline;
-  background-color: #0060df;
+  background-color: #004697;
 }
 
 .btn-login {

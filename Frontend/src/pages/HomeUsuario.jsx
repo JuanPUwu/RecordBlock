@@ -319,14 +319,17 @@ export default function HomeUsuario() {
       datos: obj,
     };
 
+    setIsLoading(true);
     const response = await crearInformacion(nuevaInfo);
 
     if (response.success) {
       toast.success(`Registro creado con éxito`);
       cargarInformacion();
       setPopUpCrearInfo(false);
+      setIsLoading(false);
     } else {
       toast.error(response.error);
+      setIsLoading(false);
     }
   };
   // ? <- Fin crear info cliente
