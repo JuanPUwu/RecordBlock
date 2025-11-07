@@ -2,7 +2,6 @@
 import "../css/home.css";
 import "../css/swalStyles.css";
 import selectNavStyles from "../css/selectNavStyles.js";
-import swalStyles from "../css/swalStyles.js";
 
 // Hooks
 import { useAuth } from "../context/AuthContext";
@@ -17,7 +16,6 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Popup from "reactjs-popup";
 import toast from "react-hot-toast";
-import Swal from "sweetalert2";
 
 // Eschemas
 import {
@@ -26,8 +24,6 @@ import {
 } from "../validations/eschemas";
 
 // Utils
-import { exportarPDF } from "../utils/pdfUtils.js";
-import { exportarExcel } from "../utils/excellUtils.js";
 import { resaltarTexto } from "../utils/textUtils.jsx";
 
 // Componentes
@@ -98,14 +94,23 @@ export default function HomeAdmin() {
   // Exportar como PDF
   const exportarComoPDF = async () => {
     setIsLoading(true);
-    await exportarPDF(whichInfo, opcionesClientes);
-    setIsLoading(false);
+    const { exportarPDF } = await import("../utils/pdfUtils.js");
+    try {
+      await exportarPDF(whichInfo, opcionesClientes);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
   // Exportar como excell
   const exportarComoExcell = async () => {
     setIsLoading(true);
-    await exportarExcel(whichInfo, opcionesClientes);
-    setIsLoading(false);
+    const { exportarExcel } = await import("../utils/excellUtils.js");
+    try {
+      await exportarExcel(whichInfo, opcionesClientes);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const [isLoading, setIsLoading] = useState(false);
@@ -241,6 +246,11 @@ export default function HomeAdmin() {
   // ? -> Inicio eliminar cliente/acciones
   const { eliminarUsuario } = useUsuarioService();
   const eliminarCliente = async (cliente) => {
+    setIsLoading(true);
+    const { default: Swal } = await import("sweetalert2");
+    const { default: swalStyles } = await import("../css/swalStyles.js");
+    setIsLoading(false);
+
     // Mostramos el confirmador
     const result = await Swal.fire({
       title: `¿Eliminar cliente ${cliente.nombre}?`,
@@ -637,6 +647,11 @@ export default function HomeAdmin() {
   // ? -> Inicio eliminar informacion cliente
   const { eliminarInformacion } = useInfoUsuarioService();
   const eliminarInformacionCliente = async (info) => {
+    setIsLoading(true);
+    const { default: Swal } = await import("sweetalert2");
+    const { default: swalStyles } = await import("../css/swalStyles.js");
+    setIsLoading(false);
+
     const result = await Swal.fire({
       title: `¿Estás seguro de eliminar el registro °${info.info_id}?`,
       text: "Esta acción es irreversible",
@@ -671,6 +686,11 @@ export default function HomeAdmin() {
   // Cerrar sesion
   const { logout } = useAuth();
   const cerrarSesion = async () => {
+    setIsLoading(true);
+    const { default: Swal } = await import("sweetalert2");
+    const { default: swalStyles } = await import("../css/swalStyles.js");
+    setIsLoading(false);
+
     const result = await Swal.fire({
       title: "¿Estás seguro de cerrar sesión?",
       text: "Tendrás que iniciar sesión nuevamente",

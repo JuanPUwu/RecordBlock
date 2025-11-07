@@ -1,5 +1,6 @@
 // Estilos
 import "../css/login.css";
+import "../css/home.css";
 
 // Hooks
 import { useAuth } from "../context/AuthContext";
@@ -13,7 +14,7 @@ import Popup from "reactjs-popup";
 import * as yup from "yup";
 
 // Servicios
-import { useForgotPasswordService } from "../services/forgotPassService";
+import { useForgotPasswordService } from "../services/forgotPassService.js";
 
 // Componentes
 import Spinner from "../components/Spinner";
@@ -76,6 +77,10 @@ export default function Login() {
 
   // 🔹 Popup estado
   const [popUpForgotPassword, setPopUpForgotPassword] = useState(false);
+
+  const openPopUpForgotPassword = () => {
+    setPopUpForgotPassword(true);
+  };
 
   // 🔹 Forgot password
   const onForgotPassword = async ({ forgotEmail }) => {
