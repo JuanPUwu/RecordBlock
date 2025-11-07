@@ -846,7 +846,9 @@ export default function HomeAdmin() {
 
       {/* Contenido principal */}
       <section>
-        {whichInfo.length === 0 && !isInfoCargando ? (
+        {isInfoCargando ? (
+          <div className="loader section"></div>
+        ) : whichInfo.length === 0 ? (
           <div className="cont-sin-resultados">
             <img src={imgVacio} alt="" />
             <span>No se encontraron resultados</span>
@@ -854,110 +856,80 @@ export default function HomeAdmin() {
         ) : (
           [0, 1].map((col) => (
             <div key={col}>
-              {isInfoCargando
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <div className="item skeleton" key={i}>
-                      <div className="skeleton-header"></div>
-                      <div className="skeleton-divColumns">
-                        <div className="skeleton-body">
-                          <div className="skeleton-line one-4"></div>
-                          <div className="skeleton-line three-4"></div>
-                          <div className="skeleton-line two-4"></div>
-                          <div className="skeleton-line four-4"></div>
-                          <div className="skeleton-line three-4"></div>
-                          <div className="skeleton-line two-4"></div>
-                          <div className="skeleton-line four-4"></div>
-                        </div>
-                        <div className="skeleton-body">
-                          <div className="skeleton-line four-4"></div>
-                          <div className="skeleton-line one-4"></div>
-                          <div className="skeleton-line three-4"></div>
-                          <div className="skeleton-line two-4"></div>
-                          <div className="skeleton-line four-4"></div>
-                          <div className="skeleton-line two-4"></div>
-                          <div className="skeleton-line three-4"></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                : whichInfo.map((info, index) =>
-                    index % 2 === col ? (
-                      <div className="item" key={info.info_id}>
-                        <h3>
-                          <button
-                            aria-label="Editar registro"
-                            onClick={() => {
-                              setInfoSeleccionada(info);
-                              setInfoAEditar({
-                                ...info,
-                                datos: info.datos.map((dato) => ({ ...dato })),
-                              });
-                              setPopUpEditarInfo(true);
-                            }}
-                          >
-                            <img src={imgEditar} alt="" />
-                          </button>
-                          {`${info.usuario_nombre} - Registro °${info.info_id}`}
-                          <button
-                            aria-label="Eliminar registro"
-                            onClick={() => eliminarInformacionCliente(info)}
-                          >
-                            <img src={imgBorrar} alt="" />
-                          </button>
-                        </h3>
+              {whichInfo.map((info, index) =>
+                index % 2 === col ? (
+                  <div className="item" key={info.info_id}>
+                    <h3>
+                      <button
+                        onClick={() => {
+                          setInfoSeleccionada(info);
+                          setInfoAEditar({
+                            ...info,
+                            datos: info.datos.map((dato) => ({ ...dato })),
+                          });
+                          setPopUpEditarInfo(true);
+                        }}
+                      >
+                        <img src={imgEditar} alt="" />
+                      </button>
+                      {`Registro °${info.info_id}`}
+                      <button onClick={() => eliminarInformacionCliente(info)}>
+                        <img src={imgBorrar} alt="" />
+                      </button>
+                    </h3>
 
-                        {info.datos.map((dato, i) => {
-                          const entries = Object.entries(dato);
-                          const mitad = Math.ceil(entries.length / 2);
-                          const colIzq = entries.slice(0, mitad);
-                          const colDer = entries.slice(mitad);
+                    {info.datos.map((dato, i) => {
+                      const entries = Object.entries(dato);
+                      const mitad = Math.ceil(entries.length / 2);
+                      const colIzq = entries.slice(0, mitad);
+                      const colDer = entries.slice(mitad);
 
-                          return (
-                            <div className="cont-dato" key={i}>
-                              <div className="columna">
-                                {colIzq.map(([key, value]) => (
-                                  <p key={key}>
-                                    <strong>
-                                      {resaltarTexto(
-                                        key,
-                                        terminosBusqueda.dato,
-                                        true
-                                      )}
-                                      :
-                                    </strong>{" "}
-                                    {resaltarTexto(
-                                      value,
-                                      terminosBusqueda.detalle,
-                                      false
-                                    )}
-                                  </p>
-                                ))}
-                              </div>
-                              <div className="columna">
-                                {colDer.map(([key, value]) => (
-                                  <p key={key}>
-                                    <strong>
-                                      {resaltarTexto(
-                                        key,
-                                        terminosBusqueda.dato,
-                                        true
-                                      )}
-                                      :
-                                    </strong>{" "}
-                                    {resaltarTexto(
-                                      value,
-                                      terminosBusqueda.detalle,
-                                      false
-                                    )}
-                                  </p>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : null
-                  )}
+                      return (
+                        <div className="cont-dato" key={i}>
+                          <div className="columna">
+                            {colIzq.map(([key, value]) => (
+                              <p key={key}>
+                                <strong>
+                                  {resaltarTexto(
+                                    key,
+                                    terminosBusqueda.dato,
+                                    true
+                                  )}
+                                  :
+                                </strong>{" "}
+                                {resaltarTexto(
+                                  value,
+                                  terminosBusqueda.detalle,
+                                  false
+                                )}
+                              </p>
+                            ))}
+                          </div>
+                          <div className="columna">
+                            {colDer.map(([key, value]) => (
+                              <p key={key}>
+                                <strong>
+                                  {resaltarTexto(
+                                    key,
+                                    terminosBusqueda.dato,
+                                    true
+                                  )}
+                                  :
+                                </strong>{" "}
+                                {resaltarTexto(
+                                  value,
+                                  terminosBusqueda.detalle,
+                                  false
+                                )}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null
+              )}
             </div>
           ))
         )}
