@@ -448,7 +448,9 @@ section div {
 
 .cont-sin-resultados img {
   height: 10rem;
+  max-height: 10dvh;
   width: 10rem;
+  max-width: 10dvh;
 }
 
 .cont-sin-resultados span {

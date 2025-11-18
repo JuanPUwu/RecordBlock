@@ -25,6 +25,7 @@ import {
 
 // Utils
 import { resaltarTexto } from "../utils/textUtils.jsx";
+import { parseDateDMY } from "../utils/dateHelper.js";
 
 // Componentes
 import Nav from "../components/Nav.jsx";
