@@ -454,7 +454,7 @@ section div {
 }
 
 .cont-sin-resultados span {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 .item {
@@ -491,6 +491,7 @@ section div {
 .item h3 button:hover {
   background-color: #f3f2f7;
   opacity: 1;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.05);
 }
 
 .item h3 button:first-of-type {
@@ -593,6 +594,7 @@ section div {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
   background-color: #ffffff;
   border-radius: 1rem;
   gap: 0.9rem;
@@ -601,9 +603,42 @@ section div {
 }
 
 .cont-popUp-editarInfo h2 {
-  font-size: 2.4rem;
+  font-size: 2rem;
   margin: 1rem 0 1rem 0;
   text-align: center;
+}
+
+.cont-popUp-editarInfo .btn-change {
+  height: 2.7rem;
+  aspect-ratio: 1/1;
+  border-radius: 0.5rem;
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding-left: 3px;
+  border: none;
+  top: 1.8rem;
+  right: 1.8rem;
+  background-color: transparent;
+  cursor: pointer;
+  transition: 0.1s ease-in;
+}
+
+.cont-popUp-editarInfo .btn-change:hover {
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.05);
+  background-color: #f3f2f7;
+}
+
+.btn-change img {
+  height: 55%;
+  opacity: 0.5;
+  transition: 0.1s ease-in;
+}
+
+.btn-change:hover img {
+  opacity: 1;
 }
 
 .cont-popUp-editarInfo > div:first-of-type {
@@ -617,6 +652,11 @@ section div {
   border-radius: 0.5rem;
   background-color: #f3f2f7;
   box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cont-popUp-editarInfo > div.cont-datos-minimos {
+  width: 30rem;
+  max-height: 50dvh;
 }
 
 .cont-dato-editar {
@@ -650,6 +690,10 @@ section div {
 
 .cont-dato-editar input:first-of-type {
   width: calc(35% - 2.25rem);
+}
+
+.cont-dato-editar input.inp-dato-minimo:first-of-type {
+  flex: 1;
 }
 
 .cont-dato-editar input:last-of-type {

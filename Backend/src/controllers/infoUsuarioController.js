@@ -81,7 +81,7 @@ export const crearInformacion = async (req, res) => {
     if (req.usuario.rol === "admin") {
       ({ usuario_id, datos } = req.body);
 
-      // ✅ Bloquear intento de asociar información a un usuario admin
+      // Bloquear intento de asociar información a un usuario admin
       const usuarioDestino = await getAsync(
         "SELECT rol FROM usuario WHERE id = ?",
         [usuario_id]
@@ -115,22 +115,27 @@ export const crearInformacion = async (req, res) => {
 
     const registros = Array.isArray(datos) ? datos : [datos];
 
-    // Campos mínimos requeridos
-    const camposRequeridos = [
-      "hostname",
-      "plataforma",
-      "marca/modelo",
-      "tipo",
-      "firmware/version s.o",
-      "ubicacion",
-      "licenciamiento",
-    ];
-
     const normalizar = (texto) =>
       texto
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
+
+    // Leer el JSON de datos mínimos almacenado en la tabla
+    const fila = await getAsync("SELECT datos FROM datos_minimos LIMIT 1");
+
+    // Convertir el JSON a array real
+    let camposRequeridosRaw = [];
+    try {
+      camposRequeridosRaw = JSON.parse(fila.datos);
+    } catch {
+      camposRequeridosRaw = [];
+    }
+
+    // Normalizar todos los campos
+    const camposRequeridos = camposRequeridosRaw.map((campo) =>
+      normalizar(campo)
+    );
 
     for (const registro of registros) {
       if (typeof registro !== "object") {
@@ -365,5 +370,202 @@ export const eliminarInformacion = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Error al eliminar información" });
+  }
+};
+
+// GET datos minimos
+export const obtenerDatosMinimos = async (req, res) => {
+  try {
+    if (req.usuario.rol !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Solo un administrador puede consultar los datos mínimos.",
+      });
+    }
+
+    const row = await getAsync("SELECT datos FROM datos_minimos WHERE id = 1");
+
+    if (!row) {
+      return res.status(500).json({
+        success: false,
+        message: "No existe registro base en datos_minimos.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: JSON.parse(row.datos),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener datos mínimos.",
+      error: err.message,
+    });
+  }
+};
+
+// POST dato minimo
+export const agregarDatoMinimo = async (req, res) => {
+  try {
+    if (req.usuario.rol !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Solo un administrador puede agregar datos.",
+      });
+    }
+
+    const { nuevoDato } = req.body;
+    if (nuevoDato === undefined || nuevoDato === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Debe enviar 'nuevoDato' en el body.",
+      });
+    }
+
+    // Obtener lista actual
+    const row = await getAsync("SELECT datos FROM datos_minimos WHERE id = 1");
+
+    if (!row) {
+      return res.status(500).json({
+        success: false,
+        message: "No existe registro base en datos_minimos",
+      });
+    }
+
+    let lista = JSON.parse(row.datos);
+
+    // Normalizador para almacenar (lo que realmente guarda SQLite)
+    const normalizeForStorage = (v) => {
+      if (typeof v === "string") return v.trim(); // quitar espacios
+      if (typeof v === "number" || typeof v === "boolean") return String(v); // convertir a string
+      try {
+        return JSON.stringify(v); // objeto → string
+      } catch {
+        return String(v);
+      }
+    };
+
+    // Normalizador solo para comparar duplicados
+    const normalizeForCompare = (v) => {
+      if (typeof v === "string") return v.trim().toLowerCase();
+      if (typeof v === "number" || typeof v === "boolean")
+        return String(v).toLowerCase();
+      try {
+        return JSON.stringify(v).toLowerCase();
+      } catch {
+        return String(v).toLowerCase();
+      }
+    };
+
+    const datoGuardado = normalizeForStorage(nuevoDato);
+    const datoNorm = normalizeForCompare(nuevoDato);
+
+    // Validar duplicado
+    const existe = lista.some((item) => normalizeForCompare(item) === datoNorm);
+
+    if (existe) {
+      return res.status(409).json({
+        success: false,
+        message: "El dato ya existe en la lista.",
+      });
+    }
+
+    // Agregar dato ya normalizado a almacenamiento
+    lista.push(datoGuardado);
+
+    // Guardar cambios
+    await runAsync("UPDATE datos_minimos SET datos = ? WHERE id = 1", [
+      JSON.stringify(lista),
+    ]);
+
+    res.json({
+      success: true,
+      message: "Dato agregado correctamente.",
+      datos: lista,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Error al agregar dato",
+      error: err.message,
+    });
+  }
+};
+
+// DELETE dato minimo
+export const eliminarDatoMinimo = async (req, res) => {
+  try {
+    if (req.usuario.rol !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Solo un administrador puede eliminar datos.",
+      });
+    }
+
+    const { dato } = req.body;
+
+    if (dato === undefined || dato === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Debe enviar 'dato' en el body para eliminar.",
+      });
+    }
+
+    // Obtener lista actual
+    const row = await getAsync("SELECT datos FROM datos_minimos WHERE id = 1");
+
+    if (!row) {
+      return res.status(500).json({
+        success: false,
+        message: "No existe registro base en datos_minimos.",
+      });
+    }
+
+    let lista = JSON.parse(row.datos);
+
+    // Normalizador para comparación (mismo que en agregarDatoMinimo)
+    const normalizeForCompare = (v) => {
+      if (typeof v === "string") return v.trim().toLowerCase();
+      if (typeof v === "number" || typeof v === "boolean")
+        return String(v).toLowerCase();
+      try {
+        return JSON.stringify(v).toLowerCase();
+      } catch {
+        return String(v).toLowerCase();
+      }
+    };
+
+    const datoNorm = normalizeForCompare(dato);
+
+    // Filtrar eliminando coincidencias
+    const nuevaLista = lista.filter(
+      (item) => normalizeForCompare(item) !== datoNorm
+    );
+
+    if (nuevaLista.length === lista.length) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "El dato no existe (comparación insensible a mayúsculas y espacios).",
+      });
+    }
+
+    // Guardar cambios
+    await runAsync("UPDATE datos_minimos SET datos = ? WHERE id = 1", [
+      JSON.stringify(nuevaLista),
+    ]);
+
+    res.json({
+      success: true,
+      message: "Dato eliminado correctamente.",
+      datos: nuevaLista,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Error al eliminar dato",
+      error: err.message,
+    });
   }
 };

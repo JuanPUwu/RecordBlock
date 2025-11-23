@@ -53,9 +53,24 @@ router.post("/refresh", refreshToken);
  * @swagger
  * /api/auth/logout:
  *   post:
- *     summary: Cerrar sesión y eliminar refresh token
+ *     summary: Cerrar sesión del usuario
+ *     description: |
+ *       Cierra la sesión del usuario eliminando el refresh token almacenado.
+ *       Si no existe un refresh token en las cookies, se retornará un error 401 indicando que no hay sesión activa.
  *     tags: [Auth]
- *     security: []
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada correctamente.
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Sesión cerrada correctamente"
+ *       401:
+ *         description: No hay sesión activa (no existe refresh token en la cookie).
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: "No hay sesión activa. No se puede cerrar sesión."
  */
 router.post("/logout", logout);
 
@@ -64,7 +79,7 @@ router.post("/logout", logout);
  * /api/auth/forgot-password:
  *   post:
  *     summary: Enviar correo para recuperación de contraseña
- *     tags: [Auth]
+ *     tags: [ForgotPassword]
  *     security: []
  *     requestBody:
  *       required: true
@@ -87,7 +102,7 @@ router.post("/forgot-password", forgotPassword);
  * /api/auth/reset-password/{token}:
  *   get:
  *     summary: Página para restablecer contraseña
- *     tags: [Auth]
+ *     tags: [ForgotPassword]
  *     parameters:
  *       - in: path
  *         name: token
@@ -105,7 +120,7 @@ router.get("/reset-password/:token", showResetPasswordPage);
  * /api/auth/reset-password/{token}:
  *   post:
  *     summary: Restablecer contraseña del usuario
- *     tags: [Auth]
+ *     tags: [ForgotPassword]
  *     parameters:
  *       - in: path
  *         name: token

@@ -164,24 +164,28 @@ export const refreshToken = async (req, res) => {
 // ==================== LOGOUT ====================
 export const logout = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
-  const accessToken = req.headers["authorization"]?.split(" ")[1]; // Obtener access token de la cabecera
+  const accessToken = req.headers["authorization"]?.split(" ")[1];
 
-  // Limpiar refresh token de la BD
-  if (refreshToken) {
-    try {
-      await run(
-        "UPDATE usuario SET refresh_token = NULL WHERE refresh_token = ?",
-        [refreshToken]
-      );
-    } catch (err) {
-      console.error("Error al limpiar refresh token en logout:", err.message);
-    }
+  // Si el usuario no tiene sesión iniciada
+  if (!refreshToken) {
+    return res.status(401).json({
+      error: "No hay sesión activa. No se puede cerrar sesión."
+    });
   }
 
-  // Agregar access token a blacklist para invalidarlo inmediatamente
+  // Limpiar refresh token de la BD
+  try {
+    await run(
+      "UPDATE usuario SET refresh_token = NULL WHERE refresh_token = ?",
+      [refreshToken]
+    );
+  } catch (err) {
+    console.error("Error al limpiar refresh token en logout:", err.message);
+  }
+
+  // Agregar access token a la blacklist
   if (accessToken) {
     try {
-      // Ahora usa la configuración centralizada
       await addToBlacklist(
         accessToken,
         TOKEN_CONFIG.ACCESS_TOKEN_EXPIRY_SECONDS

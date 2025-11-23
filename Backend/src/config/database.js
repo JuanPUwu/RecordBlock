@@ -3,17 +3,18 @@ import bcrypt from "bcrypt";
 
 const db = new sqlite3.Database("database.db");
 
-// ✅ Activar soporte para claves foráneas (IMPORTANTE en SQLite)
+// Activar soporte para claves foráneas (IMPORTANTE en SQLite)
 db.run("PRAGMA foreign_keys = ON");
 
-// Crear tablas (reinicio)
+// Crear tablas
 db.serialize(async () => {
   // Borrar tablas relacionadas primero
+  db.run(`DROP TABLE IF EXISTS usuario`);
   db.run(`DROP TABLE IF EXISTS tokens_verificacion`);
   db.run(`DROP TABLE IF EXISTS tokens_recuperacion`);
   db.run(`DROP TABLE IF EXISTS informacion_usuario`);
+  db.run(`DROP TABLE IF EXISTS datos_minimos`);
   db.run(`DROP TABLE IF EXISTS token_blacklist`);
-  db.run(`DROP TABLE IF EXISTS usuario`);
 
   // Crear tabla de usuarios
   db.run(`
@@ -28,7 +29,7 @@ db.serialize(async () => {
     )
   `);
 
-  // Tabla verificación con DELETE en cascada
+  // Tabla verificación
   db.run(`
     CREATE TABLE IF NOT EXISTS tokens_verificacion (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +40,7 @@ db.serialize(async () => {
     )
   `);
 
-  // Tabla recuperación con DELETE en cascada
+  // Tabla recuperación
   db.run(`
     CREATE TABLE IF NOT EXISTS tokens_recuperacion (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +52,7 @@ db.serialize(async () => {
     )
   `);
 
-  // Tabla información personal con DELETE en cascada
+  // Tabla información usuario
   db.run(`
     CREATE TABLE IF NOT EXISTS informacion_usuario (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +62,18 @@ db.serialize(async () => {
     )
   `);
 
-  // Blacklist (no depende del usuario)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS datos_minimos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      datos TEXT NOT NULL
+    )
+  `);
+
+  db.run(`
+    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('["hostname", "físico/virtual", "plataforma", "servicio", "marca/modelo", "tipo", "estado", "serial", "firmware/versión s.o", "ubicación", "licenciamiento"]')
+  `);
+
+  // Blacklist
   db.run(`
     CREATE TABLE IF NOT EXISTS token_blacklist (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,13 +95,19 @@ db.serialize(async () => {
   db.run(
     `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    [
-      "ClientePrueba1",
-      "ClientePrueba1@example.com",
-      hashedPassword,
-      "cliente",
-      1,
-    ]
+    ["Microsoft", "microsoft@example.com", hashedPassword, "cliente", 1]
+  );
+
+  db.run(
+    `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
+     VALUES (?, ?, ?, ?, ?)`,
+    ["Apple", "apple@example.com", hashedPassword, "cliente", 1]
+  );
+
+  db.run(
+    `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
+     VALUES (?, ?, ?, ?, ?)`,
+    ["Google", "google@example.com", hashedPassword, "cliente", 1]
   );
 });
 

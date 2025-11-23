@@ -180,7 +180,7 @@ router.delete("/:id", verificarToken, verificarAdmin, eliminarUsuario);
  *   get:
  *     summary: Verificar correo electrónico del usuario
  *     description: Verifica el correo electrónico del usuario usando el token enviado por correo. Si el token es válido y no ha expirado, marca la cuenta como verificada.
- *     tags: [Usuario]
+ *     tags: [VerificacionCorreo]
  *     parameters:
  *       - in: path
  *         name: token

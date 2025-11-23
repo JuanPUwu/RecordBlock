@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 // Servicios
 import { useUsuarioService } from "../services/usuarioService.js";
 import { useInfoUsuarioService } from "../services/infoUsuarioServices.js";
+import { useDatosMinimosService } from "../services/datosMinimos.js";
 
 // Librerias
 import { useRef, useEffect, useState } from "react";
@@ -51,6 +52,7 @@ import imgCrearRegistro from "../assets/img/flecha.webp";
 import imgExcell from "../assets/img/excell.webp";
 import imgPdf from "../assets/img/pdf.webp";
 import imgVacio from "../assets/img/vacio.webp";
+import imgGuardar from "../assets/img/guardar.webp";
 
 export default function HomeAdmin() {
   // Todo Funciones Nav
@@ -117,6 +119,27 @@ export default function HomeAdmin() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [isInfoCargando, setIsInfoCargando] = useState(true);
+
+  const { obtenerDatosMinimos, crearDatosMinimos, eliminarDatosMinimos } =
+    useDatosMinimosService();
+  const [datosMinimos, setDatosMinimos] = useState([]);
+  const [popUpEditarDatosMinimos, setPopUpEditarDatosMinimos] = useState(false);
+  const [draftDatosMinimos, setDraftDatosMinimos] = useState([]);
+  const obtenerDatosMin = async () => {
+    setIsLoading(true);
+    const response = await obtenerDatosMinimos();
+
+    setDatosMinimos(response.data.data);
+    setDraftCrear(
+      response.data.data.length > 0
+        ? response.data.data.map((item) => ({
+            key: item,
+            value: "",
+          }))
+        : [{ key: "", value: "" }]
+    );
+    setIsLoading(false);
+  };
   // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
@@ -391,6 +414,15 @@ export default function HomeAdmin() {
   const scrollCrearRef = useRef(null);
   const inputCrearRef = useRef(null);
   const agregarDatoCrear = () => {
+    // Validar que no haya un par vacío ya
+    const hayVacio = draftCrear.some(
+      (d) => d.key.trim() === "" && d.value.trim() === ""
+    );
+    if (hayVacio) {
+      toast.error("Completa el campo vacío\nantes de agregar uno nuevo");
+      return;
+    }
+
     setDraftCrear([...draftCrear, { key: "", value: "" }]);
 
     requestAnimationFrame(() => {
@@ -535,6 +567,15 @@ export default function HomeAdmin() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const agregarDatoDraft = () => {
+    // Validar que no haya un par vacío ya
+    const hayVacio = draftDatos.some(
+      (d) => d.key.trim() === "" && d.value.trim() === ""
+    );
+    if (hayVacio) {
+      toast.error("Completa el campo vacío\nantes de agregar uno nuevo");
+      return;
+    }
+
     setDraftDatos([...draftDatos, { key: "", value: "" }]);
 
     requestAnimationFrame(() => {
@@ -692,6 +733,101 @@ export default function HomeAdmin() {
 
   // * <-------------------------------------------------------------------------------->
 
+  // ? -> Inicio editar datos minimos
+  // Inicializar draft cuando se abre el popup
+  useEffect(() => {
+    if (popUpEditarDatosMinimos) {
+      setDraftDatosMinimos([...datosMinimos]);
+    } else {
+      setDraftDatosMinimos([]);
+    }
+  }, [popUpEditarDatosMinimos]);
+
+  // Cambiar valor de dato minimo
+  const cambiarDatoMinimo = (index, newValue) => {
+    const copy = [...draftDatosMinimos];
+    copy[index] = newValue;
+    setDraftDatosMinimos(copy);
+  };
+
+  // Eliminar dato minimo
+  const eliminarDatoMinimo = (index) => {
+    const copy = [...draftDatosMinimos];
+    copy.splice(index, 1);
+    setDraftDatosMinimos(copy);
+  };
+
+  // Agregar dato minimo nuevo
+  const scrollDatosMinimosRef = useRef(null);
+  const inputDatosMinimosRef = useRef(null);
+  const agregarDatoMinimo = () => {
+    // Validar que no haya un dato vacío ya
+    const hayVacio = draftDatosMinimos.some((d) => d.trim() === "");
+    if (hayVacio) {
+      toast.error("Completa el dato vacío\nantes de agregar uno nuevo");
+      return;
+    }
+
+    setDraftDatosMinimos([...draftDatosMinimos, ""]);
+
+    requestAnimationFrame(() => {
+      if (scrollDatosMinimosRef.current) {
+        scrollDatosMinimosRef.current.scrollTo({
+          top: scrollDatosMinimosRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+
+      setTimeout(() => {
+        if (inputDatosMinimosRef.current) {
+          inputDatosMinimosRef.current.focus();
+        }
+      }, 250);
+    });
+  };
+
+  // Guardar datos minimos
+  const guardarDatosMinimos = async () => {
+    const noEmojisRegex = /^[^\p{Extended_Pictographic}]*$/u;
+
+    // Limpiar datos vacíos
+    const cleanedDraft = draftDatosMinimos
+      .map((d) => d.trim())
+      .filter((d) => d !== "");
+
+    // Validar que haya al menos un dato
+    if (cleanedDraft.length === 0) {
+      toast.error("Ingresa por lo menos un dato mínimo");
+      return;
+    }
+
+    // Validar que no haya emojis
+    for (const dato of cleanedDraft) {
+      if (!noEmojisRegex.test(dato)) {
+        toast.error(`El dato "${dato}" contiene emojis, no es válido`);
+        return;
+      }
+    }
+
+    // Validar duplicados (ignorando mayúsculas/minúsculas)
+    const lowerDatos = cleanedDraft.map((d) => d.toLowerCase());
+    const seen = new Map();
+    for (let i = 0; i < lowerDatos.length; i++) {
+      const d = lowerDatos[i];
+      if (seen.has(d)) {
+        toast.error(`El dato "${cleanedDraft[i]}" ya existe`);
+        return;
+      }
+      seen.set(d, true);
+    }
+
+    // Mostrar lista de nuevos datos en consola
+    console.log("Lista de nuevos datos mínimos:", cleanedDraft);
+  };
+  // ? <- Fin editar datos minimos
+
+  // * <-------------------------------------------------------------------------------->
+
   // ? -> Inicio logout/acciones
   // Cerrar sesion
   const { logout } = useAuth();
@@ -786,17 +922,8 @@ export default function HomeAdmin() {
           className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
           title="Crear registro"
           disabled={!clienteSeleccionado}
-          onClick={() => {
-            setDraftCrear([
-              { key: "Hostname", value: "" },
-              { key: "Plataforma", value: "" },
-              { key: "Marca/Modelo", value: "" },
-              { key: "Tipo", value: "" },
-              { key: "Firmware/Versión S.O", value: "" },
-              { key: "Ubicación", value: "" },
-              { key: "Licenciamiento", value: "" },
-            ]);
-
+          onClick={async () => {
+            await obtenerDatosMin();
             setPopUpCrearInfo(true);
           }}
         >
@@ -873,7 +1000,7 @@ export default function HomeAdmin() {
                       >
                         <img src={imgEditar} alt="" />
                       </button>
-                      {`Registro °${info.info_id}`}
+                      {`Registro °${info.info_id} - ${info.usuario_nombre}`}
                       <button onClick={() => eliminarInformacionCliente(info)}>
                         <img src={imgBorrar} alt="" />
                       </button>
@@ -1186,10 +1313,17 @@ export default function HomeAdmin() {
               )?.label
             } - Nuevo registro`}
           </h2>
+          <button
+            className="btn-change"
+            title="Editar datos minimos"
+            onClick={() => setPopUpEditarDatosMinimos(true)}
+          >
+            <img src={imgEditar} alt="" />
+          </button>
 
           <div ref={scrollCrearRef}>
             {draftCrear.map(({ key, value }, i, array) => {
-              const esObligatorio = i < 7;
+              const esObligatorio = i < datosMinimos.length;
 
               return (
                 <div key={i} className="cont-dato-editar">
@@ -1272,7 +1406,7 @@ export default function HomeAdmin() {
 
           <div ref={scrollRef}>
             {draftDatos.map(({ key, value }, i, array) => {
-              const esObligatorio = i < 7;
+              const esObligatorio = i < datosMinimos.length;
 
               return (
                 <div key={i} className="cont-dato-editar">
@@ -1325,6 +1459,62 @@ export default function HomeAdmin() {
               title="Guardar registro"
             >
               <img src={imgEditar} alt="" />
+              Guardar
+            </button>
+          </div>
+        </div>
+      </Popup>
+
+      {/* PopUp editar datos minimos */}
+      <Popup
+        open={popUpEditarDatosMinimos}
+        onClose={() => {
+          setPopUpEditarDatosMinimos(false);
+          setDraftDatosMinimos([]);
+        }}
+        modal
+        nested
+      >
+        <div className="cont-popUp-editarInfo">
+          <h2>Editar datos minimos</h2>
+          <div ref={scrollDatosMinimosRef} className="cont-datos-minimos">
+            {draftDatosMinimos.map((dato, i, array) => (
+              <div key={i} className="cont-dato-editar">
+                <input
+                  type="text"
+                  placeholder="Dato mínimo..."
+                  className="inp-dato-minimo"
+                  value={dato}
+                  onChange={(e) => cambiarDatoMinimo(i, e.target.value)}
+                  ref={i === array.length - 1 ? inputDatosMinimosRef : null}
+                />
+                <button
+                  type="button"
+                  onClick={() => eliminarDatoMinimo(i)}
+                  title="Eliminar dato"
+                >
+                  <img src={imgBorrar} alt="Eliminar" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="sep-hrz"></div>
+          <div className="cont-btns">
+            <button
+              type="button"
+              onClick={agregarDatoMinimo}
+              title="Agregar dato"
+            >
+              <img src={imgAgregarFila} alt="" />
+              Agregar dato
+            </button>
+            <button
+              type="button"
+              className="btn-crear"
+              onClick={guardarDatosMinimos}
+              title="Guardar datos mínimos"
+            >
+              <img src={imgGuardar} alt="" />
               Guardar
             </button>
           </div>

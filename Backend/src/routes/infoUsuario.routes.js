@@ -5,6 +5,9 @@ import {
   crearInformacion,
   actualizarInformacion,
   eliminarInformacion,
+  obtenerDatosMinimos,
+  agregarDatoMinimo,
+  eliminarDatoMinimo,
 } from "../controllers/infoUsuarioController.js";
 import { verificarToken } from "../middleware/authMiddleware.js";
 
@@ -64,11 +67,10 @@ router.get("/", verificarToken, obtenerInformacion);
  *   post:
  *     summary: Crear información de usuario
  *     description: >
- *       - **Admin**: puede crear información para cualquier usuario indicando `usuario_id`.
- *       - **Cliente**: crea información asociada a su propio ID (se ignora `usuario_id` en este caso).
- *       - El campo `datos` acepta un **objeto JSON único** o un **array de objetos JSON**.
- *       - Los siguientes campos dentro de `datos` son **obligatorios**:
- *         `hostname`, `plataforma`, `"marca/modelo"`, `tipo`, `"firmware/version s.o"`, `ubicacion`, `licenciamiento`.
+ *       - **Admin**: puede crear información para cualquier usuario indicando `usuario_id`.<br>
+ *       - **Cliente**: crea información asociada a su propio ID.<br>
+ *       - El campo `datos` acepta un **objeto** o un **array de objetos**.<br>
+ *       - Los campos obligatorios se obtienen **dinámicamente desde la tabla `datos_minimos`**.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -83,71 +85,25 @@ router.get("/", verificarToken, obtenerInformacion);
  *                 type: integer
  *                 example: 1
  *               datos:
+ *                 description: >
+ *                   Objeto o array de objetos con los campos definidos en la tabla `datos_minimos`.
  *                 oneOf:
  *                   - type: object
- *                     required:
- *                       - hostname
- *                       - plataforma
- *                       - "marca/modelo"
- *                       - tipo
- *                       - "firmware/version s.o"
- *                       - ubicacion
- *                       - licenciamiento
- *                     properties:
- *                       hostname:
- *                         type: string
- *                         example: "ServidorPrincipal"
- *                       plataforma:
- *                         type: string
- *                         example: "Windows Server"
- *                       "marca/modelo":
- *                         type: string
- *                         example: "Dell PowerEdge R740"
- *                       tipo:
- *                         type: string
- *                         example: "Servidor"
- *                       "firmware/version s.o":
- *                         type: string
- *                         example: "v2.4.1"
- *                       ubicacion:
- *                         type: string
- *                         example: "Bogotá - Centro de Datos"
- *                       licenciamiento:
- *                         type: string
- *                         example: "Windows Server 2022 Standard"
+ *                     additionalProperties:
+ *                       type: string
+ *                     example:
+ *                       Hostname: "ServidorPrincipal"
+ *                       Plataforma: "Windows Server"
  *                   - type: array
  *                     items:
  *                       type: object
- *                       required:
- *                         - hostname
- *                         - plataforma
- *                         - "marca/modelo"
- *                         - tipo
- *                         - "firmware/version s.o"
- *                         - ubicacion
- *                         - licenciamiento
- *                       properties:
- *                         hostname:
- *                           type: string
- *                           example: "ServidorBackup"
- *                         plataforma:
- *                           type: string
- *                           example: "Ubuntu Server"
- *                         "marca/modelo":
- *                           type: string
- *                           example: "HP ProLiant DL380"
- *                         tipo:
- *                           type: string
- *                           example: "Servidor"
- *                         "firmware/version s.o":
- *                           type: string
- *                           example: "v3.0.5"
- *                         ubicacion:
- *                           type: string
- *                           example: "Medellín - Centro Secundario"
- *                         licenciamiento:
- *                           type: string
- *                           example: "Ubuntu 22.04 LTS"
+ *                       additionalProperties:
+ *                         type: string
+ *                     example:
+ *                       - Hostname: "ServidorBackup"
+ *                         Plataforma: "Ubuntu Server"
+ *                       - Hostname: "Firewall1"
+ *                         Plataforma: "Fortigate"
  *     responses:
  *       201:
  *         description: Información creada correctamente
@@ -159,6 +115,7 @@ router.get("/", verificarToken, obtenerInformacion);
  *         description: Error al crear información
  */
 router.post("/", verificarToken, crearInformacion);
+
 
 /**
  * @swagger
@@ -270,5 +227,88 @@ router.put("/", verificarToken, actualizarInformacion);
  *         description: Error al eliminar información
  */
 router.delete("/", verificarToken, eliminarInformacion);
+
+/**
+ * @swagger
+ * /api/informacion_usuario/datos_minimos:
+ *   get:
+ *     summary: Obtener todos los datos mínimos
+ *     description: >
+ *       - **Solo ADMIN** puede consultar la lista completa.
+ *     tags: [DatosMinimos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de datos mínimos
+ *       403:
+ *         description: Solo admin
+ *       500:
+ *         description: Error al obtener datos
+ */
+router.get("/datos_minimos", verificarToken, obtenerDatosMinimos);
+
+/**
+ * @swagger
+ * /api/informacion_usuario/datos_minimos/agregar:
+ *   post:
+ *     summary: Agregar un dato a la lista de datos mínimos
+ *     description: >
+ *       - **Solo ADMIN** puede agregar datos a la lista.
+ *       - La lista se guarda en el registro único de la tabla `datos_minimos`.
+ *     tags: [DatosMinimos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nuevoDato:
+ *                 type: string
+ *                 example: "Valor nuevo"
+ *     responses:
+ *       200:
+ *         description: Dato agregado correctamente
+ *       403:
+ *         description: Solo administrador
+ *       500:
+ *         description: Error del servidor
+ */
+router.post("/datos_minimos/agregar", verificarToken, agregarDatoMinimo);
+
+/**
+ * @swagger
+ * /api/informacion_usuario/datos_minimos/eliminar:
+ *   delete:
+ *     summary: Eliminar un dato de la lista de datos mínimos
+ *     description: >
+ *       - **Solo ADMIN** puede eliminar elementos.
+ *     tags: [DatosMinimos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               dato:
+ *                 type: string
+ *                 example: "Valor a eliminar"
+ *     responses:
+ *       200:
+ *         description: Dato eliminado correctamente
+ *       404:
+ *         description: El dato no existe
+ *       403:
+ *         description: Solo admin
+ *       500:
+ *         description: Error del servidor
+ */
+router.delete("/datos_minimos/eliminar", verificarToken, eliminarDatoMinimo);
 
 export default router;

@@ -144,13 +144,7 @@ export const AuthProvider = ({ children }) => {
       setUser(usuario);
       setupInterceptors(token);
       setTimeout(() => {
-        toast.success(
-          "Bienvenido " +
-            (usuario.nombre
-              ? usuario.nombre.charAt(0).toUpperCase() +
-                usuario.nombre.slice(1).toLowerCase()
-              : "")
-        );
+        toast.success("Bienvenido " + usuario.nombre);
       }, 1100);
       return { success: true, data: response.data };
     } catch (error) {
