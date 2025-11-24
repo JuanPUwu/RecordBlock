@@ -404,43 +404,32 @@ export const obtenerDatosMinimos = async (req, res) => {
     });
   }
 };
-
-// POST dato minimo
-export const agregarDatoMinimo = async (req, res) => {
+// PUT reemplazar lista completa de datos minimos
+export const reemplazarDatosMinimos = async (req, res) => {
   try {
     if (req.usuario.rol !== "admin") {
       return res.status(403).json({
         success: false,
-        message: "Solo un administrador puede agregar datos.",
+        message:
+          "Solo un administrador puede reemplazar la lista de datos mínimos.",
       });
     }
 
-    const { nuevoDato } = req.body;
-    if (nuevoDato === undefined || nuevoDato === null) {
+    const { datos } = req.body;
+
+    if (!Array.isArray(datos)) {
       return res.status(400).json({
         success: false,
-        message: "Debe enviar 'nuevoDato' en el body.",
+        message: "El campo 'datos' debe ser un array.",
       });
     }
-
-    // Obtener lista actual
-    const row = await getAsync("SELECT datos FROM datos_minimos WHERE id = 1");
-
-    if (!row) {
-      return res.status(500).json({
-        success: false,
-        message: "No existe registro base en datos_minimos",
-      });
-    }
-
-    let lista = JSON.parse(row.datos);
 
     // Normalizador para almacenar (lo que realmente guarda SQLite)
     const normalizeForStorage = (v) => {
-      if (typeof v === "string") return v.trim(); // quitar espacios
-      if (typeof v === "number" || typeof v === "boolean") return String(v); // convertir a string
+      if (typeof v === "string") return v.trim();
+      if (typeof v === "number" || typeof v === "boolean") return String(v);
       try {
-        return JSON.stringify(v); // objeto → string
+        return JSON.stringify(v);
       } catch {
         return String(v);
       }
@@ -458,113 +447,30 @@ export const agregarDatoMinimo = async (req, res) => {
       }
     };
 
-    const datoGuardado = normalizeForStorage(nuevoDato);
-    const datoNorm = normalizeForCompare(nuevoDato);
+    const listaFinal = [];
+    const vistos = new Set();
 
-    // Validar duplicado
-    const existe = lista.some((item) => normalizeForCompare(item) === datoNorm);
-
-    if (existe) {
-      return res.status(409).json({
-        success: false,
-        message: "El dato ya existe en la lista.",
-      });
+    for (const item of datos) {
+      const cmp = normalizeForCompare(item);
+      if (vistos.has(cmp)) continue; // evitar duplicados
+      vistos.add(cmp);
+      listaFinal.push(normalizeForStorage(item));
     }
 
-    // Agregar dato ya normalizado a almacenamiento
-    lista.push(datoGuardado);
-
-    // Guardar cambios
+    // Guardar la nueva lista completa
     await runAsync("UPDATE datos_minimos SET datos = ? WHERE id = 1", [
-      JSON.stringify(lista),
+      JSON.stringify(listaFinal),
     ]);
 
     res.json({
       success: true,
-      message: "Dato agregado correctamente.",
-      datos: lista,
+      message: "Lista de datos mínimos reemplazada correctamente.",
+      datos: listaFinal,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "Error al agregar dato",
-      error: err.message,
-    });
-  }
-};
-
-// DELETE dato minimo
-export const eliminarDatoMinimo = async (req, res) => {
-  try {
-    if (req.usuario.rol !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Solo un administrador puede eliminar datos.",
-      });
-    }
-
-    const { dato } = req.body;
-
-    if (dato === undefined || dato === null) {
-      return res.status(400).json({
-        success: false,
-        message: "Debe enviar 'dato' en el body para eliminar.",
-      });
-    }
-
-    // Obtener lista actual
-    const row = await getAsync("SELECT datos FROM datos_minimos WHERE id = 1");
-
-    if (!row) {
-      return res.status(500).json({
-        success: false,
-        message: "No existe registro base en datos_minimos.",
-      });
-    }
-
-    let lista = JSON.parse(row.datos);
-
-    // Normalizador para comparación (mismo que en agregarDatoMinimo)
-    const normalizeForCompare = (v) => {
-      if (typeof v === "string") return v.trim().toLowerCase();
-      if (typeof v === "number" || typeof v === "boolean")
-        return String(v).toLowerCase();
-      try {
-        return JSON.stringify(v).toLowerCase();
-      } catch {
-        return String(v).toLowerCase();
-      }
-    };
-
-    const datoNorm = normalizeForCompare(dato);
-
-    // Filtrar eliminando coincidencias
-    const nuevaLista = lista.filter(
-      (item) => normalizeForCompare(item) !== datoNorm
-    );
-
-    if (nuevaLista.length === lista.length) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "El dato no existe (comparación insensible a mayúsculas y espacios).",
-      });
-    }
-
-    // Guardar cambios
-    await runAsync("UPDATE datos_minimos SET datos = ? WHERE id = 1", [
-      JSON.stringify(nuevaLista),
-    ]);
-
-    res.json({
-      success: true,
-      message: "Dato eliminado correctamente.",
-      datos: nuevaLista,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Error al eliminar dato",
+      message: "Error al reemplazar la lista de datos mínimos",
       error: err.message,
     });
   }

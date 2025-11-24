@@ -9,10 +9,10 @@ db.run("PRAGMA foreign_keys = ON");
 // Crear tablas
 db.serialize(async () => {
   // Borrar tablas relacionadas primero
-  db.run(`DROP TABLE IF EXISTS usuario`);
+  /* db.run(`DROP TABLE IF EXISTS usuario`); */
   db.run(`DROP TABLE IF EXISTS tokens_verificacion`);
   db.run(`DROP TABLE IF EXISTS tokens_recuperacion`);
-  db.run(`DROP TABLE IF EXISTS informacion_usuario`);
+  /* db.run(`DROP TABLE IF EXISTS informacion_usuario`); */
   db.run(`DROP TABLE IF EXISTS datos_minimos`);
   db.run(`DROP TABLE IF EXISTS token_blacklist`);
 

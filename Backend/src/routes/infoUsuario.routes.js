@@ -6,8 +6,7 @@ import {
   actualizarInformacion,
   eliminarInformacion,
   obtenerDatosMinimos,
-  agregarDatoMinimo,
-  eliminarDatoMinimo,
+  reemplazarDatosMinimos,
 } from "../controllers/infoUsuarioController.js";
 import { verificarToken } from "../middleware/authMiddleware.js";
 
@@ -115,7 +114,6 @@ router.get("/", verificarToken, obtenerInformacion);
  *         description: Error al crear información
  */
 router.post("/", verificarToken, crearInformacion);
-
 
 /**
  * @swagger
@@ -250,65 +248,51 @@ router.get("/datos_minimos", verificarToken, obtenerDatosMinimos);
 
 /**
  * @swagger
- * /api/informacion_usuario/datos_minimos/agregar:
- *   post:
- *     summary: Agregar un dato a la lista de datos mínimos
+ * /api/informacion_usuario/datos_minimos:
+ *   put:
+ *     summary: Reemplazar la lista completa de datos mínimos
  *     description: >
- *       - **Solo ADMIN** puede agregar datos a la lista.
- *       - La lista se guarda en el registro único de la tabla `datos_minimos`.
+ *       Reemplaza completamente la lista de **datos mínimos** almacenada en la tabla `datos_minimos`.
+ *
+ *       **Restricciones:**
+ *       - Solo un **ADMIN** puede ejecutar esta operación.
+ *       - Se eliminarán los valores duplicados automáticamente.
+ *       - El sistema normaliza los valores (trim, lowercase para comparación).
+ *
  *     tags: [DatosMinimos]
  *     security:
  *       - bearerAuth: []
+ *
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - datos
  *             properties:
- *               nuevoDato:
- *                 type: string
- *                 example: "Valor nuevo"
+ *               datos:
+ *                 type: array
+ *                 description: Lista completa de datos mínimos que reemplazará a la existente.
+ *                 items:
+ *                   type: string
+ *                 example:
+ *                   - "hostname"
+ *                   - "plataforma"
+ *                   - "ubicacion"
+ *                   - "estado"
+ *
  *     responses:
  *       200:
- *         description: Dato agregado correctamente
+ *         description: Lista reemplazada correctamente
+ *       400:
+ *         description: Formato inválido (se esperaba un array)
  *       403:
- *         description: Solo administrador
+ *         description: Solo administradores pueden realizar esta acción
  *       500:
- *         description: Error del servidor
+ *         description: Error interno del servidor
  */
-router.post("/datos_minimos/agregar", verificarToken, agregarDatoMinimo);
-
-/**
- * @swagger
- * /api/informacion_usuario/datos_minimos/eliminar:
- *   delete:
- *     summary: Eliminar un dato de la lista de datos mínimos
- *     description: >
- *       - **Solo ADMIN** puede eliminar elementos.
- *     tags: [DatosMinimos]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               dato:
- *                 type: string
- *                 example: "Valor a eliminar"
- *     responses:
- *       200:
- *         description: Dato eliminado correctamente
- *       404:
- *         description: El dato no existe
- *       403:
- *         description: Solo admin
- *       500:
- *         description: Error del servidor
- */
-router.delete("/datos_minimos/eliminar", verificarToken, eliminarDatoMinimo);
+router.put("/datos_minimos", verificarToken, reemplazarDatosMinimos);
 
 export default router;

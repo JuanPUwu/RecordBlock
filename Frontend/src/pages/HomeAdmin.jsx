@@ -120,7 +120,7 @@ export default function HomeAdmin() {
 
   const [isInfoCargando, setIsInfoCargando] = useState(true);
 
-  const { obtenerDatosMinimos, crearDatosMinimos, eliminarDatosMinimos } =
+  const { obtenerDatosMinimos, remplazarDatosMinimos } =
     useDatosMinimosService();
   const [datosMinimos, setDatosMinimos] = useState([]);
   const [popUpEditarDatosMinimos, setPopUpEditarDatosMinimos] = useState(false);
@@ -808,12 +808,6 @@ export default function HomeAdmin() {
       return;
     }
 
-    // Validar que haya al menos un dato
-    if (cleanedDraft.length === 0) {
-      toast.error("Ingresa por lo menos un dato mínimo");
-      return;
-    }
-
     // Validar que no haya emojis
     for (const dato of cleanedDraft) {
       if (!noEmojisRegex.test(dato)) {
@@ -834,14 +828,17 @@ export default function HomeAdmin() {
       seen.set(d, true);
     }
 
-    // Calcular datos adicionales (nuevos datos que no estaban en la lista original)
-    const datosOriginalesLower = datosMinimos.map((d) => d.toLowerCase());
-    const datosAdicionales = cleanedDraft.filter(
-      (d) => !datosOriginalesLower.includes(d.toLowerCase())
-    );
+    // Modificar lista de datosMinimos
+    setIsLoading(true);
+    const response = await remplazarDatosMinimos(cleanedDraft);
+    if (response.success) {
+      obtenerDatosMin();
+      setIsLoading(false);
+    } else {
+      console.error(response.error);
+      setIsLoading(false);
+    }
 
-    // Mostrar lista de nuevos datos en consola
-    console.log("Lista de datos adicionales:", datosAdicionales);
     setPopUpEditarDatosMinimos(false);
   };
   // ? <- Fin editar datos minimos

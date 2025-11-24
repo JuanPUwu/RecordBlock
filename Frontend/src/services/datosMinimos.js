@@ -7,17 +7,13 @@ export const useDatosMinimosService = () => {
   const obtenerDatosMinimos = async () =>
     handleRequest(() => api.get("/informacion_usuario/datos_minimos"));
 
-  const crearDatosMinimos = async (datosMinimos) =>
+  const remplazarDatosMinimos = async (datos) =>
     handleRequest(() =>
-      api.post("/informacion_usuario/datos_minimos", datosMinimos)
+      api.put("/informacion_usuario/datos_minimos", { datos })
     );
-
-  const eliminarDatosMinimos = async (id) =>
-    handleRequest(() => api.delete(`/informacion_usuario/datos_minimos/${id}`));
 
   return {
     obtenerDatosMinimos,
-    crearDatosMinimos,
-    eliminarDatosMinimos,
+    remplazarDatosMinimos,
   };
 };
