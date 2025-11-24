@@ -795,6 +795,19 @@ export default function HomeAdmin() {
       .map((d) => d.trim())
       .filter((d) => d !== "");
 
+    // Normalizar arrays para comparación (ordenar y convertir a minúsculas)
+    const normalizedDraft = cleanedDraft.map((d) => d.toLowerCase()).sort();
+    const normalizedOriginal = datosMinimos.map((d) => d.toLowerCase()).sort();
+
+    // Si no hay cambios, cerrar popup y no hacer nada
+    if (
+      normalizedDraft.length === normalizedOriginal.length &&
+      normalizedDraft.every((d, i) => d === normalizedOriginal[i])
+    ) {
+      setPopUpEditarDatosMinimos(false);
+      return;
+    }
+
     // Validar que haya al menos un dato
     if (cleanedDraft.length === 0) {
       toast.error("Ingresa por lo menos un dato mínimo");
@@ -821,8 +834,15 @@ export default function HomeAdmin() {
       seen.set(d, true);
     }
 
+    // Calcular datos adicionales (nuevos datos que no estaban en la lista original)
+    const datosOriginalesLower = datosMinimos.map((d) => d.toLowerCase());
+    const datosAdicionales = cleanedDraft.filter(
+      (d) => !datosOriginalesLower.includes(d.toLowerCase())
+    );
+
     // Mostrar lista de nuevos datos en consola
-    console.log("Lista de nuevos datos mínimos:", cleanedDraft);
+    console.log("Lista de datos adicionales:", datosAdicionales);
+    setPopUpEditarDatosMinimos(false);
   };
   // ? <- Fin editar datos minimos
 
