@@ -273,10 +273,8 @@ export default function HomeAdmin() {
   // ? -> Inicio eliminar cliente/acciones
   const { eliminarUsuario } = useUsuarioService();
   const eliminarCliente = async (cliente) => {
-    setIsLoading(true);
     const { default: Swal } = await import("sweetalert2");
     const { default: swalStyles } = await import("../css/swalStyles.js");
-    setIsLoading(false);
 
     // Mostramos el confirmador
     const result = await Swal.fire({
@@ -695,10 +693,8 @@ export default function HomeAdmin() {
   // ? -> Inicio eliminar informacion cliente
   const { eliminarInformacion } = useInfoUsuarioService();
   const eliminarInformacionCliente = async (info) => {
-    setIsLoading(true);
     const { default: Swal } = await import("sweetalert2");
     const { default: swalStyles } = await import("../css/swalStyles.js");
-    setIsLoading(false);
 
     const result = await Swal.fire({
       title: `¿Estás seguro de eliminar el registro °${info.info_id}?`,
@@ -737,11 +733,16 @@ export default function HomeAdmin() {
   // Inicializar draft cuando se abre el popup
   useEffect(() => {
     if (popUpEditarDatosMinimos) {
-      setDraftDatosMinimos([...datosMinimos]);
+      // Si no hay datos mínimos, inicializar con al menos un elemento vacío
+      if (!datosMinimos || datosMinimos.length === 0) {
+        setDraftDatosMinimos([""]);
+      } else {
+        setDraftDatosMinimos([...datosMinimos]);
+      }
     } else {
       setDraftDatosMinimos([]);
     }
-  }, [popUpEditarDatosMinimos]);
+  }, [popUpEditarDatosMinimos, datosMinimos]);
 
   // Cambiar valor de dato minimo
   const cambiarDatoMinimo = (index, newValue) => {
@@ -752,6 +753,13 @@ export default function HomeAdmin() {
 
   // Eliminar dato minimo
   const eliminarDatoMinimo = (index) => {
+    // Si solo queda un elemento y tiene contenido, resetearlo a vacío
+    if (draftDatosMinimos.length <= 1) {
+      const copy = [...draftDatosMinimos];
+      copy[index] = "";
+      setDraftDatosMinimos(copy);
+      return;
+    }
     const copy = [...draftDatosMinimos];
     copy.splice(index, 1);
     setDraftDatosMinimos(copy);
@@ -1493,7 +1501,7 @@ export default function HomeAdmin() {
         nested
       >
         <div className="cont-popUp-editarInfo">
-          <h2>Editar datos minimos</h2>
+          <h2>Editar datos mínimos</h2>
           <div ref={scrollDatosMinimosRef} className="cont-datos-minimos">
             {draftDatosMinimos.map((dato, i, array) => (
               <div key={i} className="cont-dato-editar">

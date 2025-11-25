@@ -17,9 +17,7 @@ export const transporter = nodemailer.createTransport({
   },
 });
 
-// =========================
-// 📧 Correo de verificación
-// =========================
+// Correo de verificación
 export const enviarCorreoVerificacion = async (email, token) => {
   const url = `${
     process.env.BACKEND_URL || "http://localhost:3000"
@@ -67,9 +65,7 @@ export const enviarCorreoVerificacion = async (email, token) => {
   await transporter.sendMail(opciones);
 };
 
-// ==============================
-// 🔐 Correo de recuperación
-// ==============================
+// Correo de recuperación
 export const enviarCorreoRecuperacion = async (email, token) => {
   const url = `${
     process.env.BACKEND_URL || "http://localhost:3000"
@@ -118,9 +114,7 @@ export const enviarCorreoRecuperacion = async (email, token) => {
   await transporter.sendMail(opciones);
 };
 
-// ========================================================
-// 🔒 Notificación de cambio de contraseña (usuario propio)
-// ========================================================
+// Notificación de cambio de contraseña (usuario propio)
 export const enviarCorreoCambioPasswordPropio = async (email, nombre) => {
   const fecha = new Date().toLocaleString("es-CO", {
     timeZone: "America/Bogota",
@@ -173,9 +167,7 @@ export const enviarCorreoCambioPasswordPropio = async (email, nombre) => {
   await transporter.sendMail(opciones);
 };
 
-// ========================================================
-// 🧑‍💼 Notificación de cambio de contraseña por administrador
-// ========================================================
+// Notificación de cambio de contraseña por administrador
 export const enviarCorreoCambioPasswordAdmin = async (email, nombre) => {
   const fecha = new Date().toLocaleString("es-CO", {
     timeZone: "America/Bogota",

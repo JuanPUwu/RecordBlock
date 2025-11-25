@@ -1,4 +1,3 @@
-// routes/auth.routes.js
 import express from "express";
 import {
   loginUsuario,
@@ -30,13 +29,26 @@ const router = express.Router();
  *             properties:
  *               email:
  *                 type: string
- *                 example: admin@example.com
  *               password:
  *                 type: string
- *                 example: Contraseña123@
  *     responses:
  *       200:
- *         description: Login exitoso
+ *         description: Login exitoso. Devuelve accessToken y guarda refreshToken en cookie HttpOnly.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 accessToken:
+ *                   type: string
+ *                 usuario:
+ *                   type: object
+ *       401:
+ *         description: Credenciales inválidas
+ *       403:
+ *         description: Correo no verificado
  */
 router.post("/login", loginUsuario);
 
@@ -44,8 +56,18 @@ router.post("/login", loginUsuario);
  * @swagger
  * /api/auth/refresh:
  *   post:
- *     summary: Renovar access token usando refresh token
+ *     summary: Renovar access token usando el refresh token (desde cookie)
  *     tags: [Auth]
+ *     description: >
+ *       Obtiene el refresh token desde una cookie HttpOnly.
+ *       Devuelve un nuevo accessToken y renueva también el refreshToken.
+ *     responses:
+ *       200:
+ *         description: Token renovado correctamente
+ *       401:
+ *         description: No se envió refresh token
+ *       403:
+ *         description: Token inválido o expirado
  */
 router.post("/refresh", refreshToken);
 
@@ -54,23 +76,20 @@ router.post("/refresh", refreshToken);
  * /api/auth/logout:
  *   post:
  *     summary: Cerrar sesión del usuario
- *     description: |
- *       Cierra la sesión del usuario eliminando el refresh token almacenado.
- *       Si no existe un refresh token en las cookies, se retornará un error 401 indicando que no hay sesión activa.
  *     tags: [Auth]
+ *     description: >
+ *       Elimina el refresh token de la base de datos
+ *       + limpia la cookie
+ *       + agrega el accessToken actual a la blacklist.
+ *
+ *       Requiere:
+ *       - Cookie "refreshToken"
+ *       - Header Authorization: Bearer {accessToken} (opcional)
  *     responses:
  *       200:
- *         description: Sesión cerrada correctamente.
- *         content:
- *           application/json:
- *             example:
- *               message: "Sesión cerrada correctamente"
+ *         description: Sesión cerrada correctamente
  *       401:
- *         description: No hay sesión activa (no existe refresh token en la cookie).
- *         content:
- *           application/json:
- *             example:
- *               error: "No hay sesión activa. No se puede cerrar sesión."
+ *         description: No hay refresh token (no hay sesión activa)
  */
 router.post("/logout", logout);
 
@@ -81,6 +100,7 @@ router.post("/logout", logout);
  *     summary: Enviar correo para recuperación de contraseña
  *     tags: [ForgotPassword]
  *     security: []
+ *     description: Envía un correo con un enlace HTML para restablecer la contraseña.
  *     requestBody:
  *       required: true
  *       content:
@@ -90,10 +110,13 @@ router.post("/logout", logout);
  *             properties:
  *               email:
  *                 type: string
- *                 example: juan@example.com
  *     responses:
  *       200:
  *         description: Correo de recuperación enviado
+ *       404:
+ *         description: Email no existe
+ *       403:
+ *         description: Correo sin verificar
  */
 router.post("/forgot-password", forgotPassword);
 
@@ -101,8 +124,9 @@ router.post("/forgot-password", forgotPassword);
  * @swagger
  * /api/auth/reset-password/{token}:
  *   get:
- *     summary: Página para restablecer contraseña
+ *     summary: Página HTML para restablecer contraseña
  *     tags: [ForgotPassword]
+ *     description: Retorna una página HTML con un formulario.
  *     parameters:
  *       - in: path
  *         name: token
@@ -111,7 +135,11 @@ router.post("/forgot-password", forgotPassword);
  *           type: string
  *     responses:
  *       200:
- *         description: Página HTML para restablecer contraseña
+ *         description: HTML de formulario o error
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
  */
 router.get("/reset-password/:token", showResetPasswordPage);
 
@@ -119,8 +147,11 @@ router.get("/reset-password/:token", showResetPasswordPage);
  * @swagger
  * /api/auth/reset-password/{token}:
  *   post:
- *     summary: Restablecer contraseña del usuario
+ *     summary: Procesar el formulario HTML para restablecer contraseña
  *     tags: [ForgotPassword]
+ *     description: >
+ *       Recibe datos desde un formulario (x-www-form-urlencoded).
+ *       Devuelve una página HTML de éxito o fallo.
  *     parameters:
  *       - in: path
  *         name: token
@@ -136,10 +167,13 @@ router.get("/reset-password/:token", showResetPasswordPage);
  *             properties:
  *               password:
  *                 type: string
- *                 example: NuevaContraseña123@
  *     responses:
  *       200:
- *         description: Contraseña actualizada exitosamente
+ *         description: Página HTML indicando éxito o error
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
  */
 router.post("/reset-password/:token", resetPassword);
 

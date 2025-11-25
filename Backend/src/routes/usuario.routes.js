@@ -7,12 +7,20 @@ import {
   eliminarUsuario,
   verificarCorreo,
 } from "../controllers/usuarioController.js";
+
 import {
   verificarToken,
   verificarAdmin,
 } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Usuario
+ *   description: Gestión de usuarios
+ */
 
 /**
  * @swagger
@@ -35,19 +43,14 @@ const router = express.Router();
  *                 properties:
  *                   id:
  *                     type: integer
- *                     example: 3
  *                   nombre:
  *                     type: string
- *                     example: María López
  *                   email:
  *                     type: string
- *                     example: maria@example.com
  *                   rol:
  *                     type: string
- *                     example: cliente
  *                   verificado:
- *                      type: boolean
- *                      example: true
+ *                     type: boolean
  *       403:
  *         description: Acceso denegado (no admin)
  *       500:
@@ -59,8 +62,8 @@ router.get("/", verificarToken, verificarAdmin, obtenerUsuarios);
  * @swagger
  * /api/usuario:
  *   post:
- *     summary: Crear un nuevo usuario, rol por defecto "cliente" (admin)
- *     description: Crea un usuario con rol "cliente" por defecto. Solo accesible para administradores. Envía un correo con enlace de verificación al usuario.
+ *     summary: Crear un nuevo usuario (rol cliente por defecto)
+ *     description: Crea un usuario con rol "cliente". Solo accesible para administradores. Envía un correo de verificación al usuario.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
@@ -77,24 +80,13 @@ router.get("/", verificarToken, verificarAdmin, obtenerUsuarios);
  *             properties:
  *               nombre:
  *                 type: string
- *                 example: Pablo
  *               email:
  *                 type: string
- *                 example: pablys8@gmail.com
  *               password:
  *                 type: string
- *                 example: Contraseña123@
  *     responses:
  *       201:
- *         description: Usuario creado correctamente y correo de verificación enviado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Usuario creado correctamente. Se envió un correo de verificación.
+ *         description: Usuario creado correctamente
  *       400:
  *         description: Datos inválidos o faltantes
  *       403:
@@ -106,20 +98,13 @@ router.post("/", verificarToken, verificarAdmin, crearUsuario);
 
 /**
  * @swagger
- * /api/usuario/{id}:
+ * /api/usuario:
  *   put:
- *     summary: Actualizar la contraseña de un usuario
- *     description: Un admin puede actualizar la contraseña de cualquier usuario. Un cliente solo puede actualizar su propia contraseña (mismo id).
+ *     summary: Actualizar tu propia contraseña (usuario autenticado)
+ *     description: Permite que un usuario normal actualice su propia contraseña sin enviar ID.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: false
- *         schema:
- *           type: integer
- *         description: ID del usuario a actualizar
  *     requestBody:
  *       required: true
  *       content:
@@ -131,7 +116,45 @@ router.post("/", verificarToken, verificarAdmin, crearUsuario);
  *             properties:
  *               password:
  *                 type: string
- *                 example: NuevaContraseña123@
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente
+ *       400:
+ *         description: Contraseña inválida o faltante
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al actualizar contraseña
+ */
+router.put("/", verificarToken, actualizarUsuario);
+
+/**
+ * @swagger
+ * /api/usuario/{id}:
+ *   put:
+ *     summary: Actualizar la contraseña de un usuario por ID
+ *     description: Un administrador puede actualizar la contraseña de cualquier usuario. Un usuario solo puede actualizar su propia contraseña.
+ *     tags: [Usuario]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario al que se desea cambiar la contraseña
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Contraseña actualizada correctamente
@@ -150,8 +173,8 @@ router.put("/:id", verificarToken, actualizarUsuario);
  * @swagger
  * /api/usuario/{id}:
  *   delete:
- *     summary: Eliminar un usuario por ID (admin)
- *     description: Elimina al usuario indicado. Solo accesible para administradores.
+ *     summary: Eliminar un usuario por ID (solo admin)
+ *     description: Elimina un usuario específico. Solo accesible para administradores.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
@@ -178,8 +201,8 @@ router.delete("/:id", verificarToken, verificarAdmin, eliminarUsuario);
  * @swagger
  * /api/usuario/verificar/{token}:
  *   get:
- *     summary: Verificar correo electrónico del usuario
- *     description: Verifica el correo electrónico del usuario usando el token enviado por correo. Si el token es válido y no ha expirado, marca la cuenta como verificada.
+ *     summary: Verificar correo electrónico de un usuario
+ *     description: Verifica el correo del usuario usando el token enviado por email.
  *     tags: [VerificacionCorreo]
  *     parameters:
  *       - in: path
@@ -187,21 +210,10 @@ router.delete("/:id", verificarToken, verificarAdmin, eliminarUsuario);
  *         required: true
  *         schema:
  *           type: string
- *         description: Token único de verificación enviado al correo del usuario
+ *         description: Token de verificación enviado al correo del usuario
  *     responses:
  *       200:
- *         description: Correo verificado correctamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Correo verificado correctamente.
+ *         description: Correo verificado correctamente (HTML)
  *       400:
  *         description: Token inválido o expirado
  *       500:

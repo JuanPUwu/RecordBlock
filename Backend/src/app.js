@@ -6,8 +6,8 @@ import usuarioRoutes from "./routes/usuario.routes.js";
 import infoUsuarioRoutes from "./routes/infoUsuario.routes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
-import path from "path";
-import { fileURLToPath } from "url";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -15,17 +15,17 @@ dotenv.config();
 const app = express();
 const ENV = process.env.NODE_ENV || "development";
 
-// ================== ORÍGENES PERMITIDOS (CORS) ==================
+// Orígenes permitidos según el entorno
 const allowedOrigins =
   ENV === "production"
     ? [
-        process.env.FRONTEND_URL, // 🚀 Frontend público (Cloudflare o dominio)
+        process.env.FRONTEND_URL, // Frontend público (Cloudflare o dominio)
       ]
     : [
-        "http://localhost:5173", // 🛠️ Frontend local en desarrollo
+        "http://localhost:5173", // Frontend local en desarrollo
       ];
 
-// ================== CONFIG CORS DINÁMICO ==================
+// Configuración CORS dinámico
 app.use(
   cors({
     origin: allowedOrigins,
@@ -33,20 +33,20 @@ app.use(
   })
 );
 
-// ================== MIDDLEWARES ==================
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ================== RUTAS ==================
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/usuario", usuarioRoutes);
 app.use("/api/informacion_usuario", infoUsuarioRoutes);
 
-// ================== SWAGGER ==================
+// Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// ================== ARCHIVOS ESTÁTICOS ==================
+// Static Files
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

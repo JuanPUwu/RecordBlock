@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
-import crypto from "crypto";
-import validator from "validator"; // para validar email
-import path from "path";
-import { fileURLToPath } from "url";
+import crypto from "node:crypto";
+import validator from "validator";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { runAsync, getAsync, allAsync } from "../utils/dbHelpers.js";
 import {
   enviarCorreoVerificacion,
@@ -10,7 +10,12 @@ import {
   enviarCorreoCambioPasswordPropio,
 } from "../utils/email.js";
 
-// Obtener todos los usuarios con rol "cliente" (solo admin)
+const safeError = (res, err, msg = "Error interno del servidor") => {
+  console.error(err);
+  return res.status(500).json({ success: false, message: msg });
+};
+
+// Obtener usuarios
 export const obtenerUsuarios = async (req, res) => {
   try {
     if (req.usuario.rol !== "admin") {
@@ -24,15 +29,13 @@ export const obtenerUsuarios = async (req, res) => {
       "SELECT id, nombre, email, rol, verificado FROM usuario WHERE rol = 'cliente'"
     );
 
-    res.json({ success: true, data: rows });
+    return res.json({ success: true, data: rows });
   } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Error al obtener clientes" });
+    return safeError(res, err);
   }
 };
 
-// Crear un nuevo usuario (solo admin, rol cliente por defecto)
+// Crear usuario
 export const crearUsuario = async (req, res) => {
   try {
     if (req.usuario.rol !== "admin") {
@@ -43,6 +46,7 @@ export const crearUsuario = async (req, res) => {
     }
 
     const { nombre, email, password } = req.body;
+
     if (!nombre || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -60,6 +64,7 @@ export const crearUsuario = async (req, res) => {
       "SELECT * FROM usuario WHERE nombre = ? OR email = ?",
       [nombre, email]
     );
+
     if (existe) {
       return res
         .status(400)
@@ -67,16 +72,17 @@ export const crearUsuario = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const result = await runAsync(
       "INSERT INTO usuario (nombre, email, password, rol, verificado) VALUES (?, ?, ?, 'cliente', 0)",
       [nombre, email, hashedPassword]
     );
+
     const userId = result.lastID;
 
-    // Generar token único
     const token = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await runAsync(
       "INSERT INTO tokens_verificacion (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
@@ -85,26 +91,24 @@ export const crearUsuario = async (req, res) => {
 
     await enviarCorreoVerificacion(email, token);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message:
         "Usuario creado correctamente. Se envió un correo de verificación.",
     });
   } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Error al crear cliente", err });
+    return safeError(res, err, "Error al crear cliente");
   }
 };
 
-//  Verificar correo
+// Verificar correo
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const verificarCorreo = async (req, res) => {
   try {
-    const token = req.params.token; // ⚠ token desde params
+    const { token } = req.params;
+
     if (!token) {
       return res.sendFile(
         path.join(__dirname, "../views/verificacionFallida.html")
@@ -127,6 +131,7 @@ export const verificarCorreo = async (req, res) => {
     await runAsync("UPDATE usuario SET verificado = 1 WHERE id = ?", [
       registro.user_id,
     ]);
+
     await runAsync("DELETE FROM tokens_verificacion WHERE user_id = ?", [
       registro.user_id,
     ]);
@@ -142,11 +147,11 @@ export const verificarCorreo = async (req, res) => {
   }
 };
 
-// Actualizar solo la contraseña de un usuario (admin o el mismo cliente)
+// Actualizar contraseña
 export const actualizarUsuario = async (req, res) => {
   try {
-    const { id } = req.params; // ID que viene por parámetro (solo lo usa admin)
-    const idToken = req.usuario.id; // ID que viene en el token
+    const { id } = req.params;
+    const idToken = req.usuario.id;
     const { password } = req.body;
 
     if (!password) {
@@ -156,10 +161,14 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
-    // Si viene ID en params lo usa (admin), si no, usa el ID del token (usuario común)
-    const idFinal = id ? parseInt(id) : idToken;
+    let idFinal;
 
-    // Validar que un usuario común no modifique a otro usuario
+    if (id) {
+      idFinal = Number.parseInt(id, 10);
+    } else {
+      idFinal = idToken;
+    }
+
     if (req.usuario.rol !== "admin" && idFinal !== idToken) {
       return res.status(403).json({
         success: false,
@@ -168,11 +177,11 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
-    // Obtener info del usuario para enviar correo
     const usuario = await getAsync(
       "SELECT email, nombre FROM usuario WHERE id = ?",
       [idFinal]
     );
+
     if (!usuario) {
       return res.status(404).json({
         success: false,
@@ -180,10 +189,8 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
-    // Encriptar nueva contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Actualizar contraseña en BD
     const result = await runAsync(
       "UPDATE usuario SET password = ? WHERE id = ?",
       [hashedPassword, idFinal]
@@ -196,7 +203,6 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
-    // ✅ Obtener fecha actual Formato C
     const fecha = new Date().toLocaleString("es-ES", {
       weekday: "long",
       year: "numeric",
@@ -206,16 +212,13 @@ export const actualizarUsuario = async (req, res) => {
       minute: "2-digit",
     });
 
-    // ✅ Enviar email según quién cambió
     if (req.usuario.rol === "admin" && idFinal !== idToken) {
-      // Un admin cambió la contraseña
       await enviarCorreoCambioPasswordAdmin(
         usuario.email,
         usuario.nombre,
         fecha
       );
     } else {
-      // El usuario cambió su propia contraseña
       await enviarCorreoCambioPasswordPropio(
         usuario.email,
         usuario.nombre,
@@ -223,21 +226,17 @@ export const actualizarUsuario = async (req, res) => {
       );
     }
 
-    res.json({
+    return res.json({
       success: true,
       message:
         "Contraseña actualizada correctamente. Se envió notificación por correo.",
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Error al actualizar contraseña.",
-    });
+    return safeError(res, err, "Error al actualizar contraseña");
   }
 };
 
-// Eliminar un usuario (solo admin)
+// Eliminar usuario
 export const eliminarUsuario = async (req, res) => {
   try {
     if (req.usuario.rol !== "admin") {
@@ -248,6 +247,7 @@ export const eliminarUsuario = async (req, res) => {
     }
 
     const { id } = req.params;
+
     const result = await runAsync("DELETE FROM usuario WHERE id = ?", [id]);
 
     if (result.changes === 0) {
@@ -256,10 +256,11 @@ export const eliminarUsuario = async (req, res) => {
         .json({ success: false, message: "Usuario no encontrado." });
     }
 
-    res.json({ success: true, message: "Usuario eliminado correctamente." });
+    return res.json({
+      success: true,
+      message: "Usuario eliminado correctamente.",
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Error al eliminar usuario" });
+    return safeError(res, err);
   }
 };

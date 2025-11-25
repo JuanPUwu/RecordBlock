@@ -9,10 +9,10 @@ db.run("PRAGMA foreign_keys = ON");
 // Crear tablas
 db.serialize(async () => {
   // Borrar tablas relacionadas primero
-  /* db.run(`DROP TABLE IF EXISTS usuario`); */
+  db.run(`DROP TABLE IF EXISTS usuario`);
   db.run(`DROP TABLE IF EXISTS tokens_verificacion`);
   db.run(`DROP TABLE IF EXISTS tokens_recuperacion`);
-  /* db.run(`DROP TABLE IF EXISTS informacion_usuario`); */
+  db.run(`DROP TABLE IF EXISTS informacion_usuario`);
   db.run(`DROP TABLE IF EXISTS datos_minimos`);
   db.run(`DROP TABLE IF EXISTS token_blacklist`);
 
@@ -70,7 +70,7 @@ db.serialize(async () => {
   `);
 
   db.run(`
-    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('["hostname", "físico/virtual", "plataforma", "servicio", "marca/modelo", "tipo", "estado", "serial", "firmware/versión s.o", "ubicación", "licenciamiento"]')
+    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('[]')
   `);
 
   // Blacklist
