@@ -13,6 +13,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+app.disable("x-powered-by");
 const ENV = process.env.NODE_ENV || "development";
 
 // Orígenes permitidos según el entorno

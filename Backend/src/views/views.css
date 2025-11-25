@@ -319,7 +319,7 @@ body {
 
 /* === Botón === */
 .form-reset button {
-  background-color: #007ef9;
+  background-color: #0066cc;
   color: #fff;
   font-weight: 500;
   font-size: 1rem;
@@ -333,7 +333,7 @@ body {
 }
 
 .form-reset button:hover {
-  background-color: #0060df;
+  background-color: #0057b8;
   text-decoration: underline;
 }
 
