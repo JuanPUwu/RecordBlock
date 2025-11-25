@@ -1,4 +1,3 @@
-// controllers/authController.js
 import { run } from "../config/database.js";
 import { addToBlacklist } from "../config/blacklist.js";
 import bcrypt from "bcrypt";
@@ -200,10 +199,12 @@ export const showResetPasswordPage = async (req, res) => {
   }
 
   try {
-    // Verificamos token contra los hashes guardados
     // Decodificamos para obtener email
     const jwtLib = await import("jsonwebtoken");
-    const decodedJwt = jwtLib.verify(token, process.env.JWT_ACCESS_SECRET);
+    const decodedJwt = jwtLib.default.verify(
+      token,
+      process.env.JWT_ACCESS_SECRET
+    );
     const email = decodedJwt.email;
 
     const valido = await verifyRecoveryToken(email, token);
@@ -244,7 +245,7 @@ export const resetPassword = async (req, res) => {
 
     // Decodificar token para obtener email
     const jwtLib = await import("jsonwebtoken");
-    const decoded = jwtLib.verify(token, process.env.JWT_ACCESS_SECRET);
+    const decoded = jwtLib.default.verify(token, process.env.JWT_ACCESS_SECRET);
     const email = decoded.email;
 
     // Verificar token contra hashes almacenados
