@@ -16,12 +16,12 @@ const router = express.Router();
  * @swagger
  * /api/informacion_usuario:
  *   get:
- *     summary: Obtener informaciones de usuario
- *     description: >
+ *     summary: Obtener informaciones de clientes
+ *     description: |
  *       Comportamiento según el rol:
- *       - **Admin**: Obtiene toda la información de usuarios cliente.
- *         Puede filtrar opcionalmente con `usuario_id`.
- *       - **Cliente**: Obtiene únicamente su propia información, ignorando cualquier `usuario_id` enviado.
+ *       - **Admin**: Puede obtener la información de todos los usuarios clientes.
+ *         Opcionalmente, puede filtrar la información mediante `usuario_id`.
+ *       - **Cliente**: Solo puede obtener su propia información.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -31,7 +31,6 @@ const router = express.Router();
  *         schema:
  *           type: integer
  *         required: false
- *         description: Solo permitido para admin
  *     responses:
  *       200:
  *         description: Información encontrada
@@ -69,16 +68,11 @@ router.get("/", verificarToken, obtenerInformacion);
  * @swagger
  * /api/informacion_usuario:
  *   post:
- *     summary: Crear información de usuario
- *     description: >
- *       - **Admin**: Puede crear información para cualquier usuario especificando `usuario_id`.
+ *     summary: Crear información de cliente
+ *     description: |
+ *      Comportamiento según el rol:
+ *       - **Admin**: Puede crear información para cualquier cliente según su `usuario_id`.
  *       - **Cliente**: Solo crea información asociada a su propio ID.
- *
- *       El campo `datos` puede ser:
- *       - un **objeto**, o
- *       - un **array de objetos**.
- *
- *       Cada objeto será validado contra la lista de **datos mínimos** almacenados en BD.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -91,14 +85,12 @@ router.get("/", verificarToken, obtenerInformacion);
  *             properties:
  *               usuario_id:
  *                 type: integer
- *                 description: Solo admin
+ *                 example: 2
  *               datos:
- *                 description: Objeto o array de objetos JSON
- *                 oneOf:
- *                   - type: object
- *                   - type: array
- *                     items:
- *                       type: object
+ *                 type: object
+ *                 description: Objeto JSON con información del cliente
+ *                 example:
+ *                   hostname: "hostnameExample"
  *     responses:
  *       201:
  *         description: Información creada correctamente
@@ -116,10 +108,10 @@ router.post("/", verificarToken, crearInformacion);
  * /api/informacion_usuario:
  *   put:
  *     summary: Actualizar información existente
- *     description: >
- *       - **Admin**: Puede actualizar información para cualquier usuario usando `usuario_id`.
+ *     description: |
+ *       Comportamiento según el rol:
+ *       - **Admin**: Puede actualizar información para cualquier cliente según su `usuario_id` e `info_id`.
  *       - **Cliente**: Solo puede actualizar registros que le pertenecen.
- *
  *       El objeto `datos` será validado contra los **datos mínimos** obtenidos de BD.
  *     tags: [InformacionUsuario]
  *     security:
@@ -141,7 +133,9 @@ router.post("/", verificarToken, crearInformacion);
  *                 description: Solo admin
  *               datos:
  *                 type: object
- *                 description: JSON con los campos requeridos según `datos_minimos`
+ *                 description: Objeto JSON con la información actualizada
+ *                 example:
+ *                   hostname: "hostnameExample"
  *     responses:
  *       200:
  *         description: Información actualizada
@@ -161,9 +155,10 @@ router.put("/", verificarToken, actualizarInformacion);
  * /api/informacion_usuario:
  *   delete:
  *     summary: Eliminar información de usuario
- *     description: >
- *       - **Admin**: Puede eliminar información de cualquier usuario (requiere `usuario_id`).
- *       - **Cliente**: Solo puede eliminar registros que le pertenecen.
+ *     description: |
+ *       Comportamiento según el rol:
+ *       - **Admin**: Puede eliminar información de cualquier cliente segun su `usuario_id`.
+ *       - **Cliente**: Solo puede eliminar información que le pertenezca.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -196,7 +191,7 @@ router.delete("/", verificarToken, eliminarInformacion);
  * /api/informacion_usuario/datos_minimos:
  *   get:
  *     summary: Obtener la lista de datos mínimos
- *     description: Solo disponible para administradores.
+ *     description: Solo disponible para `Administradores`.
  *     tags: [DatosMinimos]
  *     security:
  *       - bearerAuth: []
@@ -215,8 +210,8 @@ router.get("/datos_minimos", verificarToken, obtenerDatosMinimos);
  * /api/informacion_usuario/datos_minimos:
  *   put:
  *     summary: Reemplazar completamente la lista de datos mínimos
- *     description: >
- *       - Solo ADMIN
+ *     description: |
+ *      Solo disponible para `Administradores`.
  *       - Elimina duplicados automáticamente
  *       - Normaliza el texto (trim, lowercase para comparación)
  *     tags: [DatosMinimos]
@@ -235,6 +230,7 @@ router.get("/datos_minimos", verificarToken, obtenerDatosMinimos);
  *                 type: array
  *                 items:
  *                   type: string
+ *                   example: "hostname"
  *     responses:
  *       200:
  *         description: Lista reemplazada correctamente

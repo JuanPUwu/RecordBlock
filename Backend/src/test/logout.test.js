@@ -8,7 +8,7 @@ const mocks = {
   addToBlacklist: jest.fn(),
 };
 
-jest.unstable_mockModule("../utils/authHelpers.js", () => ({
+jest.unstable_mockModule("../utils/authHelper.js", () => ({
   clearRefreshTokenByValue: mocks.clearRefreshTokenByValue,
   clearRefreshTokenCookie: mocks.clearRefreshTokenCookie,
   findUserByEmail: jest.fn(),

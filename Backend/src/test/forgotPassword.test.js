@@ -14,7 +14,7 @@ const mocks = {
   bcryptHash: jest.fn(),
 };
 
-jest.unstable_mockModule("../utils/authHelpers.js", () => ({
+jest.unstable_mockModule("../utils/authHelper.js", () => ({
   findUserByEmail: mocks.findUserByEmail,
   getUserByRefreshToken: jest.fn(),
   saveRefreshToken: jest.fn(),
@@ -23,13 +23,13 @@ jest.unstable_mockModule("../utils/authHelpers.js", () => ({
   clearRefreshTokenCookie: jest.fn(),
 }));
 
-jest.unstable_mockModule("../utils/recovery.js", () => ({
+jest.unstable_mockModule("../utils/recoveryHelper.js", () => ({
   saveRecoveryToken: mocks.saveRecoveryToken,
   markRecoveryTokensUsed: jest.fn(),
   verifyRecoveryToken: jest.fn(),
 }));
 
-jest.unstable_mockModule("../utils/tokens.js", () => ({
+jest.unstable_mockModule("../utils/tokensHelper.js", () => ({
   createAccessToken: mocks.createAccessToken,
   createRefreshToken: jest.fn(),
   verifyRefreshToken: jest.fn(),
@@ -39,7 +39,7 @@ jest.unstable_mockModule("bcrypt", () => ({
   default: { hash: mocks.bcryptHash },
 }));
 
-jest.unstable_mockModule("../utils/email.js", () => ({
+jest.unstable_mockModule("../utils/emailHelper.js", () => ({
   enviarCorreoRecuperacion: mocks.enviarCorreoRecuperacion,
 }));
 

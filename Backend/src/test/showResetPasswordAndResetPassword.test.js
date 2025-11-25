@@ -10,7 +10,7 @@ const mocks = {
   verifyRecoveryToken: jest.fn(),
   markRecoveryTokensUsed: jest.fn(),
   run: jest.fn(),
-  isValidPassword: jest.fn(),
+  validarYHashearPassword: jest.fn(),
   jwtVerify: jest.fn(),
 };
 
@@ -20,7 +20,7 @@ jest.unstable_mockModule("jsonwebtoken", () => ({
   default: { verify: mocks.jwtVerify },
 }));
 
-jest.unstable_mockModule("../utils/recovery.js", () => ({
+jest.unstable_mockModule("../utils/recoveryHelper.js", () => ({
   saveRecoveryToken: jest.fn(),
   verifyRecoveryToken: mocks.verifyRecoveryToken,
   markRecoveryTokensUsed: mocks.markRecoveryTokensUsed,
@@ -28,11 +28,11 @@ jest.unstable_mockModule("../utils/recovery.js", () => ({
 
 jest.unstable_mockModule("../config/database.js", () => ({
   run: mocks.run,
-  all: jest.fn(), // mock para evitar error de import
+  all: jest.fn(),
 }));
 
-jest.unstable_mockModule("../utils/password.js", () => ({
-  isValidPassword: mocks.isValidPassword,
+jest.unstable_mockModule("../utils/hashHelper.js", () => ({
+  validarYHashearPassword: mocks.validarYHashearPassword,
 }));
 
 // Import del controller
@@ -100,11 +100,17 @@ describe("resetPassword", () => {
     req.params.token = MOCK_TOKEN;
     req.body.password = "123";
 
-    mocks.isValidPassword.mockReturnValue(false);
+    mocks.validarYHashearPassword.mockRejectedValue(
+      new Error("La contraseña no cumple con los requisitos mínimos")
+    );
 
     await resetPassword(req, res);
 
     expect(mocks.sendFile).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith(
+      expect.stringContaining("La contraseña no cumple")
+    );
   });
 
   it("muestra error si verifyRecoveryToken devuelve falso", async () => {
@@ -113,7 +119,7 @@ describe("resetPassword", () => {
     req.body.password = MOCK_PASSWORD;
 
     mocks.jwtVerify.mockReturnValue({ email: MOCK_EMAIL });
-    mocks.isValidPassword.mockReturnValue(true);
+    mocks.validarYHashearPassword.mockResolvedValue("hashedPassword");
     mocks.verifyRecoveryToken.mockResolvedValue(false);
 
     await resetPassword(req, res);
@@ -130,7 +136,7 @@ describe("resetPassword", () => {
     req.body.password = MOCK_PASSWORD;
 
     mocks.jwtVerify.mockReturnValue({ email: MOCK_EMAIL });
-    mocks.isValidPassword.mockReturnValue(true);
+    mocks.validarYHashearPassword.mockResolvedValue("hashedPassword");
     mocks.verifyRecoveryToken.mockResolvedValue(true);
     mocks.run.mockResolvedValue();
     mocks.markRecoveryTokensUsed.mockResolvedValue();
@@ -139,7 +145,7 @@ describe("resetPassword", () => {
 
     expect(mocks.run).toHaveBeenCalledWith(
       "UPDATE usuario SET password = ? WHERE email = ?",
-      expect.any(Array)
+      ["hashedPassword", MOCK_EMAIL]
     );
     expect(mocks.markRecoveryTokensUsed).toHaveBeenCalledWith(MOCK_EMAIL);
     expect(mocks.sendFile).toHaveBeenCalled();

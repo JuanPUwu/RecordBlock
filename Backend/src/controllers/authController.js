@@ -3,13 +3,13 @@ import { addToBlacklist } from "../config/blacklist.js";
 import bcrypt from "bcrypt";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { enviarCorreoRecuperacion } from "../utils/email.js";
+import { enviarCorreoRecuperacion } from "../utils/emailHelper.js";
 
 import {
   createAccessToken,
   createRefreshToken,
   verifyRefreshToken,
-} from "../utils/tokens.js";
+} from "../utils/tokensHelper.js";
 
 import {
   findUserByEmail,
@@ -18,14 +18,14 @@ import {
   clearRefreshTokenByValue,
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
-} from "../utils/authHelpers.js";
+} from "../utils/authHelper.js";
 
 import {
   saveRecoveryToken,
   verifyRecoveryToken,
   markRecoveryTokensUsed,
-} from "../utils/recovery.js";
-import { isValidPassword } from "../utils/password.js";
+} from "../utils/recoveryHelper.js";
+import { validarYHashearPassword } from "../utils/hashHelper.js";
 import { TOKEN_CONFIG } from "../config/constants.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,8 +109,9 @@ export const refreshToken = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error en refresh:", err?.message ?? err);
-    return res.status(403).json({ error: "Refresh token inválido o expirado" });
+    return res.status(403).json({
+      error: "Refresh token inválido o expirado",
+    });
   }
 };
 
@@ -178,7 +179,6 @@ export const forgotPassword = async (req, res) => {
     await saveRecoveryToken(usuario.id, tokenHash, expiresAt.toISOString());
 
     await enviarCorreoRecuperacion(email, token);
-    console.log(`[auth] Token de recuperación creado para ${email}`);
 
     return res.json({
       success: true,
@@ -229,10 +229,13 @@ export const resetPassword = async (req, res) => {
   const { password } = req.body;
 
   try {
-    // Validar formato contraseña
-    if (!isValidPassword(password)) {
+    // Validar y hashear contraseña en un solo paso
+    let hashed;
+    try {
+      hashed = await validarYHashearPassword(password);
+    } catch (err) {
       return res.status(400).send(`
-        <h2>La contraseña no cumple con los requisitos mínimos:</h2>
+        <h2>${err.message}</h2>
         <ul>
           <li>Mínimo 8 caracteres</li>
           <li>Al menos una letra mayúscula</li>
@@ -257,7 +260,6 @@ export const resetPassword = async (req, res) => {
     }
 
     // Actualizar contraseña
-    const hashed = await bcrypt.hash(password, 10);
     await run("UPDATE usuario SET password = ? WHERE email = ?", [
       hashed,
       email,
@@ -266,7 +268,6 @@ export const resetPassword = async (req, res) => {
     // Marcar tokens usados
     await markRecoveryTokensUsed(email);
 
-    console.log(`[auth] Contraseña restablecida para ${email}`);
     return res.sendFile(
       path.join(__dirname, "../views/resetPasswordExitosa.html")
     );

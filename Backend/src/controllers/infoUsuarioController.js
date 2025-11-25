@@ -1,4 +1,4 @@
-import { runAsync, getAsync, allAsync } from "../utils/dbHelpers.js";
+import { runAsync, getAsync, allAsync } from "../utils/dbHelper.js";
 import {
   normalizar,
   obtenerCamposMinimos,

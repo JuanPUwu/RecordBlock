@@ -29,8 +29,12 @@ const router = express.Router();
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: "admin@example.com"
  *               password:
  *                 type: string
+ *                 format: password
+ *                 example: "Contraseña123@"
  *     responses:
  *       200:
  *         description: Login exitoso. Devuelve accessToken y guarda refreshToken en cookie HttpOnly.

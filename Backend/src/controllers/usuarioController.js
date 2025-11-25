@@ -1,18 +1,20 @@
-import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 import validator from "validator";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { runAsync, getAsync, allAsync } from "../utils/dbHelpers.js";
+import { runAsync, getAsync, allAsync } from "../utils/dbHelper.js";
 import {
   enviarCorreoVerificacion,
   enviarCorreoCambioPasswordAdmin,
   enviarCorreoCambioPasswordPropio,
-} from "../utils/email.js";
+} from "../utils/emailHelper.js";
+import { validarYHashearPassword } from "../utils/hashHelper.js";
 
 const safeError = (res, err, msg = "Error interno del servidor") => {
-  console.error(err);
-  return res.status(500).json({ success: false, message: msg });
+  return res.status(500).json({
+    success: false,
+    message: err?.message || msg,
+  });
 };
 
 // Obtener usuarios
@@ -71,7 +73,8 @@ export const crearUsuario = async (req, res) => {
         .json({ success: false, message: "El cliente ya existe." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Validar y hashear contraseña
+    const hashedPassword = await validarYHashearPassword(password);
 
     const result = await runAsync(
       "INSERT INTO usuario (nombre, email, password, rol, verificado) VALUES (?, ?, ?, 'cliente', 0)",
@@ -154,20 +157,7 @@ export const actualizarUsuario = async (req, res) => {
     const idToken = req.usuario.id;
     const { password } = req.body;
 
-    if (!password) {
-      return res.status(400).json({
-        success: false,
-        message: "La contraseña es obligatoria.",
-      });
-    }
-
-    let idFinal;
-
-    if (id) {
-      idFinal = Number.parseInt(id, 10);
-    } else {
-      idFinal = idToken;
-    }
+    let idFinal = id ? Number.parseInt(id, 10) : idToken;
 
     if (req.usuario.rol !== "admin" && idFinal !== idToken) {
       return res.status(403).json({
@@ -183,13 +173,13 @@ export const actualizarUsuario = async (req, res) => {
     );
 
     if (!usuario) {
-      return res.status(404).json({
-        success: false,
-        message: "Usuario no encontrado.",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Usuario no encontrado." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Validar y hashear contraseña
+    const hashedPassword = await validarYHashearPassword(password);
 
     const result = await runAsync(
       "UPDATE usuario SET password = ? WHERE id = ?",
@@ -197,10 +187,9 @@ export const actualizarUsuario = async (req, res) => {
     );
 
     if (result.changes === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Usuario no encontrado.",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Usuario no encontrado." });
     }
 
     const fecha = new Date().toLocaleString("es-ES", {
@@ -232,7 +221,7 @@ export const actualizarUsuario = async (req, res) => {
         "Contraseña actualizada correctamente. Se envió notificación por correo.",
     });
   } catch (err) {
-    return safeError(res, err, "Error al actualizar contraseña");
+    return safeError(res, err);
   }
 };
 

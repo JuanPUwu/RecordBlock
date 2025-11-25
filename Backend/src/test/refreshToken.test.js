@@ -12,7 +12,7 @@ const mocks = {
   createRefreshToken: jest.fn(),
 };
 
-jest.unstable_mockModule("../utils/authHelpers.js", () => ({
+jest.unstable_mockModule("../utils/authHelper.js", () => ({
   getUserByRefreshToken: mocks.getUserByRefreshToken,
   saveRefreshToken: mocks.saveRefreshToken,
   setRefreshTokenCookie: mocks.setRefreshTokenCookie,
@@ -21,7 +21,7 @@ jest.unstable_mockModule("../utils/authHelpers.js", () => ({
   clearRefreshTokenCookie: jest.fn(),
 }));
 
-jest.unstable_mockModule("../utils/tokens.js", () => ({
+jest.unstable_mockModule("../utils/tokensHelper.js", () => ({
   verifyRefreshToken: mocks.verifyRefreshToken,
   createAccessToken: mocks.createAccessToken,
   createRefreshToken: mocks.createRefreshToken,

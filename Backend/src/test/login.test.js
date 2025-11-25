@@ -36,7 +36,7 @@ jest.unstable_mockModule("bcrypt", () => ({
   default: { compare: mocks.bcryptCompare, hash: jest.fn() },
 }));
 
-jest.unstable_mockModule("../utils/authHelpers.js", () => ({
+jest.unstable_mockModule("../utils/authHelper.js", () => ({
   findUserByEmail: mocks.findUserByEmail,
   saveRefreshToken: mocks.saveRefreshToken,
   setRefreshTokenCookie: mocks.setRefreshTokenCookie,
@@ -45,7 +45,7 @@ jest.unstable_mockModule("../utils/authHelpers.js", () => ({
   clearRefreshTokenCookie: jest.fn(),
 }));
 
-jest.unstable_mockModule("../utils/tokens.js", () => ({
+jest.unstable_mockModule("../utils/tokensHelper.js", () => ({
   createAccessToken: mocks.createAccessToken,
   createRefreshToken: mocks.createRefreshToken,
   verifyRefreshToken: mocks.verifyRefreshToken,

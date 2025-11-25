@@ -17,17 +17,10 @@ const router = express.Router();
 
 /**
  * @swagger
- * tags:
- *   name: Usuario
- *   description: Gestión de usuarios
- */
-
-/**
- * @swagger
  * /api/usuario:
  *   get:
- *     summary: Obtener todos los usuarios con rol cliente (admin)
- *     description: Devuelve la lista de usuarios cuyo rol es "cliente". Solo accesible para administradores.
+ *     summary: Obtener todos los clientes
+ *     description: Obtiene todos los clientes. Solo accesible para `Administradores`.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
@@ -62,8 +55,11 @@ router.get("/", verificarToken, verificarAdmin, obtenerUsuarios);
  * @swagger
  * /api/usuario:
  *   post:
- *     summary: Crear un nuevo usuario (rol cliente por defecto)
- *     description: Crea un usuario con rol "cliente". Solo accesible para administradores. Envía un correo de verificación al usuario.
+ *     summary: Crear un nuevo cliente
+ *     description: |
+ *      Solo accesible para `Administradores`.
+ *      - Crea un cliente.
+ *      - Envía un correo de verificación al cliente creado.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
@@ -100,8 +96,8 @@ router.post("/", verificarToken, verificarAdmin, crearUsuario);
  * @swagger
  * /api/usuario:
  *   put:
- *     summary: Actualizar tu propia contraseña (usuario autenticado)
- *     description: Permite que un usuario normal actualice su propia contraseña sin enviar ID.
+ *     summary: Actualizar contraseña propia
+ *     description: Permite que un usuario `Cliente` actualice su propia contraseña
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
@@ -133,17 +129,18 @@ router.put("/", verificarToken, actualizarUsuario);
  * /api/usuario/{id}:
  *   put:
  *     summary: Actualizar la contraseña de un usuario por ID
- *     description: Un administrador puede actualizar la contraseña de cualquier usuario. Un usuario solo puede actualizar su propia contraseña.
+ *     description: |
+ *       - Un `Administrador` puede actualizar la contraseña de cualquier cliente.
+ *       - Un `Administrador` solo puede actualizar su propia contraseña.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: usuario_id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del usuario al que se desea cambiar la contraseña
  *     requestBody:
  *       required: true
  *       content:
@@ -167,14 +164,14 @@ router.put("/", verificarToken, actualizarUsuario);
  *       500:
  *         description: Error al actualizar usuario
  */
-router.put("/:id", verificarToken, actualizarUsuario);
+router.put("/:usuario_id", verificarToken, actualizarUsuario);
 
 /**
  * @swagger
  * /api/usuario/{id}:
  *   delete:
- *     summary: Eliminar un usuario por ID (solo admin)
- *     description: Elimina un usuario específico. Solo accesible para administradores.
+ *     summary: Eliminar un usuario por ID
+ *     description: Elimina un usuario específico. Solo accesible para `Administradores`.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
