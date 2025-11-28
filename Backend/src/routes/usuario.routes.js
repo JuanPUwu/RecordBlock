@@ -175,7 +175,6 @@ router.delete("/:id", verificarToken, verificarAdmin, eliminarUsuario);
  *         required: true
  *         schema:
  *           type: string
- *         description: Token de verificación enviado al correo del usuario
  *     responses:
  *       200:
  *         description: Correo verificado correctamente (HTML)

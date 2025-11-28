@@ -18,7 +18,7 @@ export const saveRecoveryToken = async (userId, tokenHash, expiresAtIso) =>
 export const verifyRecoveryToken = async (email, token) => {
   const tokens = await all(
     `SELECT * FROM tokens_recuperacion
-     WHERE used = 0 AND user_id = (SELECT id FROM usuario WHERE email = ?)`,
+     WHERE used = 0 AND user_id = (SELECT id FROM usuario WHERE LOWER(email) = LOWER(?))`,
     [email]
   );
 
@@ -38,6 +38,6 @@ export const markRecoveryTokensUsed = async (email) =>
   run(
     `UPDATE tokens_recuperacion
      SET used = 1
-     WHERE user_id = (SELECT id FROM usuario WHERE email = ?)`,
+     WHERE user_id = (SELECT id FROM usuario WHERE LOWER(email) = LOWER(?))`,
     [email]
   );

@@ -121,7 +121,7 @@ describe("loginUsuario (optimizado)", () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
-      message: "Debes verificar tu correo antes de iniciar sesión.",
+      message: "Debes verificar tu correo antes de iniciar sesión",
     });
   });
 

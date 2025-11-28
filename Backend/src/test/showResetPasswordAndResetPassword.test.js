@@ -144,7 +144,7 @@ describe("resetPassword", () => {
     await resetPassword(req, res);
 
     expect(mocks.run).toHaveBeenCalledWith(
-      "UPDATE usuario SET password = ? WHERE email = ?",
+      "UPDATE usuario SET password = ? WHERE LOWER(email) = LOWER(?)",
       ["hashedPassword", MOCK_EMAIL]
     );
     expect(mocks.markRecoveryTokensUsed).toHaveBeenCalledWith(MOCK_EMAIL);

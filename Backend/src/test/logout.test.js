@@ -43,7 +43,7 @@ describe("logout", () => {
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
-      error: "No hay sesión activa. No se puede cerrar sesión.",
+      error: "No hay sesión activa. No se puede cerrar sesión",
     });
   });
 

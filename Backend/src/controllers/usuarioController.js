@@ -38,25 +38,42 @@ export const crearUsuario = async (req, res) => {
     if (!nombre || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Nombre, email y password son requeridos.",
+        message: "Nombre, email y password son requeridos",
       });
     }
 
     if (!validator.isEmail(email)) {
       return res
         .status(400)
-        .json({ success: false, message: "Email inválido." });
+        .json({ success: false, message: "Email inválido" });
     }
 
-    const existe = await getAsync(
-      "SELECT * FROM usuario WHERE nombre = ? OR email = ?",
-      [nombre, email]
+    // Verificar si el nombre ya existe
+    const existeNombre = await getAsync(
+      "SELECT * FROM usuario WHERE LOWER(nombre) = LOWER(?)",
+      [nombre]
     );
 
-    if (existe) {
-      return res
-        .status(400)
-        .json({ success: false, message: "El cliente ya existe." });
+    // Verificar si el email ya existe
+    const existeEmail = await getAsync(
+      "SELECT * FROM usuario WHERE LOWER(email) = LOWER(?)",
+      [email]
+    );
+
+    // Construir mensaje de error específico
+    if (existeNombre || existeEmail) {
+      const errores = [];
+      if (existeNombre) {
+        errores.push("Este nombre ya está ligado a una cuenta existente");
+      }
+      if (existeEmail) {
+        errores.push("Este correo ya está ligado a una cuenta existente");
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: errores.join(". "),
+      });
     }
 
     // Validar y hashear contraseña
@@ -83,7 +100,7 @@ export const crearUsuario = async (req, res) => {
     return res.status(201).json({
       success: true,
       message:
-        "Usuario creado correctamente. Se envió un correo de verificación.",
+        "Usuario creado correctamente. Se envió un correo de verificación",
     });
   } catch (err) {
     return safeError(res, err, "Error al crear cliente");
@@ -111,7 +128,7 @@ export const actualizarUsuario = async (req, res) => {
     if (!usuario) {
       return res.status(404).json({
         success: false,
-        message: "Usuario no encontrado.",
+        message: "Usuario no encontrado",
       });
     }
 
@@ -127,7 +144,7 @@ export const actualizarUsuario = async (req, res) => {
     if (result.changes === 0) {
       return res.status(500).json({
         success: false,
-        message: "La contraseña no pudo ser actualizada.",
+        message: "La contraseña no pudo ser actualizada",
       });
     }
 
@@ -177,12 +194,12 @@ export const eliminarUsuario = async (req, res) => {
     if (result.changes === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "Usuario no encontrado." });
+        .json({ success: false, message: "Usuario no encontrado" });
     }
 
     return res.json({
       success: true,
-      message: "Usuario eliminado correctamente.",
+      message: "Usuario eliminado correctamente",
     });
   } catch (err) {
     return safeError(res, err);

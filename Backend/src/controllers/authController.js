@@ -51,7 +51,7 @@ export const loginUsuario = async (req, res) => {
     if (!usuario.verificado) {
       return res.status(403).json({
         success: false,
-        message: "Debes verificar tu correo antes de iniciar sesión.",
+        message: "Debes verificar tu correo antes de iniciar sesión",
       });
     }
 
@@ -127,7 +127,7 @@ export const logout = async (req, res) => {
 
   if (!refreshToken) {
     return res.status(401).json({
-      error: "No hay sesión activa. No se puede cerrar sesión.",
+      error: "No hay sesión activa. No se puede cerrar sesión",
     });
   }
 
@@ -265,7 +265,7 @@ export const resetPassword = async (req, res) => {
     }
 
     // Actualizar contraseña
-    await run("UPDATE usuario SET password = ? WHERE email = ?", [
+    await run("UPDATE usuario SET password = ? WHERE LOWER(email) = LOWER(?)", [
       hashed,
       email,
     ]);

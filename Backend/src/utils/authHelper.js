@@ -6,7 +6,7 @@ import { COOKIE_CONFIG, TOKEN_CONFIG } from "../config/constants.js";
  * Retorna null si no existe.
  */
 export const findUserByEmail = async (email) => {
-  const rows = await all("SELECT * FROM usuario WHERE email = ?", [email]);
+  const rows = await all("SELECT * FROM usuario WHERE LOWER(email) = LOWER(?)", [email]);
   return rows[0] || null;
 };
 

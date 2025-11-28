@@ -17,11 +17,14 @@ export const transporter = nodemailer.createTransport({
   },
 });
 
+const backendUrl =
+  process.env.NODE_ENV === "production"
+    ? process.env.BACKEND_URL
+    : "http://localhost:3000";
+
 // Correo de verificación
 export const enviarCorreoVerificacion = async (email, token) => {
-  const url = `${
-    process.env.BACKEND_URL || "http://localhost:3000"
-  }/api/usuario/verificar/${token}`;
+  const url = `${backendUrl}/api/usuario/verificar/${token}`;
 
   const opciones = {
     from: `"Verificador de RecordBlock" <${process.env.EMAIL_USER}>`,
@@ -67,9 +70,9 @@ export const enviarCorreoVerificacion = async (email, token) => {
 
 // Correo de recuperación
 export const enviarCorreoRecuperacion = async (email, token) => {
-  const url = `${
-    process.env.BACKEND_URL || "http://localhost:3000"
-  }/api/auth/reset-password/${encodeURIComponent(token)}`;
+  const url = `${backendUrl}/api/auth/reset-password/${encodeURIComponent(
+    token
+  )}`;
 
   const opciones = {
     from: `"Soporte RecordBlock" <${process.env.EMAIL_USER}>`,
@@ -186,7 +189,7 @@ export const enviarCorreoCambioPasswordAdmin = async (email, nombre) => {
     html: `
       <div style="font-family: Arial, sans-serif; color: #333;">
         <p>Hola <strong>${nombre}</strong>,</p>
-        <p>Queremos informarte que un <strong>administrador</strong> actualizó la contraseña de tu cuenta en <strong>RecordBlock</strong> el <strong>${fecha}</strong>.</p>
+        <p>Queremos informarte que un <strong>Administrador</strong> actualizó la contraseña de tu cuenta en <strong>RecordBlock</strong> el <strong>${fecha}</strong>.</p>
         <p>Si fuiste notificado previamente sobre este cambio, puedes ignorar este mensaje.</p>
         <p style="color:#b30000;"><strong>Si no autorizaste esta acción, por favor comunícate con el área de soporte de inmediato.</strong></p>
         <br>

@@ -31,13 +31,13 @@ export const obtenerUsuarioDestino = async (req, res) => {
     if (!usuario)
       return res.status(404).json({
         success: false,
-        message: "El usuario destino no existe.",
+        message: "El usuario destino no existe",
       });
 
     if (usuario.isAdmin)
       return res.status(400).json({
         success: false,
-        message: "El usuario administrador no puede recibir información.",
+        message: "El usuario administrador no puede recibir información",
       });
 
     return { usuario_id };
@@ -47,7 +47,7 @@ export const obtenerUsuarioDestino = async (req, res) => {
     return { usuario_id: req.usuario.id };
   }
 
-  res.status(403).json({ success: false, message: "Rol no autorizado." });
+  res.status(403).json({ success: false, message: "Rol no autorizado" });
   return null;
 };
 
