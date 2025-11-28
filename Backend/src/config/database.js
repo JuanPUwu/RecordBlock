@@ -23,8 +23,8 @@ db.serialize(async () => {
       nombre TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
-      rol TEXT NOT NULL,
-      verificado BOOLEAN DEFAULT 0,
+      isAdmin BOOLEAN NOT NULL DEFAULT 0,
+      verificado BOOLEAN NOT NULL DEFAULT 0,
       refresh_token TEXT
     )
   `);
@@ -87,27 +87,33 @@ db.serialize(async () => {
   const hashedPassword = await bcrypt.hash("Contraseña123@", saltRounds);
 
   db.run(
-    `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
+    `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    ["Administrador", "admin@example.com", hashedPassword, "admin", 1]
+    ["Administrador", "admin@example.com", hashedPassword, 1, 1]
   );
 
   db.run(
-    `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
+    `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    ["Microsoft", "microsoft@example.com", hashedPassword, "cliente", 1]
+    ["Microsoft", "microsoft@example.com", hashedPassword, 0, 1]
   );
 
   db.run(
-    `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
+    `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    ["Apple", "apple@example.com", hashedPassword, "cliente", 1]
+    ["Apple", "apple@example.com", hashedPassword, 0, 1]
   );
 
   db.run(
-    `INSERT OR IGNORE INTO usuario (nombre, email, password, rol, verificado)
+    `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
-    ["Google", "google@example.com", hashedPassword, "cliente", 1]
+    ["Google", "google@example.com", hashedPassword, 0, 1]
+  );
+
+  db.run(
+    `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
+     VALUES (?, ?, ?, ?, ?)`,
+    ["Pablo", "pablys8@gmail.com", hashedPassword, 0, 1]
   );
 });
 

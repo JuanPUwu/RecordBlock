@@ -9,10 +9,10 @@ import {
 // GET Obtener información
 export const obtenerInformacion = async (req, res) => {
   try {
-    const rol = req.usuario.rol;
+    const isAdmin = req.usuario.isAdmin;
 
-    if (rol === "admin") return obtenerInformacionAdmin(req, res);
-    if (rol === "cliente") return obtenerInformacionCliente(req, res);
+    if (isAdmin) return obtenerInformacionAdmin(req, res);
+    if (!isAdmin) return obtenerInformacionCliente(req, res);
 
     return res
       .status(403)
@@ -30,7 +30,7 @@ async function obtenerInformacionAdmin(req, res) {
     SELECT iu.id, iu.usuario_id, iu.datos, u.nombre AS usuario_nombre
     FROM informacion_usuario iu
     JOIN usuario u ON iu.usuario_id = u.id
-    WHERE u.rol = 'cliente'
+    WHERE u.isAdmin = 0
   `;
 
   const params = [];
@@ -143,10 +143,9 @@ export const actualizarInformacion = async (req, res) => {
         .json({ success: false, message: "'datos' inválido" });
 
     // Determinar usuario destino
-    const destino =
-      req.usuario.rol === "admin"
-        ? await obtenerUsuarioDestino(req, res)
-        : { usuario_id: req.usuario.id };
+    const destino = req.usuario.isAdmin
+      ? await obtenerUsuarioDestino(req, res)
+      : { usuario_id: req.usuario.id };
 
     if (!destino) return;
 
@@ -192,9 +191,9 @@ export const eliminarInformacion = async (req, res) => {
     const { info_id, usuario_id } = req.body;
 
     let destino = null;
-    if (req.usuario.rol === "admin") {
+    if (req.usuario.isAdmin) {
       destino = usuario_id;
-    } else if (req.usuario.rol === "cliente") {
+    } else if (!req.usuario.isAdmin) {
       destino = req.usuario.id;
     }
 
@@ -225,7 +224,7 @@ export const eliminarInformacion = async (req, res) => {
 // GET Datos mínimos
 export const obtenerDatosMinimos = async (req, res) => {
   try {
-    if (req.usuario.rol !== "admin")
+    if (!req.usuario.isAdmin)
       return res.status(403).json({
         success: false,
         message: "Solo administrador",
@@ -252,7 +251,7 @@ export const obtenerDatosMinimos = async (req, res) => {
 // PUT Reemplazar datos mínimos
 export const reemplazarDatosMinimos = async (req, res) => {
   try {
-    if (req.usuario.rol !== "admin")
+    if (!req.usuario.isAdmin)
       return res.status(403).json({
         success: false,
         message: "Solo administrador",

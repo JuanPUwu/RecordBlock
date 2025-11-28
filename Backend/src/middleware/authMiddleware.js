@@ -35,8 +35,11 @@ export const verificarToken = async (req, res, next) => {
 };
 
 export const verificarAdmin = (req, res, next) => {
-  if (req.usuario?.rol !== "admin") {
-    return res.status(403).json({ error: "Acceso denegado: solo admin" });
+  if (!req.usuario?.isAdmin) {
+    return res.status(403).json({
+      error:
+        "Acceso denegado, solo los administradores pueden realizar esta acción",
+    });
   }
   next();
 };

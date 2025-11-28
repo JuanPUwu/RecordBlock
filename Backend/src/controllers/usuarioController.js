@@ -20,15 +20,8 @@ const safeError = (res, err, msg = "Error interno del servidor") => {
 // Obtener usuarios
 export const obtenerUsuarios = async (req, res) => {
   try {
-    if (req.usuario.rol !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Solo los administradores pueden ver la lista de clientes.",
-      });
-    }
-
     const rows = await allAsync(
-      "SELECT id, nombre, email, rol, verificado FROM usuario WHERE rol = 'cliente'"
+      "SELECT id, nombre, email, isAdmin, verificado FROM usuario WHERE isAdmin = 0"
     );
 
     return res.json({ success: true, data: rows });
@@ -40,13 +33,6 @@ export const obtenerUsuarios = async (req, res) => {
 // Crear usuario
 export const crearUsuario = async (req, res) => {
   try {
-    if (req.usuario.rol !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Solo los administradores pueden crear clientes.",
-      });
-    }
-
     const { nombre, email, password } = req.body;
 
     if (!nombre || !email || !password) {
@@ -77,7 +63,7 @@ export const crearUsuario = async (req, res) => {
     const hashedPassword = await validarYHashearPassword(password);
 
     const result = await runAsync(
-      "INSERT INTO usuario (nombre, email, password, rol, verificado) VALUES (?, ?, ?, 'cliente', 0)",
+      "INSERT INTO usuario (nombre, email, password, isAdmin, verificado) VALUES (?, ?, ?, 0, 0)",
       [nombre, email, hashedPassword]
     );
 
@@ -104,7 +90,106 @@ export const crearUsuario = async (req, res) => {
   }
 };
 
-// Verificar correo
+// Actualizar contraseña
+export const actualizarUsuario = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const solicitante = req.usuario;
+    const { password } = req.body;
+
+    // 1. Selección del ID objetivo según rol
+    const idObjetivo = solicitante.isAdmin
+      ? Number.parseInt(id, 10)
+      : solicitante.id;
+
+    const usuario = await getAsync(
+      "SELECT email, nombre, isAdmin FROM usuario WHERE id = ?",
+      [idObjetivo]
+    );
+
+    // 2. Verificar existencia usuario
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado.",
+      });
+    }
+
+    // 3. Validar + hashear contraseña
+    const hashedPassword = await validarYHashearPassword(password);
+
+    // 4. Actualizar contraseña en DB
+    const result = await runAsync(
+      "UPDATE usuario SET password = ? WHERE id = ?",
+      [hashedPassword, idObjetivo]
+    );
+
+    if (result.changes === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "La contraseña no pudo ser actualizada.",
+      });
+    }
+
+    // 5. Generar fecha legible
+    const fecha = new Date().toLocaleString("es-ES", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // 6. Enviar correo correspondiente
+    if (solicitante.isAdmin && idObjetivo !== solicitante.id) {
+      await enviarCorreoCambioPasswordAdmin(
+        usuario.email,
+        usuario.nombre,
+        fecha
+      );
+    } else {
+      await enviarCorreoCambioPasswordPropio(
+        usuario.email,
+        usuario.nombre,
+        fecha
+      );
+    }
+
+    // 7. Respuesta final incluyendo trazabilidad del cambio
+    return res.json({
+      success: true,
+      message: "Contraseña actualizada correctamente",
+      usuario: usuario.email,
+    });
+  } catch (err) {
+    return safeError(res, err);
+  }
+};
+
+// Eliminar usuario
+export const eliminarUsuario = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await runAsync("DELETE FROM usuario WHERE id = ?", [id]);
+
+    if (result.changes === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Usuario no encontrado." });
+    }
+
+    return res.json({
+      success: true,
+      message: "Usuario eliminado correctamente.",
+    });
+  } catch (err) {
+    return safeError(res, err);
+  }
+};
+
+// Verificar correo electrónico
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -147,109 +232,5 @@ export const verificarCorreo = async (req, res) => {
     return res.sendFile(
       path.join(__dirname, "../views/verificacionFallida.html")
     );
-  }
-};
-
-// Actualizar contraseña
-export const actualizarUsuario = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const idToken = req.usuario.id;
-    const { password } = req.body;
-
-    let idFinal = id ? Number.parseInt(id, 10) : idToken;
-
-    if (req.usuario.rol !== "admin" && idFinal !== idToken) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "No tienes permiso para actualizar la contraseña de este usuario.",
-      });
-    }
-
-    const usuario = await getAsync(
-      "SELECT email, nombre FROM usuario WHERE id = ?",
-      [idFinal]
-    );
-
-    if (!usuario) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Usuario no encontrado." });
-    }
-
-    // Validar y hashear contraseña
-    const hashedPassword = await validarYHashearPassword(password);
-
-    const result = await runAsync(
-      "UPDATE usuario SET password = ? WHERE id = ?",
-      [hashedPassword, idFinal]
-    );
-
-    if (result.changes === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Usuario no encontrado." });
-    }
-
-    const fecha = new Date().toLocaleString("es-ES", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    if (req.usuario.rol === "admin" && idFinal !== idToken) {
-      await enviarCorreoCambioPasswordAdmin(
-        usuario.email,
-        usuario.nombre,
-        fecha
-      );
-    } else {
-      await enviarCorreoCambioPasswordPropio(
-        usuario.email,
-        usuario.nombre,
-        fecha
-      );
-    }
-
-    return res.json({
-      success: true,
-      message:
-        "Contraseña actualizada correctamente. Se envió notificación por correo.",
-    });
-  } catch (err) {
-    return safeError(res, err);
-  }
-};
-
-// Eliminar usuario
-export const eliminarUsuario = async (req, res) => {
-  try {
-    if (req.usuario.rol !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Solo los administradores pueden eliminar usuarios.",
-      });
-    }
-
-    const { id } = req.params;
-
-    const result = await runAsync("DELETE FROM usuario WHERE id = ?", [id]);
-
-    if (result.changes === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Usuario no encontrado." });
-    }
-
-    return res.json({
-      success: true,
-      message: "Usuario eliminado correctamente.",
-    });
-  } catch (err) {
-    return safeError(res, err);
   }
 };

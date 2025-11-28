@@ -60,7 +60,7 @@ export const loginUsuario = async (req, res) => {
       return res.status(401).json({ error: "Usuario o contraseña no válido" });
     }
 
-    const payload = { id: usuario.id, rol: usuario.rol };
+    const payload = { id: usuario.id, isAdmin: usuario.isAdmin };
     const accessToken = createAccessToken(payload);
     const refreshToken = createRefreshToken(payload);
 
@@ -70,7 +70,11 @@ export const loginUsuario = async (req, res) => {
     return res.json({
       mensaje: "Login exitoso",
       accessToken,
-      usuario: { id: usuario.id, rol: usuario.rol, nombre: usuario.nombre },
+      usuario: {
+        id: usuario.id,
+        isAdmin: usuario.isAdmin,
+        nombre: usuario.nombre,
+      },
     });
   } catch (err) {
     return safeServerError(res, err, "Error en el servidor");
@@ -92,7 +96,7 @@ export const refreshToken = async (req, res) => {
 
     const decoded = verifyRefreshToken(refreshToken);
 
-    const payload = { id: decoded.id, rol: decoded.rol };
+    const payload = { id: decoded.id, isAdmin: decoded.isAdmin };
     const newAccessToken = createAccessToken(payload);
     const newRefreshToken = createRefreshToken(payload);
 
@@ -103,7 +107,7 @@ export const refreshToken = async (req, res) => {
       accessToken: newAccessToken,
       usuario: {
         id: usuario.id,
-        rol: usuario.rol,
+        isAdmin: usuario.isAdmin,
         email: usuario.email,
         nombre: usuario.nombre,
       },
@@ -111,6 +115,7 @@ export const refreshToken = async (req, res) => {
   } catch (err) {
     return res.status(403).json({
       error: "Refresh token inválido o expirado",
+      message: err,
     });
   }
 };

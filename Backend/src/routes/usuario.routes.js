@@ -40,8 +40,8 @@ const router = express.Router();
  *                     type: string
  *                   email:
  *                     type: string
- *                   rol:
- *                     type: string
+ *                   isAdmin:
+ *                     type: boolean
  *                   verificado:
  *                     type: boolean
  *       403:
@@ -94,51 +94,19 @@ router.post("/", verificarToken, verificarAdmin, crearUsuario);
 
 /**
  * @swagger
- * /api/usuario:
- *   put:
- *     summary: Actualizar contraseña propia
- *     description: Permite que un usuario `Cliente` actualice su propia contraseña
- *     tags: [Usuario]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - password
- *             properties:
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Contraseña actualizada correctamente
- *       400:
- *         description: Contraseña inválida o faltante
- *       404:
- *         description: Usuario no encontrado
- *       500:
- *         description: Error al actualizar contraseña
- */
-router.put("/", verificarToken, actualizarUsuario);
-
-/**
- * @swagger
  * /api/usuario/{id}:
  *   put:
- *     summary: Actualizar la contraseña de un usuario por ID
+ *     summary: Actualizar la contraseña de un usuario
  *     description: |
- *       - Un `Administrador` puede actualizar la contraseña de cualquier cliente.
- *       - Un `Administrador` solo puede actualizar su propia contraseña.
+ *       Comportamiento según el rol:
+ *       - **Administrador**: pueden actualizar la contraseña de cualquier usuario colocando el `id` del usuario en el parametro.
+ *       - **Cliente**: solo pueden actualizar su propia contraseña. ignora el parametro `id`.
  *     tags: [Usuario]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: usuario_id
- *         required: true
+ *         name: id
  *         schema:
  *           type: integer
  *     requestBody:
@@ -164,7 +132,7 @@ router.put("/", verificarToken, actualizarUsuario);
  *       500:
  *         description: Error al actualizar usuario
  */
-router.put("/:usuario_id", verificarToken, actualizarUsuario);
+router.put("/:id", verificarToken, actualizarUsuario);
 
 /**
  * @swagger

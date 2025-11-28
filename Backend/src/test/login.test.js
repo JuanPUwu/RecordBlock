@@ -27,7 +27,7 @@ const usuarioBase = {
   email: "test@example.com",
   password: MOCK_PASSWORD, // Symbol, no literal string
   verificado: 1,
-  rol: "usuario",
+  isAdmin: 0,
   nombre: "Test User",
 };
 
@@ -155,7 +155,7 @@ describe("loginUsuario (optimizado)", () => {
       accessToken: MOCK_ACCESS_TOKEN,
       usuario: {
         id: usuarioBase.id,
-        rol: usuarioBase.rol,
+        isAdmin: usuarioBase.isAdmin,
         nombre: usuarioBase.nombre,
       },
     });

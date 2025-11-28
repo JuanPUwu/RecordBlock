@@ -71,13 +71,13 @@ describe("refreshToken", () => {
 
     const usuario = {
       id: 1,
-      rol: "usuario",
+      isAdmin: 0,
       email: "t@t.com",
       nombre: "Test",
     };
 
     mocks.getUserByRefreshToken.mockResolvedValue(usuario);
-    mocks.verifyRefreshToken.mockReturnValue({ id: 1, rol: "usuario" });
+    mocks.verifyRefreshToken.mockReturnValue({ id: 1, isAdmin: 0 });
     mocks.createAccessToken.mockReturnValue(MOCK_ACCESS_TOKEN);
     mocks.createRefreshToken.mockReturnValue(MOCK_REFRESH_TOKEN);
 
@@ -90,7 +90,7 @@ describe("refreshToken", () => {
       accessToken: MOCK_ACCESS_TOKEN,
       usuario: {
         id: usuario.id,
-        rol: usuario.rol,
+        isAdmin: usuario.isAdmin,
         email: usuario.email,
         nombre: usuario.nombre,
       },

@@ -1,3 +1,4 @@
+import { getAsync } from "./dbHelper.js";
 // Normalizar texto
 export const normalizar = (texto) =>
   texto
@@ -19,11 +20,11 @@ export const obtenerCamposMinimos = async () => {
 
 // Validar rol admin/cliente
 export const obtenerUsuarioDestino = async (req, res) => {
-  const rol = req.usuario.rol;
+  const isAdmin = req.usuario.isAdmin;
 
-  if (rol === "admin") {
+  if (isAdmin) {
     const { usuario_id } = req.body;
-    const usuario = await getAsync("SELECT rol FROM usuario WHERE id = ?", [
+    const usuario = await getAsync("SELECT isAdmin FROM usuario WHERE id = ?", [
       usuario_id,
     ]);
 
@@ -33,7 +34,7 @@ export const obtenerUsuarioDestino = async (req, res) => {
         message: "El usuario destino no existe.",
       });
 
-    if (usuario.rol === "admin")
+    if (usuario.isAdmin)
       return res.status(400).json({
         success: false,
         message: "El usuario administrador no puede recibir información.",
@@ -42,7 +43,7 @@ export const obtenerUsuarioDestino = async (req, res) => {
     return { usuario_id };
   }
 
-  if (rol === "cliente") {
+  if (!isAdmin) {
     return { usuario_id: req.usuario.id };
   }
 
