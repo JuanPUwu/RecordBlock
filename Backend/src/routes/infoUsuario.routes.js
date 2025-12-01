@@ -1,11 +1,43 @@
 import express from "express";
+import multer from "multer";
+import { tmpdir } from "node:os";
 import {
   obtenerInformacion,
   crearInformacion,
   actualizarInformacion,
   eliminarInformacion,
+  cargarInformacionCSV,
 } from "../controllers/infoUsuarioController.js";
 import { verificarToken } from "../middleware/authMiddleware.js";
+
+// Configurar multer para almacenar archivos temporalmente
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      // Usar el directorio temporal del sistema
+      cb(null, tmpdir());
+    },
+    filename: (req, file, cb) => {
+      // Generar nombre único para el archivo
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, `csv-${uniqueSuffix}.csv`);
+    },
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB máximo
+  },
+  fileFilter: (req, file, cb) => {
+    // Aceptar solo archivos CSV
+    if (
+      file.mimetype === "text/csv" ||
+      file.originalname.toLowerCase().endsWith(".csv")
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("Solo se permiten archivos CSV"), false);
+    }
+  },
+});
 
 const router = express.Router();
 
@@ -182,5 +214,128 @@ router.put("/", verificarToken, actualizarInformacion);
  *         description: Error interno
  */
 router.delete("/", verificarToken, eliminarInformacion);
+
+/**
+ * @swagger
+ * /api/informacion_usuario/upload-csv:
+ *   post:
+ *     summary: Carga masiva de información desde archivo CSV
+ *     description: |
+ *       Permite cargar múltiples registros de información desde un archivo CSV.
+ *
+ *       **IMPORTANTE**: El archivo CSV debe estar delimitado por punto y coma (;), no por comas.
+ *
+ *       El CSV debe tener la misma estructura que informacion_usuario, con columnas que correspondan
+ *       a los datos_minimos vigentes (ej: direccion, ciudad, pais, telefono, nacimiento, bio).
+ *
+ *       **Formato requerido**:
+ *       - Delimitador: punto y coma (;)
+ *       - Primera fila: encabezados (nombres de columnas)
+ *       - Filas siguientes: datos
+ *       - Los campos no mínimos vacíos no se guardarán
+ *       - Los campos mínimos pueden estar vacíos pero deben existir
+ *
+ *       Comportamiento según el rol:
+ *       - **Admin**: Debe proporcionar `usuario_id` en el body para indicar a qué cliente se atribuirá la información.
+ *       - **Cliente**: La información se atribuirá automáticamente al cliente que sube el archivo.
+ *
+ *       El archivo CSV será validado contra los datos_minimos vigentes. Solo se insertarán los registros
+ *       que cumplan con todos los campos obligatorios.
+ *     tags: [InformacionUsuario]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - archivo
+ *             properties:
+ *               archivo:
+ *                 type: string
+ *                 format: binary
+ *                 description: Archivo CSV delimitado por punto y coma (;) con los datos a cargar
+ *               usuario_id:
+ *                 type: integer
+ *                 description: ID del usuario cliente (solo para administradores)
+ *                 example: 2
+ *     responses:
+ *       201:
+ *         description: Carga masiva completada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Carga masiva completada. 10 registro(s) insertado(s)"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     registros_insertados:
+ *                       type: integer
+ *                       example: 10
+ *                     registros_con_error:
+ *                       type: integer
+ *                       example: 2
+ *                     usuario_id:
+ *                       type: integer
+ *                       example: 2
+ *                     errores:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           fila:
+ *                             type: integer
+ *                           error:
+ *                             type: string
+ *                           datos:
+ *                             type: object
+ *       400:
+ *         description: |
+ *           Archivo inválido, faltan campos obligatorios o errores en el CSV.
+ *           Asegúrate de que el CSV esté delimitado por punto y coma (;).
+ *       403:
+ *         description: No autorizado
+ *       404:
+ *         description: Usuario destino no existe (solo admin)
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.post(
+  "/upload-csv",
+  verificarToken,
+  upload.single("archivo"),
+  (err, req, res, next) => {
+    // Manejar errores de multer
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "El archivo es demasiado grande. Tamaño máximo: 10MB",
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: `Error al cargar archivo: ${err.message}`,
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Error al procesar el archivo",
+      });
+    }
+    next();
+  },
+  cargarInformacionCSV
+);
 
 export default router;

@@ -2,9 +2,16 @@ import { runAsync, getAsync, allAsync } from "../utils/dbHelper.js";
 import {
   obtenerCamposMinimos,
   obtenerUsuarioDestino,
-  validarRegistro,
-  normalizar,
 } from "../utils/datosHelper.js";
+import {
+  limpiarArchivo,
+  validarArchivoCSV,
+  determinarUsuarioDestinoCSV,
+  procesarFilaCSV,
+  procesarCSVCompletado,
+} from "../utils/csvHelper.js";
+import csv from "csv-parser";
+import { createReadStream } from "node:fs";
 
 // GET Obtener información
 export const obtenerInformacion = async (req, res) => {
@@ -289,5 +296,75 @@ export const eliminarInformacion = async (req, res) => {
     return res.json({ success: true, message: "Información eliminada" });
   } catch (err) {
     return res.status(500).json({ success: false, message: err });
+  }
+};
+
+// POST Carga masiva desde CSV
+export const cargarInformacionCSV = async (req, res) => {
+  try {
+    const validacionArchivo = validarArchivoCSV(req.file);
+    if (!validacionArchivo.valido) {
+      return res.status(400).json({
+        success: false,
+        message: validacionArchivo.mensaje,
+      });
+    }
+
+    const destino = await determinarUsuarioDestinoCSV(req, res);
+    if (!destino) return;
+
+    const camposMinimos = await obtenerCamposMinimos();
+    const datosMinimosIniciales = JSON.stringify(camposMinimos || []);
+
+    const registros = [];
+    const errores = [];
+    let numeroFila = 1;
+
+    return new Promise((resolve, reject) => {
+      createReadStream(req.file.path)
+        .pipe(
+          csv({
+            separator: ";", // Usar punto y coma como delimitador
+            skipEmptyLines: true,
+            skipLinesWithError: false,
+          })
+        )
+        .on("data", (row) => {
+          numeroFila++;
+          procesarFilaCSV(row, numeroFila, camposMinimos, registros, errores);
+        })
+        .on("end", async () => {
+          await procesarCSVCompletado(
+            registros,
+            errores,
+            destino,
+            req.file.path,
+            res,
+            resolve,
+            reject,
+            datosMinimosIniciales
+          );
+        })
+        .on("error", (err) => {
+          limpiarArchivo(req.file.path);
+          console.error("Error al leer CSV:", err);
+          return reject(
+            res.status(500).json({
+              success: false,
+              message:
+                "Error al procesar el archivo CSV. Asegúrate de que el archivo esté delimitado por punto y coma (;).",
+              error: err.message,
+            })
+          );
+        });
+    });
+  } catch (err) {
+    limpiarArchivo(req.file?.path);
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Error al procesar la carga masiva",
+      error: err.message,
+    });
   }
 };
