@@ -3,6 +3,7 @@ import {
   obtenerCamposMinimos,
   obtenerUsuarioDestino,
   validarRegistro,
+  normalizar,
 } from "../utils/datosHelper.js";
 
 // GET Obtener información
@@ -22,7 +23,7 @@ export const obtenerInformacion = async (req, res) => {
 async function obtenerInformacionAdmin(req, res) {
   const { usuario_id } = req.query;
   let query = `
-    SELECT iu.id, iu.usuario_id, iu.datos, u.nombre AS usuario_nombre
+    SELECT iu.id, iu.usuario_id, iu.datos, iu.datos_minimos, u.nombre AS usuario_nombre
     FROM informacion_usuario iu
     JOIN usuario u ON iu.usuario_id = u.id
     WHERE u.isAdmin = 0
@@ -44,13 +45,20 @@ async function obtenerInformacionAdmin(req, res) {
       usuario_id: row.usuario_id,
       usuario_nombre: row.usuario_nombre,
       datos: [JSON.parse(row.datos)],
+      datos_minimos_iniciales: (() => {
+        try {
+          return JSON.parse(row.datos_minimos || "[]");
+        } catch {
+          return [];
+        }
+      })(),
     })),
   });
 }
 
 async function obtenerInformacionCliente(req, res) {
   const rows = await allAsync(
-    "SELECT id, usuario_id, datos FROM informacion_usuario WHERE usuario_id = ?",
+    "SELECT id, usuario_id, datos, datos_minimos FROM informacion_usuario WHERE usuario_id = ?",
     [req.usuario.id]
   );
 
@@ -60,6 +68,13 @@ async function obtenerInformacionCliente(req, res) {
       info_id: row.id,
       usuario_id: row.usuario_id,
       datos: [JSON.parse(row.datos)],
+      datos_minimos_iniciales: (() => {
+        try {
+          return JSON.parse(row.datos_minimos || "[]");
+        } catch {
+          return [];
+        }
+      })(),
     })),
   });
 }
@@ -71,39 +86,44 @@ export const crearInformacion = async (req, res) => {
     if (!destino) return;
 
     const { datos } = req.body;
-    if (!datos)
+    if (!datos) {
       return res
         .status(400)
         .json({ success: false, message: "El campo 'datos' es obligatorio" });
+    }
 
     const registros = Array.isArray(datos) ? datos : [datos];
     const camposMinimos = await obtenerCamposMinimos();
+    const datosMinimosIniciales = JSON.stringify(camposMinimos || []);
 
-    // Validar cada registro
+    // Validación
     for (const reg of registros) {
-      if (typeof reg !== "object")
+      if (typeof reg !== "object") {
         return res.status(400).json({
           success: false,
           message: "Cada elemento de 'datos' debe ser un JSON válido",
         });
-
+      }
       const faltantes = validarRegistro(reg, camposMinimos);
-      if (faltantes.length)
+      if (faltantes.length) {
         return res.status(400).json({
           success: false,
           message: `Faltan campos obligatorios: ${faltantes.join(", ")}`,
         });
+      }
     }
 
-    // Insertar
-    const placeholders = registros.map(() => "(?, ?)").join(", ");
+    // Ahora el número de placeholders debe coincidir con 7 columnas pero tú insertas 2 → lo ajustamos a 2 objetos TEXT:
+    // usuario_id, datos, datos_minimos
+    const placeholders = registros.map(() => "(?, ?, ?)").join(", ");
     const values = registros.flatMap((reg) => [
       destino.usuario_id,
       JSON.stringify(reg),
+      datosMinimosIniciales,
     ]);
 
     const result = await runAsync(
-      `INSERT INTO informacion_usuario (usuario_id, datos) VALUES ${placeholders}`,
+      `INSERT INTO informacion_usuario (usuario_id, datos, datos_minimos) VALUES ${placeholders}`,
       values
     );
 
@@ -156,12 +176,56 @@ export const actualizarInformacion = async (req, res) => {
         message: "La información no pertenece o no existe",
       });
 
-    // Validar datos contra campos mínimos
-    const faltantes = validarRegistro(datos, await obtenerCamposMinimos());
+    // Obtener los campos mínimos INICIALES guardados en el registro.
+    let camposMinimosIniciales = [];
+    try {
+      camposMinimosIniciales = JSON.parse(existe.datos_minimos || "[]");
+    } catch {
+      camposMinimosIniciales = [];
+    }
+
+    // Regla específica para actualización:
+    // - SOLO importan los datos_minimos iniciales del registro.
+    // - Esos campos pueden estar vacíos, pero DEBEN existir como claves en el JSON.
+    // - Los datos_minimos vigentes NO influyen en nada para este registro.
+    const clavesNorm = new Set(Object.keys(datos).map((k) => normalizar(k)));
+    const camposMinimosInicialesNorm = new Set(
+      (camposMinimosIniciales || []).map((c) => normalizar(String(c)))
+    );
+
+    // 1) Validar que todas las claves mínimas iniciales existan
+    const faltantes = (camposMinimosIniciales || []).filter((campo) => {
+      const campoNorm = normalizar(String(campo));
+      return !clavesNorm.has(campoNorm);
+    });
     if (faltantes.length)
       return res.status(400).json({
         success: false,
-        message: `Faltan: ${faltantes.join(", ")}`,
+        message: `Faltan el campo obligatorio: ${faltantes.join(", ")}`,
+      });
+
+    // 2) Validar que los campos que NO son mínimos iniciales NO estén vacíos
+    //    (si el cliente los envía, deben tener valor)
+    const noMinimosVacios = Object.entries(datos)
+      .filter(([clave, valor]) => {
+        const claveNorm = normalizar(clave);
+        // Si es campo mínimo inicial, puede estar vacío
+        if (camposMinimosInicialesNorm.has(claveNorm)) return false;
+
+        // Para campos no mínimos: no se permite null/undefined ni string vacío
+        if (valor === null || valor === undefined) return true;
+        if (typeof valor === "string" && valor.trim() === "") return true;
+
+        return false;
+      })
+      .map(([clave]) => clave);
+
+    if (noMinimosVacios.length)
+      return res.status(400).json({
+        success: false,
+        message: `Los siguientes campos NO mínimos no pueden estar vacíos: ${noMinimosVacios.join(
+          ", "
+        )}`,
       });
 
     // Actualizar

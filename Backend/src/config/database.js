@@ -26,10 +26,38 @@ export function run(sql, params = []) {
   });
 }
 
+// Obtener la lista de datos_minimos para usar como iniciales en informacion_usuario
+async function obtenerDatosMinimosIniciales() {
+  const fallback = [
+    "direccion",
+    "ciudad",
+    "pais",
+    "telefono",
+    "nacimiento",
+    "bio",
+  ];
+
+  try {
+    const filas = await all("SELECT datos FROM datos_minimos LIMIT 1");
+    const fila = filas?.[0];
+    if (!fila?.datos) {
+      return JSON.stringify(fallback);
+    }
+
+    const lista = JSON.parse(fila.datos);
+    // Siempre devolvemos un string JSON válido
+    return JSON.stringify(Array.isArray(lista) ? lista : fallback);
+  } catch {
+    // Si algo falla, usamos el fallback por defecto
+    return JSON.stringify(fallback);
+  }
+}
+
 // Poblar informacion_usuario con datos de ejemplo
 async function seedInformacionUsuario(cantidadPorUsuario = 10) {
   try {
     const usuarios = await all("SELECT id FROM usuario WHERE isAdmin = 0");
+    const datosMinimosIniciales = await obtenerDatosMinimosIniciales();
 
     await Promise.all(
       usuarios.map(async (usuario) => {
@@ -58,10 +86,10 @@ async function seedInformacionUsuario(cantidadPorUsuario = 10) {
 
           await run(
             `
-            INSERT INTO informacion_usuario (usuario_id, datos)
-            VALUES (?, ?)
+            INSERT INTO informacion_usuario (usuario_id, datos, datos_minimos)
+            VALUES (?, ?, ?)
           `,
-            [usuario.id, JSON.stringify(datos)]
+            [usuario.id, JSON.stringify(datos), datosMinimosIniciales]
           );
         }
       })
@@ -123,6 +151,7 @@ db.serialize(async () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       usuario_id INTEGER NOT NULL,
       datos TEXT NOT NULL,
+      datos_minimos TEXT NOT NULL,
       FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
     )
   `);
@@ -135,7 +164,7 @@ db.serialize(async () => {
   `);
 
   db.run(`
-    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('["hostname", "licenciamiento", "plataforma"]')
+    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('["direccion", "ciudad", "pais", "telefono", "nacimiento", "bio"]')
   `);
 
   // Blacklist

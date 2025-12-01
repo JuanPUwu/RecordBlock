@@ -69,7 +69,7 @@ router.get("/", verificarToken, obtenerInformacion);
  *     description: |
  *      Comportamiento según el rol:
  *       - **Admin**: Puede crear información para cualquier cliente según su `usuario_id`.
- *       - **Cliente**: Solo crea información asociada a su propio ID.
+ *       - **Cliente**: Solo crea información asociada a su propio ID. ignora el parametro `usuario_id`.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -108,7 +108,7 @@ router.post("/", verificarToken, crearInformacion);
  *     description: |
  *       Comportamiento según el rol:
  *       - **Admin**: Puede actualizar información para cualquier cliente según su `usuario_id` e `info_id`.
- *       - **Cliente**: Solo puede actualizar registros que le pertenecen.
+ *       - **Cliente**: Solo puede actualizar registros que le pertenecen. ignora el parametro `usuario_id`.
  *       El objeto `datos` será validado contra los **datos mínimos** obtenidos de BD.
  *     tags: [InformacionUsuario]
  *     security:
