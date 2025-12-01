@@ -1,12 +1,9 @@
-// routes/infoUsuario.routes.js
 import express from "express";
 import {
   obtenerInformacion,
   crearInformacion,
   actualizarInformacion,
   eliminarInformacion,
-  obtenerDatosMinimos,
-  reemplazarDatosMinimos,
 } from "../controllers/infoUsuarioController.js";
 import { verificarToken } from "../middleware/authMiddleware.js";
 
@@ -158,7 +155,7 @@ router.put("/", verificarToken, actualizarInformacion);
  *     description: |
  *       Comportamiento según el rol:
  *       - **Admin**: Puede eliminar información de cualquier cliente segun su `usuario_id`.
- *       - **Cliente**: Solo puede eliminar información que le pertenezca.
+ *       - **Cliente**: Solo puede eliminar información que le pertenezca. ignora el parametro `usuario_id`.
  *     tags: [InformacionUsuario]
  *     security:
  *       - bearerAuth: []
@@ -185,62 +182,5 @@ router.put("/", verificarToken, actualizarInformacion);
  *         description: Error interno
  */
 router.delete("/", verificarToken, eliminarInformacion);
-
-/**
- * @swagger
- * /api/informacion_usuario/datos_minimos:
- *   get:
- *     summary: Obtener la lista de datos mínimos
- *     description: Solo disponible para `Administradores`.
- *     tags: [DatosMinimos]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista actual de datos mínimos
- *       403:
- *         description: No autorizado
- *       500:
- *         description: Error en servidor
- */
-router.get("/datos_minimos", verificarToken, obtenerDatosMinimos);
-
-/**
- * @swagger
- * /api/informacion_usuario/datos_minimos:
- *   put:
- *     summary: Reemplazar completamente la lista de datos mínimos
- *     description: |
- *      Solo disponible para `Administradores`.
- *       - Elimina duplicados automáticamente
- *       - Normaliza el texto (trim, lowercase para comparación)
- *     tags: [DatosMinimos]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - datos
- *             properties:
- *               datos:
- *                 type: array
- *                 items:
- *                   type: string
- *                   example: "hostname"
- *     responses:
- *       200:
- *         description: Lista reemplazada correctamente
- *       400:
- *         description: Formato inválido
- *       403:
- *         description: Solo admin
- *       500:
- *         description: Error en servidor
- */
-router.put("/datos_minimos", verificarToken, reemplazarDatosMinimos);
 
 export default router;

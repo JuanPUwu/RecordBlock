@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import usuarioRoutes from "./routes/usuario.routes.js";
 import infoUsuarioRoutes from "./routes/infoUsuario.routes.js";
+import datosMinimosRoutes from "./routes/datosMinimos.routes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 import path from "node:path";
@@ -43,6 +44,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/usuario", usuarioRoutes);
 app.use("/api/informacion_usuario", infoUsuarioRoutes);
+app.use("/api/datos_minimos", datosMinimosRoutes);
 
 // Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -1,6 +1,5 @@
 import { runAsync, getAsync, allAsync } from "../utils/dbHelper.js";
 import {
-  normalizar,
   obtenerCamposMinimos,
   obtenerUsuarioDestino,
   validarRegistro,
@@ -9,14 +8,10 @@ import {
 // GET Obtener información
 export const obtenerInformacion = async (req, res) => {
   try {
-    const isAdmin = req.usuario.isAdmin;
-
-    if (isAdmin) return obtenerInformacionAdmin(req, res);
-    if (!isAdmin) return obtenerInformacionCliente(req, res);
-
-    return res
-      .status(403)
-      .json({ success: false, message: "Rol no autorizado" });
+    if (req.usuario.isAdmin) {
+      return await obtenerInformacionAdmin(req, res);
+    }
+    return await obtenerInformacionCliente(req, res);
   } catch (err) {
     return res
       .status(500)
@@ -190,17 +185,29 @@ export const eliminarInformacion = async (req, res) => {
   try {
     const { info_id, usuario_id } = req.body;
 
-    let destino = null;
+    if (!info_id)
+      return res
+        .status(400)
+        .json({ success: false, message: "El campo 'info_id' es obligatorio" });
+
+    let destino;
     if (req.usuario.isAdmin) {
+      if (!usuario_id) {
+        return res.status(400).json({
+          success: false,
+          message: "El campo 'usuario_id' es obligatorio para administradores",
+        });
+      }
       destino = usuario_id;
-    } else if (!req.usuario.isAdmin) {
+    } else {
+      if (!req.usuario.id) {
+        return res.status(500).json({
+          success: false,
+          message: "Error: ID de usuario no encontrado",
+        });
+      }
       destino = req.usuario.id;
     }
-
-    if (!destino)
-      return res
-        .status(403)
-        .json({ success: false, message: "Rol no autorizado" });
 
     const row = await getAsync(
       "SELECT * FROM informacion_usuario WHERE id = ? AND usuario_id = ?",
@@ -218,77 +225,5 @@ export const eliminarInformacion = async (req, res) => {
     return res.json({ success: true, message: "Información eliminada" });
   } catch (err) {
     return res.status(500).json({ success: false, message: err });
-  }
-};
-
-// GET Datos mínimos
-export const obtenerDatosMinimos = async (req, res) => {
-  try {
-    if (!req.usuario.isAdmin)
-      return res.status(403).json({
-        success: false,
-        message: "Solo administrador",
-      });
-
-    const row = await getAsync("SELECT datos FROM datos_minimos WHERE id = 1");
-
-    if (!row)
-      return res.status(500).json({
-        success: false,
-        message: "No existe registro base",
-      });
-
-    return res.json({ success: true, data: JSON.parse(row.datos) });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Error",
-      error: err.message,
-    });
-  }
-};
-
-// PUT Reemplazar datos mínimos
-export const reemplazarDatosMinimos = async (req, res) => {
-  try {
-    if (!req.usuario.isAdmin)
-      return res.status(403).json({
-        success: false,
-        message: "Solo administrador",
-      });
-
-    const { datos } = req.body;
-    if (!Array.isArray(datos))
-      return res.status(400).json({
-        success: false,
-        message: "'datos' debe ser un array",
-      });
-
-    const vistos = new Set();
-    const listaFinal = [];
-
-    for (const item of datos) {
-      const cmp = normalizar(String(item));
-      if (!vistos.has(cmp)) {
-        vistos.add(cmp);
-        listaFinal.push(String(item).trim());
-      }
-    }
-
-    await runAsync("UPDATE datos_minimos SET datos = ? WHERE id = 1", [
-      JSON.stringify(listaFinal),
-    ]);
-
-    return res.json({
-      success: true,
-      message: "Datos mínimos reemplazados",
-      datos: listaFinal,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Error",
-      error: err.message,
-    });
   }
 };

@@ -1,4 +1,3 @@
-// routes/usuario.routes.js
 import express from "express";
 import {
   obtenerUsuarios,

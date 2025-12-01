@@ -1,10 +1,75 @@
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
+import { faker } from "@faker-js/faker";
 
 const db = new sqlite3.Database("database.db");
 
-// Activar soporte para claves foráneas (IMPORTANTE en SQLite)
-db.run("PRAGMA foreign_keys = ON");
+// Activar soporte para claves foráneas
+await run("PRAGMA foreign_keys = ON");
+
+// Wrappers de Promises
+export function all(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+}
+
+export function run(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve({ id: this.lastID, changes: this.changes });
+    });
+  });
+}
+
+// Poblar informacion_usuario con datos de ejemplo
+async function seedInformacionUsuario(cantidadPorUsuario = 10) {
+  try {
+    const usuarios = await all("SELECT id FROM usuario WHERE isAdmin = 0");
+
+    await Promise.all(
+      usuarios.map(async (usuario) => {
+        const [conteo] = await all(
+          "SELECT COUNT(*) as total FROM informacion_usuario WHERE usuario_id = ?",
+          [usuario.id]
+        );
+
+        const existentes = conteo?.total ?? 0;
+
+        // Si ya tiene la cantidad deseada o más, no hacemos nada
+        if (existentes >= cantidadPorUsuario) return;
+
+        for (let i = existentes; i < cantidadPorUsuario; i++) {
+          const datos = {
+            direccion: faker.location.streetAddress(),
+            ciudad: faker.location.city(),
+            pais: faker.location.country(),
+            telefono: faker.phone.number(),
+            nacimiento: faker.date
+              .birthdate({ min: 18, max: 65, mode: "age" })
+              .toISOString()
+              .split("T")[0],
+            bio: faker.lorem.sentence(),
+          };
+
+          await run(
+            `
+            INSERT INTO informacion_usuario (usuario_id, datos)
+            VALUES (?, ?)
+          `,
+            [usuario.id, JSON.stringify(datos)]
+          );
+        }
+      })
+    );
+  } catch (error) {
+    console.error("Error poblando informacion_usuario:", error);
+  }
+}
 
 // Crear tablas
 db.serialize(async () => {
@@ -70,7 +135,7 @@ db.serialize(async () => {
   `);
 
   db.run(`
-    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('[]')
+    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('["hostname", "licenciamiento", "plataforma"]')
   `);
 
   // Blacklist
@@ -86,54 +151,37 @@ db.serialize(async () => {
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash("Contraseña123@", saltRounds);
 
-  db.run(
+  await run(
     `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
     ["Administrador", "admin@example.com", hashedPassword, 1, 1]
   );
 
-  db.run(
+  await run(
     `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
     ["Microsoft", "microsoft@example.com", hashedPassword, 0, 1]
   );
 
-  db.run(
+  await run(
     `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
     ["Apple", "apple@example.com", hashedPassword, 0, 1]
   );
 
-  db.run(
+  await run(
     `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
     ["Google", "google@example.com", hashedPassword, 0, 1]
   );
 
-  db.run(
+  await run(
     `INSERT OR IGNORE INTO usuario (nombre, email, password, isAdmin, verificado)
      VALUES (?, ?, ?, ?, ?)`,
     ["Pablo", "pablys8@gmail.com", hashedPassword, 0, 1]
   );
+
+  await seedInformacionUsuario();
 });
-
-// ✅ Wrappers para Promises
-export function all(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
-}
-
-export function run(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve({ id: this.lastID, changes: this.changes });
-    });
-  });
-}
 
 export default db;

@@ -113,7 +113,6 @@ export const enviarCorreoRecuperacion = async (email, token) => {
     ],
   };
 
-  console.log("[email] enviarCorreoRecuperacion -> url:", url);
   await transporter.sendMail(opciones);
 };
 

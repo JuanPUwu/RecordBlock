@@ -3,7 +3,10 @@ import { addToBlacklist } from "../config/blacklist.js";
 import bcrypt from "bcrypt";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { enviarCorreoRecuperacion } from "../utils/emailHelper.js";
+import {
+  enviarCorreoRecuperacion,
+  enviarCorreoCambioPasswordPropio,
+} from "../utils/emailHelper.js";
 
 import {
   createAccessToken,
@@ -264,6 +267,10 @@ export const resetPassword = async (req, res) => {
       );
     }
 
+    // Obtener datos del usuario para incluir su nombre en el correo
+    const usuario = await findUserByEmail(email);
+    const nombre = usuario?.nombre || "usuario";
+
     // Actualizar contraseña
     await run("UPDATE usuario SET password = ? WHERE LOWER(email) = LOWER(?)", [
       hashed,
@@ -272,6 +279,9 @@ export const resetPassword = async (req, res) => {
 
     // Marcar tokens usados
     await markRecoveryTokensUsed(email);
+
+    // Enviar correo de notificación de cambio de contraseña
+    await enviarCorreoCambioPasswordPropio(email, nombre);
 
     return res.sendFile(
       path.join(__dirname, "../views/resetPasswordExitosa.html")
