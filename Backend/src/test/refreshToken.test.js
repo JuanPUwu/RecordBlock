@@ -102,8 +102,9 @@ describe("refreshToken", () => {
     req.cookies.refreshToken = "token";
 
     mocks.getUserByRefreshToken.mockResolvedValue({ id: 1 });
+    const error = new Error("Expired");
     mocks.verifyRefreshToken.mockImplementation(() => {
-      throw new Error("Expired");
+      throw error;
     });
 
     await refreshToken(req, res);
@@ -111,6 +112,7 @@ describe("refreshToken", () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
       error: "Refresh token inválido o expirado",
+      message: error,
     });
   });
 });

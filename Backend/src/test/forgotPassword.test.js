@@ -41,6 +41,7 @@ jest.unstable_mockModule("bcrypt", () => ({
 
 jest.unstable_mockModule("../utils/emailHelper.js", () => ({
   enviarCorreoRecuperacion: mocks.enviarCorreoRecuperacion,
+  enviarCorreoCambioPasswordPropio: jest.fn(),
 }));
 
 const { forgotPassword } = await import("../controllers/authController.js");

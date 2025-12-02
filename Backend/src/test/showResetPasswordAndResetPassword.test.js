@@ -12,6 +12,8 @@ const mocks = {
   run: jest.fn(),
   validarYHashearPassword: jest.fn(),
   jwtVerify: jest.fn(),
+  findUserByEmail: jest.fn(),
+  enviarCorreoCambioPasswordPropio: jest.fn(),
 };
 
 // Mocks de módulos
@@ -33,6 +35,20 @@ jest.unstable_mockModule("../config/database.js", () => ({
 
 jest.unstable_mockModule("../utils/hashHelper.js", () => ({
   validarYHashearPassword: mocks.validarYHashearPassword,
+}));
+
+jest.unstable_mockModule("../utils/authHelper.js", () => ({
+  findUserByEmail: mocks.findUserByEmail,
+  getUserByRefreshToken: jest.fn(),
+  saveRefreshToken: jest.fn(),
+  clearRefreshTokenByValue: jest.fn(),
+  setRefreshTokenCookie: jest.fn(),
+  clearRefreshTokenCookie: jest.fn(),
+}));
+
+jest.unstable_mockModule("../utils/emailHelper.js", () => ({
+  enviarCorreoRecuperacion: jest.fn(),
+  enviarCorreoCambioPasswordPropio: mocks.enviarCorreoCambioPasswordPropio,
 }));
 
 // Import del controller
@@ -138,8 +154,10 @@ describe("resetPassword", () => {
     mocks.jwtVerify.mockReturnValue({ email: MOCK_EMAIL });
     mocks.validarYHashearPassword.mockResolvedValue("hashedPassword");
     mocks.verifyRecoveryToken.mockResolvedValue(true);
+    mocks.findUserByEmail.mockResolvedValue({ nombre: "Test User", email: MOCK_EMAIL });
     mocks.run.mockResolvedValue();
     mocks.markRecoveryTokensUsed.mockResolvedValue();
+    mocks.enviarCorreoCambioPasswordPropio.mockResolvedValue();
 
     await resetPassword(req, res);
 
@@ -148,6 +166,7 @@ describe("resetPassword", () => {
       ["hashedPassword", MOCK_EMAIL]
     );
     expect(mocks.markRecoveryTokensUsed).toHaveBeenCalledWith(MOCK_EMAIL);
+    expect(mocks.enviarCorreoCambioPasswordPropio).toHaveBeenCalledWith(MOCK_EMAIL, "Test User");
     expect(mocks.sendFile).toHaveBeenCalled();
     expect(mocks.sendFile.mock.calls[0][0]).toContain(
       "resetPasswordExitosa.html"
