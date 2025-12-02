@@ -2,6 +2,8 @@ import { runAsync, getAsync, allAsync } from "../utils/dbHelper.js";
 import {
   obtenerCamposMinimos,
   obtenerUsuarioDestino,
+  validarRegistro,
+  normalizar,
 } from "../utils/datosHelper.js";
 import {
   limpiarArchivo,
@@ -340,8 +342,7 @@ export const cargarInformacionCSV = async (req, res) => {
             destino,
             req.file.path,
             res,
-            resolve,
-            reject,
+            { resolve, reject },
             datosMinimosIniciales
           );
         })

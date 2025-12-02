@@ -23,9 +23,13 @@ export const limpiarArchivo = (filePath) => {
 export const contieneEmojis = (texto) => {
   if (!texto || typeof texto !== "string") return false;
   // Verificar si contiene emojis iterando sobre los caracteres
-  for (let i = 0; i < texto.length; i++) {
+  let i = 0;
+  while (i < texto.length) {
     const code = texto.codePointAt(i);
-    if (!code) continue;
+    if (!code) {
+      i++;
+      continue;
+    }
     // Rangos principales de emojis Unicode
     if (
       (code >= 0x2600 && code <= 0x26ff) || // Símbolos varios
@@ -39,7 +43,8 @@ export const contieneEmojis = (texto) => {
       return true;
     }
     // Saltar caracteres suplementarios (surrogate pairs)
-    if (code > 0xffff) i++;
+    // Incrementar i según el tamaño del carácter
+    i += code > 0xffff ? 2 : 1;
   }
   return false;
 };
@@ -223,8 +228,7 @@ export const insertarRegistros = async (
  * @param {{usuario_id: number}} destino - Usuario destino
  * @param {string} filePath - Ruta del archivo temporal
  * @param {Object} res - Response object de Express
- * @param {Function} resolve - Función resolve de la Promise
- * @param {Function} reject - Función reject de la Promise
+ * @param {{resolve: Function, reject: Function}} promiseCallbacks - Callbacks de Promise
  * @param {string} datosMinimosIniciales - JSON string de los datos mínimos iniciales
  */
 export const procesarCSVCompletado = async (
@@ -233,15 +237,14 @@ export const procesarCSVCompletado = async (
   destino,
   filePath,
   res,
-  resolve,
-  reject,
+  promiseCallbacks,
   datosMinimosIniciales
 ) => {
   try {
     limpiarArchivo(filePath);
 
     if (errores.length > 0 && registros.length === 0) {
-      return resolve(
+      return promiseCallbacks.resolve(
         res.status(400).json({
           success: false,
           message: "No se pudo procesar ningún registro del CSV",
@@ -252,7 +255,7 @@ export const procesarCSVCompletado = async (
 
     await insertarRegistros(registros, destino, datosMinimosIniciales);
 
-    return resolve(
+    return promiseCallbacks.resolve(
       res.status(201).json({
         success: true,
         message: `Carga masiva completada. ${registros.length} registro(s) insertado(s)`,
@@ -266,7 +269,7 @@ export const procesarCSVCompletado = async (
     );
   } catch (err) {
     console.error(err);
-    return reject(
+    return promiseCallbacks.reject(
       res.status(500).json({
         success: false,
         message: "Error al insertar registros en la base de datos",

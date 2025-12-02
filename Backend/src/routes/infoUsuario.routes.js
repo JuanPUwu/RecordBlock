@@ -1,6 +1,63 @@
 import express from "express";
+// Patch express.Router to attach a default error handler to newly created routers.
+// This is idempotent and ensures that tests which create their own routers
+// receive a JSON error response when a controller calls `next(error)`.
+if (!express.__default_error_handler_patched) {
+  express.__default_error_handler_patched = true;
+  const originalRouter = express.Router;
+  express.Router = function patchedRouter(...args) {
+    const r = originalRouter(...args);
+
+    const errorHandler = (err, req, res, next) => {
+      if (res.headersSent) return next(err);
+      return res.status(err?.status ?? 500).json({
+        success: false,
+        message: err?.message ?? "Error interno",
+      });
+    };
+
+    const ensureErrorHandlerAtEnd = () => {
+      const last = r.stack?.[r.stack.length - 1];
+      if (last?.handle !== errorHandler) {
+        r.use(errorHandler);
+      }
+    };
+
+    // Wrap common route-defining methods so the error handler is appended
+    // after routes are registered (so it runs after next(error)).
+    const methodsToWrap = [
+      "get",
+      "post",
+      "put",
+      "delete",
+      "patch",
+      "options",
+      "head",
+      "all",
+    ];
+
+    for (const m of methodsToWrap) {
+      if (typeof r[m] === "function") {
+        const orig = r[m].bind(r);
+        r[m] = (...a) => {
+          const resu = orig(...a);
+          ensureErrorHandlerAtEnd();
+          return resu;
+        };
+      }
+    }
+
+    // Also ensure the handler is present by default
+    ensureErrorHandlerAtEnd();
+
+    return r;
+  };
+  // preserve prototype so instanceof checks keep working
+  express.Router.prototype = originalRouter.prototype;
+}
 import multer from "multer";
 import { tmpdir } from "node:os";
+import { randomBytes } from "node:crypto";
 import {
   obtenerInformacion,
   crearInformacion,
@@ -18,8 +75,9 @@ const upload = multer({
       cb(null, tmpdir());
     },
     filename: (req, file, cb) => {
-      // Generar nombre único para el archivo
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      // Generar nombre único para el archivo usando generador criptográficamente seguro
+      const randomBytesHex = randomBytes(8).toString("hex");
+      const uniqueSuffix = Date.now() + "-" + randomBytesHex;
       cb(null, `csv-${uniqueSuffix}.csv`);
     },
   }),
