@@ -55,6 +55,7 @@ import imgExcell from "../assets/img/excell.webp";
 import imgPdf from "../assets/img/pdf.webp";
 import imgVacio from "../assets/img/vacio.webp";
 import imgGuardar from "../assets/img/guardar.webp";
+import imgSubirArchivo from "../assets/img/subirArchivo.webp";
 
 export default function HomeAdmin() {
   // Todo Funciones Nav
@@ -132,14 +133,15 @@ export default function HomeAdmin() {
     const response = await obtenerDatosMinimos();
 
     setDatosMinimos(response.data.data);
-    setDraftCrear(
+    const datosMinimosArray =
       response.data.data.length > 0
         ? response.data.data.map((item) => ({
             key: item,
             value: "",
           }))
-        : [{ key: "", value: "" }]
-    );
+        : [];
+    // Siempre agregar un campo vacío adicional además de los datos mínimos
+    setDraftCrear([...datosMinimosArray, { key: "", value: "" }]);
     setIsLoading(false);
   };
   // ? <- Fin utils
@@ -315,6 +317,7 @@ export default function HomeAdmin() {
   const cargarInformacion = async () => {
     setIsInfoCargando(true);
     const response = await obtenerInformacion(clienteSeleccionado?.value);
+    console.log(response);
     refInformacion.current = response.data.data;
     filtroInformacion();
   };
@@ -837,6 +840,7 @@ export default function HomeAdmin() {
     if (response.success) {
       obtenerDatosMin();
       setIsLoading(false);
+      toast.success("Datos mínimos guardados");
     } else {
       console.error(response.error);
       setIsLoading(false);
@@ -874,6 +878,91 @@ export default function HomeAdmin() {
     }
   };
   // ? <- Fin logout/acciones
+
+  // Función para renderizar el contenido principal
+  const renderizarContenidoPrincipal = () => {
+    if (isInfoCargando) {
+      return <div className="loader section"></div>;
+    }
+
+    if (whichInfo.length === 0) {
+      return (
+        <div className="cont-sin-resultados">
+          <img src={imgVacio} alt="" />
+          <span>No se encontraron resultados</span>
+        </div>
+      );
+    }
+
+    return [0, 1].map((col) => (
+      <div key={col}>
+        {whichInfo.map((info, index) =>
+          index % 2 === col ? (
+            <div className="item" key={info.info_id}>
+              <h3>
+                <button
+                  onClick={() => {
+                    setInfoSeleccionada(info);
+                    setInfoAEditar({
+                      ...info,
+                      datos: info.datos.map((dato) => ({ ...dato })),
+                    });
+                    setPopUpEditarInfo(true);
+                  }}
+                >
+                  <img src={imgEditar} alt="" />
+                </button>
+                {`Registro °${info.info_id} - ${info.usuario_nombre}`}
+                <button onClick={() => eliminarInformacionCliente(info)}>
+                  <img src={imgBorrar} alt="" />
+                </button>
+              </h3>
+
+              {info.datos.map((dato, i) => {
+                const entries = Object.entries(dato);
+                const mitad = Math.ceil(entries.length / 2);
+                const colIzq = entries.slice(0, mitad);
+                const colDer = entries.slice(mitad);
+
+                return (
+                  <div className="cont-dato" key={i}>
+                    <div className="columna">
+                      {colIzq.map(([key, value]) => (
+                        <p key={key}>
+                          <strong>
+                            {resaltarTexto(key, terminosBusqueda.dato, true)}:
+                          </strong>{" "}
+                          {resaltarTexto(
+                            value,
+                            terminosBusqueda.detalle,
+                            false
+                          )}
+                        </p>
+                      ))}
+                    </div>
+                    <div className="columna">
+                      {colDer.map(([key, value]) => (
+                        <p key={key}>
+                          <strong>
+                            {resaltarTexto(key, terminosBusqueda.dato, true)}:
+                          </strong>{" "}
+                          {resaltarTexto(
+                            value,
+                            terminosBusqueda.detalle,
+                            false
+                          )}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null
+        )}
+      </div>
+    ));
+  };
 
   return (
     <>
@@ -988,95 +1077,7 @@ export default function HomeAdmin() {
       <SepHrz />
 
       {/* Contenido principal */}
-      <section>
-        {isInfoCargando ? (
-          <div className="loader section"></div>
-        ) : whichInfo.length === 0 ? (
-          <div className="cont-sin-resultados">
-            <img src={imgVacio} alt="" />
-            <span>No se encontraron resultados</span>
-          </div>
-        ) : (
-          [0, 1].map((col) => (
-            <div key={col}>
-              {whichInfo.map((info, index) =>
-                index % 2 === col ? (
-                  <div className="item" key={info.info_id}>
-                    <h3>
-                      <button
-                        onClick={() => {
-                          setInfoSeleccionada(info);
-                          setInfoAEditar({
-                            ...info,
-                            datos: info.datos.map((dato) => ({ ...dato })),
-                          });
-                          setPopUpEditarInfo(true);
-                        }}
-                      >
-                        <img src={imgEditar} alt="" />
-                      </button>
-                      {`Registro °${info.info_id} - ${info.usuario_nombre}`}
-                      <button onClick={() => eliminarInformacionCliente(info)}>
-                        <img src={imgBorrar} alt="" />
-                      </button>
-                    </h3>
-
-                    {info.datos.map((dato, i) => {
-                      const entries = Object.entries(dato);
-                      const mitad = Math.ceil(entries.length / 2);
-                      const colIzq = entries.slice(0, mitad);
-                      const colDer = entries.slice(mitad);
-
-                      return (
-                        <div className="cont-dato" key={i}>
-                          <div className="columna">
-                            {colIzq.map(([key, value]) => (
-                              <p key={key}>
-                                <strong>
-                                  {resaltarTexto(
-                                    key,
-                                    terminosBusqueda.dato,
-                                    true
-                                  )}
-                                  :
-                                </strong>{" "}
-                                {resaltarTexto(
-                                  value,
-                                  terminosBusqueda.detalle,
-                                  false
-                                )}
-                              </p>
-                            ))}
-                          </div>
-                          <div className="columna">
-                            {colDer.map(([key, value]) => (
-                              <p key={key}>
-                                <strong>
-                                  {resaltarTexto(
-                                    key,
-                                    terminosBusqueda.dato,
-                                    true
-                                  )}
-                                  :
-                                </strong>{" "}
-                                {resaltarTexto(
-                                  value,
-                                  terminosBusqueda.detalle,
-                                  false
-                                )}
-                              </p>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null
-              )}
-            </div>
-          ))
-        )}
-      </section>
+      <section>{renderizarContenidoPrincipal()}</section>
 
       {/* PopUp usuarios */}
       <Popup
@@ -1321,6 +1322,13 @@ export default function HomeAdmin() {
         nested
       >
         <div className="cont-popUp-editarInfo">
+          <button
+            className="btn-change btn-subir-archivo"
+            title="importar archivo CSV"
+            onClick={null /* Aca ira la funcion para subir el archivo CSV */}
+          >
+            <img src={imgSubirArchivo} alt="" />
+          </button>
           <h2>
             {`${
               opcionesClientes.find(
@@ -1421,7 +1429,8 @@ export default function HomeAdmin() {
 
           <div ref={scrollRef}>
             {draftDatos.map(({ key, value }, i, array) => {
-              const esObligatorio = i < datosMinimos.length;
+              const esObligatorio =
+                i < infoAEditar?.datos_minimos_iniciales?.length;
 
               return (
                 <div key={i} className="cont-dato-editar">

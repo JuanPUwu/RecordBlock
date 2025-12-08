@@ -58,7 +58,7 @@ export const loginUsuario = async (req, res) => {
     if (!usuario.verificado) {
       return res.status(403).json({
         success: false,
-        message: "Debes verificar tu correo antes de iniciar sesión",
+        message: "Debes verificar tu correo\nantes de iniciar sesión",
       });
     }
 
