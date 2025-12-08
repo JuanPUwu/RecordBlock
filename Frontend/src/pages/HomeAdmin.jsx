@@ -3,6 +3,7 @@ import "../css/home.css";
 import "../css/swalStyles.css";
 import selectNavStyles from "../css/selectNavStyles.js";
 import swalStyles from "../css/swalStyles.js";
+import swalStylesCSV from "../css/swalStylesCSV.js";
 
 // Hooks
 import { useAuth } from "../context/AuthContext";
@@ -384,7 +385,8 @@ export default function HomeAdmin() {
   const [popUpCrearInfo, setPopUpCrearInfo] = useState(false);
   const [draftCrear, setDraftCrear] = useState([]);
 
-  const { crearInformacion } = useInfoUsuarioService();
+  const { crearInformacion, subirCSV } = useInfoUsuarioService();
+  const refInputFile = useRef(null);
 
   // Cambiar clave
   const cambiarLlaveCrear = (index, newKey) => {
@@ -438,6 +440,225 @@ export default function HomeAdmin() {
         }
       }, 250);
     });
+  };
+
+  // Función para parsear CSV
+  const parsearCSV = (texto) => {
+    const lineas = texto.split("\n").filter((linea) => linea.trim() !== "");
+    if (lineas.length === 0) return { headers: [], filas: [] };
+
+    // Función auxiliar para parsear una línea CSV (delimitado por punto y coma)
+    const parsearLineaCSV = (linea) => {
+      const valores = [];
+      let valorActual = "";
+      let dentroComillas = false;
+
+      for (let i = 0; i < linea.length; i++) {
+        const char = linea[i];
+        if (char === '"') {
+          dentroComillas = !dentroComillas;
+        } else if (char === ";" && !dentroComillas) {
+          valores.push(valorActual.trim().replace(/^"|"$/g, ""));
+          valorActual = "";
+        } else {
+          valorActual += char;
+        }
+      }
+      valores.push(valorActual.trim().replace(/^"|"$/g, "")); // Último valor
+
+      return valores;
+    };
+
+    // Obtener headers (primera línea)
+    const headers = parsearLineaCSV(lineas[0]);
+
+    // Parsear filas (resto de líneas)
+    const filas = lineas.slice(1).map((linea) => parsearLineaCSV(linea));
+
+    return { headers, filas };
+  };
+
+  // Función para generar tabla HTML del CSV
+  const generarTablaCSV = (headers, filas) => {
+    const maxFilasMostrar = 50; // Limitar a 50 filas para no sobrecargar
+    const filasAMostrar = filas.slice(0, maxFilasMostrar);
+    const hayMasFilas = filas.length > maxFilasMostrar;
+
+    let tablaHTML = `
+      <div class="cont-tabla-csv">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f0f0f0; position: sticky; top: 0;">
+    `;
+
+    // Headers
+    headers.forEach((header) => {
+      tablaHTML += `<th style="padding: 8px; text-align: left; font-weight: bold;">${header}</th>`;
+    });
+    tablaHTML += `</tr></thead><tbody>`;
+
+    // Filas
+    filasAMostrar.forEach((fila, index) => {
+      tablaHTML += `<tr style="background-color: ${
+        index % 2 === 0 ? "#fff" : "#f9f9f9"
+      }">`;
+      headers.forEach((_, colIndex) => {
+        const valor = fila[colIndex] || "";
+        tablaHTML += `<td style="padding: 6px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${valor}">${valor}</td>`;
+      });
+      tablaHTML += `</tr>`;
+    });
+
+    tablaHTML += `</tbody></table></div>`;
+
+    if (hayMasFilas) {
+      tablaHTML += `<p style="margin-top: 0.9rem; color: #666; font-size: 16px;">Mostrando ${maxFilasMostrar} de ${filas.length} filas...</p>`;
+    }
+
+    return tablaHTML;
+  };
+
+  // Función para subir archivo CSV
+  const manejarSubidaCSV = async () => {
+    // Validar que haya un cliente seleccionado
+    if (!clienteSeleccionado) {
+      toast.error("Debes seleccionar un cliente primero");
+      return;
+    }
+
+    // Abrir el selector de archivos
+    refInputFile.current?.click();
+  };
+
+  // Función que se ejecuta cuando se selecciona un archivo
+  const onFileSelected = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar que sea un archivo CSV
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      toast.error("Por favor selecciona un archivo CSV");
+      event.target.value = ""; // Limpiar el input
+      return;
+    }
+
+    // Leer el archivo
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const texto = e.target.result;
+        const { headers, filas } = parsearCSV(texto);
+
+        if (filas.length === 0) {
+          toast.error("El archivo CSV está vacío o no tiene filas de datos");
+          event.target.value = ""; // Limpiar el input
+          return;
+        }
+
+        // Generar tabla HTML
+        const tablaHTML = generarTablaCSV(headers, filas);
+
+        // Paso 1: Mostrar tabla con las filas
+        const resultadoVista = await Swal.fire({
+          title: `Vista previa`,
+          html: tablaHTML,
+          icon: false,
+          confirmButtonText: "Continuar",
+          cancelButtonText: "Cancelar",
+          showCancelButton: true,
+          width: "40rem",
+          ...swalStylesCSV,
+        });
+
+        if (!resultadoVista.isConfirmed) {
+          event.target.value = ""; // Limpiar el input
+          return;
+        }
+
+        // Paso 2: Mostrar confirmación
+        const result = await Swal.fire({
+          title:
+            "¿Estás seguro que quieres insertar el archivo CSV seleccionado?",
+          html: `
+            <div style="text-align: left;">
+              <p style="margin-bottom: 10px;"><strong>⚠️ Esta acción es irreversible</strong></p>
+              <p style="margin-bottom: 10px;">Se intentarán insertar <strong>${filas.length} fila(s)</strong> de datos.</p>
+              <p>¿Deseas continuar con la inserción?</p>
+            </div>
+          `,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Sí, Insertar archivo",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: "#d33",
+          ...swalStyles,
+        });
+
+        if (result.isConfirmed) {
+          // Crear FormData y subir el archivo
+          const formData = new FormData();
+          formData.append("archivo", file);
+          // Agregar el usuario_id si el backend lo requiere
+          if (clienteSeleccionado?.value) {
+            formData.append("usuario_id", clienteSeleccionado.value);
+          }
+
+          setIsLoading(true);
+          const response = await subirCSV(formData);
+
+          // Paso 3: Mostrar resumen del backend
+          if (response.success) {
+            // Mostrar mensaje del backend (puede ser un objeto con detalles)
+            const mensajeBackend =
+              response.data?.message ||
+              response.data ||
+              "Archivo subido exitosamente";
+            const mensajeFormateado =
+              typeof mensajeBackend === "string"
+                ? mensajeBackend
+                : JSON.stringify(mensajeBackend, null, 2);
+
+            await Swal.fire({
+              title: "¡Inserción completada!",
+              html: `
+                <div style="text-align: left;">
+                  <p style="margin-bottom: 10px;">${mensajeFormateado}</p>
+                </div>
+              `,
+              icon: "success",
+              ...swalStyles,
+            });
+            // Recargar la información
+            cargarInformacion();
+            // Cerrar el popup de crear info
+            setPopUpCrearInfo(false);
+          } else {
+            // Mostrar error del backend
+            await Swal.fire({
+              title: "Error en la inserción",
+              text: response.error || "No se pudo subir el archivo",
+              icon: "error",
+              ...swalStyles,
+            });
+          }
+          setIsLoading(false);
+        }
+
+        // Limpiar el input
+        event.target.value = "";
+      } catch (error) {
+        console.error("Error al leer el archivo:", error);
+        toast.error("Error al leer el archivo CSV");
+        event.target.value = ""; // Limpiar el input
+      }
+    };
+
+    reader.onerror = () => {
+      toast.error("Error al leer el archivo");
+      event.target.value = ""; // Limpiar el input
+    };
+
+    reader.readAsText(file);
   };
 
   // Guardar nueva información
@@ -1322,10 +1543,17 @@ export default function HomeAdmin() {
         nested
       >
         <div className="cont-popUp-editarInfo">
+          <input
+            type="file"
+            accept=".csv"
+            ref={refInputFile}
+            onChange={onFileSelected}
+            style={{ display: "none" }}
+          />
           <button
             className="btn-change btn-subir-archivo"
             title="importar archivo CSV"
-            onClick={null /* Aca ira la funcion para subir el archivo CSV */}
+            onClick={manejarSubidaCSV}
           >
             <img src={imgSubirArchivo} alt="" />
           </button>

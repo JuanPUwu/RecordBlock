@@ -1,7 +1,7 @@
-const swalStyles = {
+const swalStylesCSV = {
   background: "#f5f5f5",
   color: "#222",
-  width: "22rem",
+  width: "60rem",
   padding: "0.9rem",
   confirmButtonColor: "#fa3d37",
   cancelButtonColor: "#8d8c91",
@@ -13,4 +13,4 @@ const swalStyles = {
   },
 };
 
-export default swalStyles;
+export default swalStylesCSV;

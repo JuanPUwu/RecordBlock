@@ -22,10 +22,20 @@ export const useInfoUsuarioService = () => {
       api.delete("/informacion_usuario", { data: infoEliminar })
     );
 
+  const subirCSV = async (formData) =>
+    handleRequest(() =>
+      api.post("/informacion_usuario/upload-csv", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+    );
+
   return {
     obtenerInformacion,
     crearInformacion,
     actualizarInformacion,
     eliminarInformacion,
+    subirCSV,
   };
 };
