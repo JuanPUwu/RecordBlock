@@ -5,7 +5,9 @@ import {
   useEffect,
   useRef,
   useReducer,
+  useMemo,
 } from "react";
+import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -61,18 +63,9 @@ export const AuthProvider = ({ children }) => {
         ) {
           await logoutWithSpinner();
         }
-        return Promise.reject(error);
+        throw error;
       }
     );
-  };
-
-  const decodeJWT = (token) => {
-    try {
-      const payload = token.split(".")[1];
-      return JSON.parse(atob(payload));
-    } catch {
-      return null;
-    }
   };
 
   const refreshToken = async () => {
@@ -83,20 +76,16 @@ export const AuthProvider = ({ children }) => {
       const { accessToken: newToken, usuario } = response.data;
       setAccessToken(newToken);
       setupInterceptors(newToken);
-      if (usuario) setUser(usuario);
-      else if (newToken) {
-        const decoded = decodeJWT(newToken);
-        if (decoded && (decoded.id || decoded.userId)) {
-          setUser({
-            id: decoded.id || decoded.userId,
-            rol: decoded.rol || decoded.role,
-            email: decoded.email,
-            nombre: decoded.nombre || decoded.name,
-          });
-        }
+      // El backend siempre devuelve usuario en la respuesta
+      if (usuario) {
+        setUser(usuario);
       }
       return newToken;
     } catch (error) {
+      // Si el refresh token es inválido o expirado, limpiar estado
+      if (error.response?.status !== 401 && error.response?.status !== 403) {
+        console.error("Error inesperado al refrescar token:", error);
+      }
       setAccessToken(null);
       setUser(null);
       setupInterceptors(null);
@@ -182,33 +171,51 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(spinnerTimeoutRef.current);
   }, []);
 
-  if (isInicializing.current) return <SpinnerPages />;
-
   const getHomeRoute = () => {
     if (!user) return "/";
-    return user.rol === "admin" ? "/homeAdmin" : "/homeUsuario";
+    // El backend devuelve isAdmin (boolean), no rol
+    return user.isAdmin ? "/homeAdmin" : "/homeUsuario";
   };
 
   const isAuthenticated = () => !!(user && accessToken);
 
+  const contextValue = useMemo(
+    () => ({
+      user,
+      accessToken,
+      showSpinnerOverlay,
+      loading: isInicializing.current,
+      login: loginWithSpinner,
+      logout: logoutWithSpinner,
+      refreshToken,
+      api,
+      getHomeRoute,
+      isAuthenticated,
+    }),
+    [
+      user,
+      accessToken,
+      showSpinnerOverlay,
+      loginWithSpinner,
+      logoutWithSpinner,
+      refreshToken,
+      getHomeRoute,
+      isAuthenticated,
+    ]
+  );
+
+  if (isInicializing.current) return <SpinnerPages />;
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        showSpinnerOverlay,
-        login: loginWithSpinner,
-        logout: logoutWithSpinner,
-        refreshToken,
-        api,
-        getHomeRoute,
-        isAuthenticated,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
       {showSpinnerOverlay && <SpinnerPages />}
     </AuthContext.Provider>
   );
+};
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export const useAuth = () => {
