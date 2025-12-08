@@ -20,7 +20,6 @@ import {
   createUserSession,
   updateSessionLastUsed,
   clearRefreshTokenByValue,
-  clearAllUserSessions,
   getUserSessions,
   deleteSessionById,
   getDeviceInfo,
@@ -73,13 +72,19 @@ export const loginUsuario = async (req, res) => {
 
     // Obtener información del dispositivo
     const { deviceInfo, ipAddress, userAgent } = getDeviceInfo(req);
-    
+
     // Crear nueva sesión (permite múltiples sesiones simultáneas)
-    const sessionId = await createUserSession(usuario.id, refreshToken, deviceInfo, ipAddress, userAgent);
-    
+    const sessionId = await createUserSession(
+      usuario.id,
+      refreshToken,
+      deviceInfo,
+      ipAddress,
+      userAgent
+    );
+
     // Incluir sessionId en el access token para poder invalidarlo cuando se cierre la sesión
     const accessToken = createAccessToken(payload, sessionId);
-    
+
     setRefreshTokenCookie(res, refreshToken);
 
     return res.json({
@@ -115,21 +120,24 @@ export const refreshToken = async (req, res) => {
     await updateSessionLastUsed(refreshToken);
 
     const payload = { id: decoded.id, isAdmin: decoded.isAdmin };
-    
+
     // Generar nuevo refresh token y actualizar la sesión existente
     const newRefreshToken = createRefreshToken(payload);
-    
-    // Obtener el session_id actual antes de eliminar la sesión
-    const currentSessionId = usuario.session_id;
-    
+
     // Eliminar la sesión antigua y crear una nueva con el mismo dispositivo
     const { deviceInfo, ipAddress, userAgent } = getDeviceInfo(req);
     await clearRefreshTokenByValue(refreshToken);
-    const newSessionId = await createUserSession(usuario.id, newRefreshToken, deviceInfo, ipAddress, userAgent);
-    
+    const newSessionId = await createUserSession(
+      usuario.id,
+      newRefreshToken,
+      deviceInfo,
+      ipAddress,
+      userAgent
+    );
+
     // Incluir sessionId en el nuevo access token
     const newAccessToken = createAccessToken(payload, newSessionId);
-    
+
     setRefreshTokenCookie(res, newRefreshToken);
 
     return res.json({
@@ -325,7 +333,7 @@ export const getMySessions = async (req, res) => {
   try {
     const userId = req.usuario.id;
     const sessions = await getUserSessions(userId);
-    
+
     return res.json({
       success: true,
       sessions: sessions.map((session) => ({
@@ -358,17 +366,18 @@ export const deleteSession = async (req, res) => {
     const currentSession = currentRefreshToken
       ? await getUserByRefreshToken(currentRefreshToken)
       : null;
-    
+
     const currentSessionId = currentSession?.session_id;
 
-    if (parseInt(sessionId) === currentSessionId) {
+    if (Number.parseInt(sessionId) === currentSessionId) {
       return res.status(400).json({
-        error: "No puedes eliminar tu sesión actual. Usa /logout para cerrar sesión",
+        error:
+          "No puedes eliminar tu sesión actual. Usa /logout para cerrar sesión",
       });
     }
 
-    const deleted = await deleteSessionById(parseInt(sessionId), userId);
-    
+    const deleted = await deleteSessionById(Number.parseInt(sessionId), userId);
+
     if (!deleted) {
       return res.status(404).json({
         error: "Sesión no encontrada o no tienes permisos para eliminarla",

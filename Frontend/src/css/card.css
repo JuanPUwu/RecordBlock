@@ -36,7 +36,6 @@
   border: none;
   transition: 0.1s ease-in;
   cursor: pointer;
-  background-color: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;

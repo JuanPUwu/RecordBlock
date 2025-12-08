@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import SpinnerPages from "../components/SpinnerPages.jsx";
+import PropTypes from "prop-types";
 
 const AuthContext = createContext();
 
@@ -288,4 +289,8 @@ export const useAuth = () => {
   if (!context)
     throw new Error("useAuth debe ser usado dentro de AuthProvider");
   return context;
+};
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

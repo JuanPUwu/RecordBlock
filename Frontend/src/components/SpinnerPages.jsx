@@ -24,3 +24,8 @@ export default function SpinnerPages() {
     </Popup>
   );
 }
+
+SpinnerPages.propTypes = {
+  open: PropTypes.bool.isRequired,
+  setOpen: PropTypes.func.isRequired,
+};

@@ -1,4 +1,5 @@
 import "../css/card.css";
+import PropTypes from "prop-types";
 
 import imgLlave from "../assets/img/candado.webp";
 
@@ -15,3 +16,9 @@ export default function CardAdmin({ nameAdmin, rolAdmin, onClick }) {
     </div>
   );
 }
+
+CardAdmin.propTypes = {
+  nameAdmin: PropTypes.string.isRequired,
+  rolAdmin: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
+};

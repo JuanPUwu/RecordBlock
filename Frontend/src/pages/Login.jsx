@@ -69,19 +69,15 @@ export default function Login() {
     setFocus("email");
   }, [setFocus]);
 
-  // 🔹 Login
+  // Login
   const iniciarSesion = async (data) => {
     await login(data.email, data.password);
   };
 
-  // 🔹 Popup estado
+  // Popup estado
   const [popUpForgotPassword, setPopUpForgotPassword] = useState(false);
 
-  const openPopUpForgotPassword = () => {
-    setPopUpForgotPassword(true);
-  };
-
-  // 🔹 Forgot password
+  // Forgot password
   const onForgotPassword = async ({ forgotEmail }) => {
     const { success, error } = await solicitarRecuperacion(forgotEmail);
 
@@ -107,20 +103,24 @@ export default function Login() {
         >
           <img src={imgCandado} alt="Logo RecordBlock" />
         </div>
+
         <h1>Iniciar sesión</h1>
         <h2>
           Accede a tu cuenta para poder gestionar <br /> tus registros de manera
           segura
         </h2>
+
+        {/* FORM LOGIN */}
         <form onSubmit={handleSubmit(iniciarSesion)}>
           {/* Email */}
           <div className="cont-label-login">
-            <label>Correo</label>
+            <label htmlFor="email">Correo</label>
             {errors.email && <span>{errors.email.message}</span>}
           </div>
           <div className="cont-input">
             <img src={imgCorreo} alt="Correo electrónico" />
             <input
+              id="email"
               type="email"
               {...register("email")}
               placeholder="ejemplo@gmail.com"
@@ -129,17 +129,19 @@ export default function Login() {
 
           {/* Password */}
           <div className="cont-label-login">
-            <label>Contraseña</label>
+            <label htmlFor="password">Contraseña</label>
             {errors.password && <span>{errors.password.message}</span>}
           </div>
           <div className="cont-input">
             <img src={imgLlave} alt="Contraseña" />
             <input
+              id="password"
               type="password"
               {...register("password")}
               placeholder="∗∗∗∗∗∗∗∗∗∗"
             />
           </div>
+
           <button
             type="button"
             className="btn-forgot-pass"
@@ -147,6 +149,7 @@ export default function Login() {
           >
             ¿Olvidaste tu contraseña?
           </button>
+
           <button type="submit" disabled={isSubmitting} className="btn-login">
             Ingresar
             {isSubmitting && <Spinner />}
@@ -154,7 +157,7 @@ export default function Login() {
         </form>
       </div>
 
-      {/* 🔹 Popup para recuperación */}
+      {/* Popup para recuperación */}
       <Popup
         open={popUpForgotPassword}
         onClose={() => {
@@ -166,20 +169,25 @@ export default function Login() {
       >
         <div className="cont-popUp">
           <h2>Restablecer contraseña</h2>
+
           <form onSubmit={handleSubmitForgot(onForgotPassword)}>
             <div className="cont-label">
-              <label>Correo asociado:</label>
+              <label htmlFor="forgotEmail">Correo asociado:</label>
               {errorsForgot.forgotEmail && (
                 <span>{errorsForgot.forgotEmail.message}</span>
               )}
             </div>
+
             <input
+              id="forgotEmail"
               className="forgot-pass"
               type="email"
               placeholder="ejemplo@gmail.com"
               {...registerForgot("forgotEmail")}
             />
+
             <div className="sep-hrz"></div>
+
             <button
               className="btn-forgot-pass"
               type="submit"

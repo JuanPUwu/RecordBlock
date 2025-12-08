@@ -21,3 +21,8 @@ export default function Spinner() {
     </Popup>
   );
 }
+
+Spinner.propTypes = {
+  open: PropTypes.bool.isRequired,
+  setOpen: PropTypes.func.isRequired,
+};

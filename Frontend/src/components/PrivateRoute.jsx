@@ -29,3 +29,8 @@ export const PrivateRoute = ({ children, roles }) => {
 
   return children;
 };
+
+PrivateRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+  roles: PropTypes.arrayOf(PropTypes.string).isRequired,
+};

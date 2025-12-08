@@ -14,7 +14,7 @@ export default function SearchNav({
 }) {
   return (
     <div className="cont-searchNav">
-      <label>
+      <div className="input-group">
         <input
           type="text"
           placeholder="Buscar por dato..."
@@ -26,11 +26,13 @@ export default function SearchNav({
           className={isDatoValue ? "" : "no-active"}
           disabled={!isDatoValue}
         >
-          <img src={imgX} alt="" />
+          <img src={imgX} alt="Limpiar búsqueda" />
         </button>
-      </label>
+      </div>
+
       <div className="sep-vrtSearch"></div>
-      <label>
+
+      <div className="input-group">
         <input
           type="text"
           placeholder="Buscar por detalle..."
@@ -42,12 +44,24 @@ export default function SearchNav({
           className={isDetalleValue ? "" : "no-active"}
           disabled={!isDetalleValue}
         >
-          <img src={imgX} alt="" />
+          <img src={imgX} alt="Limpiar búsqueda" />
         </button>
-      </label>
+      </div>
+
       <button>
-        <img src={imgSearch} alt="" />
+        <img src={imgSearch} alt="Buscar" />
       </button>
     </div>
   );
 }
+
+SearchNav.propTypes = {
+  refDato: PropTypes.object.isRequired,
+  refDetalle: PropTypes.object.isRequired,
+  onInputDato: PropTypes.func.isRequired,
+  onInputDetalle: PropTypes.func.isRequired,
+  clearDato: PropTypes.func.isRequired,
+  clearDetalle: PropTypes.func.isRequired,
+  isDatoValue: PropTypes.bool.isRequired,
+  isDetalleValue: PropTypes.bool.isRequired,
+};

@@ -1,4 +1,5 @@
 import "../css/card.css";
+import PropTypes from "prop-types";
 
 import imgLlave from "../assets/img/candado.webp";
 import imgBorrar from "../assets/img/eliminar.webp";
@@ -26,3 +27,11 @@ export default function CardUsuario({
     </div>
   );
 }
+
+CardUsuario.propTypes = {
+  nameUsuario: PropTypes.string.isRequired,
+  correoUsuario: PropTypes.string.isRequired,
+  estado: PropTypes.string.isRequired,
+  onClick1: PropTypes.func.isRequired,
+  onClick2: PropTypes.func.isRequired,
+};
