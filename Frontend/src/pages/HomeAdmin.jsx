@@ -2,6 +2,7 @@
 import "../css/home.css";
 import "../css/swalStyles.css";
 import selectNavStyles from "../css/selectNavStyles.js";
+import swalStyles from "../css/swalStyles.js";
 
 // Hooks
 import { useAuth } from "../context/AuthContext";
@@ -17,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Popup from "reactjs-popup";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
 // Eschemas
 import {
@@ -273,10 +275,6 @@ export default function HomeAdmin() {
   // ? -> Inicio eliminar cliente/acciones
   const { eliminarUsuario } = useUsuarioService();
   const eliminarCliente = async (cliente) => {
-    const { default: Swal } = await import("sweetalert2");
-    const { default: swalStyles } = await import("../css/swalStyles.js");
-
-    // Mostramos el confirmador
     const result = await Swal.fire({
       title: `¿Eliminar cliente ${cliente.nombre}?`,
       text: "Esta acción es irreversible",
@@ -693,9 +691,6 @@ export default function HomeAdmin() {
   // ? -> Inicio eliminar informacion cliente
   const { eliminarInformacion } = useInfoUsuarioService();
   const eliminarInformacionCliente = async (info) => {
-    const { default: Swal } = await import("sweetalert2");
-    const { default: swalStyles } = await import("../css/swalStyles.js");
-
     const result = await Swal.fire({
       title: `¿Estás seguro de eliminar el registro °${info.info_id}?`,
       text: "Esta acción es irreversible",
@@ -857,11 +852,6 @@ export default function HomeAdmin() {
   // Cerrar sesion
   const { logout } = useAuth();
   const cerrarSesion = async () => {
-    setIsLoading(true);
-    const { default: Swal } = await import("sweetalert2");
-    const { default: swalStyles } = await import("../css/swalStyles.js");
-    setIsLoading(false);
-
     const result = await Swal.fire({
       title: "¿Estás seguro de cerrar sesión?",
       text: "Tendrás que iniciar sesión nuevamente",
@@ -1103,7 +1093,7 @@ export default function HomeAdmin() {
           <h2>Gestión de usuarios</h2>
           <CardAdmin
             nameAdmin={user.nombre}
-            rolAdmin={user.rol}
+            isAdmin={user.isAdmin}
             onClick={() => {
               setPopUpEditarContrasena(true);
               setUsuarioSeleccionado(user);

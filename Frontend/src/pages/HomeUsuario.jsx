@@ -768,7 +768,7 @@ export default function HomeUsuario() {
           <h2>Gestión de usuario</h2>
           <CardAdmin
             nameAdmin={user.nombre}
-            rolAdmin={user.rol}
+            isAdmin={user.isAdmin}
             onClick={() => {
               setPopUpEditarContrasena(true);
               setUsuarioSeleccionado(user);

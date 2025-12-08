@@ -23,20 +23,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Helper para normalizar usuario del backend (isAdmin -> rol)
-const normalizeUser = (usuario) => {
-  if (!usuario) return null;
-
-  // Si ya tiene rol, mantenerlo
-  if (usuario.rol) return usuario;
-
-  // Convertir isAdmin a rol
-  return {
-    ...usuario,
-    rol: usuario.isAdmin ? "admin" : "cliente",
-  };
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
@@ -134,17 +120,16 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(newToken);
         setupInterceptors(newToken);
 
-        // Normalizar usuario del backend
-        const normalizedUser = normalizeUser(usuario);
-        if (normalizedUser) {
-          setUser(normalizedUser);
+        // El backend proporciona `usuario` con `isAdmin` booleano
+        if (usuario) {
+          setUser(usuario);
         } else {
           // Si no viene usuario, intentar decodificarlo del token
           const decoded = decodeJWT(newToken);
           if (decoded && decoded.id) {
             setUser({
               id: decoded.id,
-              rol: decoded.isAdmin ? "admin" : "cliente",
+              isAdmin: !!decoded.isAdmin,
               email: decoded.email,
               nombre: decoded.nombre,
             });
@@ -206,12 +191,11 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(token);
       setupInterceptors(token);
 
-      // Normalizar usuario del backend
-      const normalizedUser = normalizeUser(usuario);
-      setUser(normalizedUser);
+      // El backend proporciona `usuario` con `isAdmin` booleano
+      setUser(usuario);
 
       setTimeout(() => {
-        toast.success("Bienvenido " + (normalizedUser?.nombre || ""));
+        toast.success("Bienvenido " + (usuario?.nombre || ""));
       }, 1100);
 
       return { success: true, data: response.data };
@@ -273,7 +257,7 @@ export const AuthProvider = ({ children }) => {
 
   const getHomeRoute = () => {
     if (!user) return "/";
-    return user.rol === "admin" ? "/homeAdmin" : "/homeUsuario";
+    return user.isAdmin ? "/homeAdmin" : "/homeUsuario";
   };
 
   const isAuthenticated = () => !!(user && accessToken);
