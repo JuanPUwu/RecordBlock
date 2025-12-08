@@ -15,6 +15,8 @@ dotenv.config();
 
 const app = express();
 app.disable("x-powered-by");
+// Configurar trust proxy para obtener IP real cuando está detrás de un proxy
+app.set("trust proxy", true);
 const ENV = process.env.NODE_ENV || "development";
 
 // Orígenes permitidos según el entorno

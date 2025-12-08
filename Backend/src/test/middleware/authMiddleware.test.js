@@ -4,10 +4,15 @@ import jwt from "jsonwebtoken";
 const mocks = {
   isBlacklisted: jest.fn(),
   jwtVerify: jest.fn(),
+  isSessionActive: jest.fn(),
 };
 
 jest.unstable_mockModule("../../config/blacklist.js", () => ({
   isBlacklisted: mocks.isBlacklisted,
+}));
+
+jest.unstable_mockModule("../../utils/authHelper.js", () => ({
+  isSessionActive: mocks.isSessionActive,
 }));
 
 jest.unstable_mockModule("jsonwebtoken", () => ({
@@ -86,7 +91,7 @@ describe("authMiddleware", () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it("permite acceso si el token es válido", async () => {
+    it("permite acceso si el token es válido sin sessionId", async () => {
       const { req, res, next } = mockReqResNext();
       req.headers.authorization = "Bearer valid-token";
 
@@ -102,9 +107,58 @@ describe("authMiddleware", () => {
         "valid-token",
         process.env.JWT_ACCESS_SECRET
       );
+      expect(mocks.isSessionActive).not.toHaveBeenCalled(); // No tiene sessionId
       expect(req.usuario).toEqual(decodedToken);
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it("permite acceso si el token es válido y la sesión está activa", async () => {
+      const { req, res, next } = mockReqResNext();
+      req.headers.authorization = "Bearer valid-token";
+
+      const decodedToken = { id: 1, isAdmin: 0, sessionId: 1 };
+
+      mocks.isBlacklisted.mockResolvedValue(false);
+      mocks.jwtVerify.mockReturnValue(decodedToken);
+      mocks.isSessionActive.mockResolvedValue(true);
+
+      await verificarToken(req, res, next);
+
+      expect(mocks.isBlacklisted).toHaveBeenCalledWith("valid-token");
+      expect(mocks.jwtVerify).toHaveBeenCalledWith(
+        "valid-token",
+        process.env.JWT_ACCESS_SECRET
+      );
+      expect(mocks.isSessionActive).toHaveBeenCalledWith(1);
+      expect(req.usuario).toEqual(decodedToken);
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it("retorna 403 si el token tiene sessionId pero la sesión no está activa", async () => {
+      const { req, res, next } = mockReqResNext();
+      req.headers.authorization = "Bearer valid-token";
+
+      const decodedToken = { id: 1, isAdmin: 0, sessionId: 1 };
+
+      mocks.isBlacklisted.mockResolvedValue(false);
+      mocks.jwtVerify.mockReturnValue(decodedToken);
+      mocks.isSessionActive.mockResolvedValue(false); // Sesión cerrada
+
+      await verificarToken(req, res, next);
+
+      expect(mocks.isBlacklisted).toHaveBeenCalledWith("valid-token");
+      expect(mocks.jwtVerify).toHaveBeenCalledWith(
+        "valid-token",
+        process.env.JWT_ACCESS_SECRET
+      );
+      expect(mocks.isSessionActive).toHaveBeenCalledWith(1);
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Token inválido (sesión cerrada)",
+      });
+      expect(next).not.toHaveBeenCalled();
     });
 
     it("retorna 401 si el token expiró", async () => {

@@ -17,8 +17,13 @@ import {
 import {
   findUserByEmail,
   getUserByRefreshToken,
-  saveRefreshToken,
+  createUserSession,
+  updateSessionLastUsed,
   clearRefreshTokenByValue,
+  clearAllUserSessions,
+  getUserSessions,
+  deleteSessionById,
+  getDeviceInfo,
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
 } from "../utils/authHelper.js";
@@ -64,10 +69,17 @@ export const loginUsuario = async (req, res) => {
     }
 
     const payload = { id: usuario.id, isAdmin: usuario.isAdmin };
-    const accessToken = createAccessToken(payload);
     const refreshToken = createRefreshToken(payload);
 
-    await saveRefreshToken(usuario.id, refreshToken);
+    // Obtener información del dispositivo
+    const { deviceInfo, ipAddress, userAgent } = getDeviceInfo(req);
+    
+    // Crear nueva sesión (permite múltiples sesiones simultáneas)
+    const sessionId = await createUserSession(usuario.id, refreshToken, deviceInfo, ipAddress, userAgent);
+    
+    // Incluir sessionId en el access token para poder invalidarlo cuando se cierre la sesión
+    const accessToken = createAccessToken(payload, sessionId);
+    
     setRefreshTokenCookie(res, refreshToken);
 
     return res.json({
@@ -99,11 +111,25 @@ export const refreshToken = async (req, res) => {
 
     const decoded = verifyRefreshToken(refreshToken);
 
-    const payload = { id: decoded.id, isAdmin: decoded.isAdmin };
-    const newAccessToken = createAccessToken(payload);
-    const newRefreshToken = createRefreshToken(payload);
+    // Actualizar última fecha de uso de la sesión
+    await updateSessionLastUsed(refreshToken);
 
-    await saveRefreshToken(usuario.id, newRefreshToken);
+    const payload = { id: decoded.id, isAdmin: decoded.isAdmin };
+    
+    // Generar nuevo refresh token y actualizar la sesión existente
+    const newRefreshToken = createRefreshToken(payload);
+    
+    // Obtener el session_id actual antes de eliminar la sesión
+    const currentSessionId = usuario.session_id;
+    
+    // Eliminar la sesión antigua y crear una nueva con el mismo dispositivo
+    const { deviceInfo, ipAddress, userAgent } = getDeviceInfo(req);
+    await clearRefreshTokenByValue(refreshToken);
+    const newSessionId = await createUserSession(usuario.id, newRefreshToken, deviceInfo, ipAddress, userAgent);
+    
+    // Incluir sessionId en el nuevo access token
+    const newAccessToken = createAccessToken(payload, newSessionId);
+    
     setRefreshTokenCookie(res, newRefreshToken);
 
     return res.json({
@@ -291,5 +317,97 @@ export const resetPassword = async (req, res) => {
     return res.sendFile(
       path.join(__dirname, "../views/resetPasswordFallida.html")
     );
+  }
+};
+
+// Obtener todas las sesiones activas del usuario
+export const getMySessions = async (req, res) => {
+  try {
+    const userId = req.usuario.id;
+    const sessions = await getUserSessions(userId);
+    
+    return res.json({
+      success: true,
+      sessions: sessions.map((session) => ({
+        id: session.id,
+        deviceInfo: session.device_info,
+        ipAddress: session.ip_address,
+        userAgent: session.user_agent,
+        createdAt: session.created_at,
+        lastUsedAt: session.last_used_at,
+        expiresAt: session.expires_at,
+      })),
+    });
+  } catch (err) {
+    return safeServerError(res, err, "Error al obtener sesiones");
+  }
+};
+
+// Eliminar una sesión específica
+export const deleteSession = async (req, res) => {
+  try {
+    const userId = req.usuario.id;
+    const { sessionId } = req.params;
+    const currentRefreshToken = req.cookies?.refreshToken;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "ID de sesión requerido" });
+    }
+
+    // Obtener la sesión actual para evitar que el usuario elimine su propia sesión activa
+    const currentSession = currentRefreshToken
+      ? await getUserByRefreshToken(currentRefreshToken)
+      : null;
+    
+    const currentSessionId = currentSession?.session_id;
+
+    if (parseInt(sessionId) === currentSessionId) {
+      return res.status(400).json({
+        error: "No puedes eliminar tu sesión actual. Usa /logout para cerrar sesión",
+      });
+    }
+
+    const deleted = await deleteSessionById(parseInt(sessionId), userId);
+    
+    if (!deleted) {
+      return res.status(404).json({
+        error: "Sesión no encontrada o no tienes permisos para eliminarla",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Sesión eliminada correctamente",
+    });
+  } catch (err) {
+    return safeServerError(res, err, "Error al eliminar sesión");
+  }
+};
+
+// Eliminar todas las sesiones excepto la actual
+export const deleteAllOtherSessions = async (req, res) => {
+  try {
+    const userId = req.usuario.id;
+    const currentRefreshToken = req.cookies?.refreshToken;
+
+    if (!currentRefreshToken) {
+      return res.status(401).json({
+        error: "No hay sesión activa",
+      });
+    }
+
+    // Eliminar todas las sesiones del usuario excepto la actual
+    await run(
+      `DELETE FROM user_sessions 
+       WHERE user_id = ? AND refresh_token != ?`,
+      [userId, currentRefreshToken]
+    );
+
+    return res.json({
+      success: true,
+      message: "Todas las demás sesiones han sido cerradas",
+    });
+  } catch (err) {
+    return safeServerError(res, err, "Error al eliminar sesiones");
   }
 };

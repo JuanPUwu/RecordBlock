@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { isBlacklisted } from "../config/blacklist.js";
+import { isSessionActive } from "../utils/authHelper.js";
 
 export const verificarToken = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
@@ -21,6 +22,17 @@ export const verificarToken = async (req, res, next) => {
 
     // Verificar JWT
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    
+    // Si el token tiene sessionId, verificar que la sesión aún existe y está activa
+    if (decoded.sessionId) {
+      const sessionActive = await isSessionActive(decoded.sessionId);
+      if (!sessionActive) {
+        return res.status(403).json({ 
+          error: "Token inválido (sesión cerrada)" 
+        });
+      }
+    }
+    
     req.usuario = decoded;
     next();
   } catch (err) {

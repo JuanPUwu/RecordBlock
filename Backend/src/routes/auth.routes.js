@@ -6,7 +6,11 @@ import {
   forgotPassword,
   showResetPasswordPage,
   resetPassword,
+  getMySessions,
+  deleteSession,
+  deleteAllOtherSessions,
 } from "../controllers/authController.js";
+import { verificarToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -180,5 +184,92 @@ router.get("/reset-password/:token", showResetPasswordPage);
  *               type: string
  */
 router.post("/reset-password/:token", resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/sessions:
+ *   get:
+ *     summary: Obtener todas las sesiones activas del usuario
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Retorna todas las sesiones activas del usuario autenticado
+ *     responses:
+ *       200:
+ *         description: Lista de sesiones activas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 sessions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       deviceInfo:
+ *                         type: string
+ *                       ipAddress:
+ *                         type: string
+ *                       userAgent:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                       lastUsedAt:
+ *                         type: string
+ *                       expiresAt:
+ *                         type: string
+ *       401:
+ *         description: No autenticado
+ */
+router.get("/sessions", verificarToken, getMySessions);
+
+/**
+ * @swagger
+ * /api/auth/sessions/{sessionId}:
+ *   delete:
+ *     summary: Eliminar una sesión específica
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Elimina una sesión específica del usuario. No se puede eliminar la sesión actual.
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Sesión eliminada correctamente
+ *       400:
+ *         description: No se puede eliminar la sesión actual
+ *       401:
+ *         description: No autenticado
+ *       404:
+ *         description: Sesión no encontrada
+ */
+router.delete("/sessions/:sessionId", verificarToken, deleteSession);
+
+/**
+ * @swagger
+ * /api/auth/sessions/others:
+ *   delete:
+ *     summary: Eliminar todas las demás sesiones
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Elimina todas las sesiones del usuario excepto la sesión actual
+ *     responses:
+ *       200:
+ *         description: Todas las demás sesiones han sido cerradas
+ *       401:
+ *         description: No autenticado o no hay sesión activa
+ */
+router.delete("/sessions/others", verificarToken, deleteAllOtherSessions);
 
 export default router;

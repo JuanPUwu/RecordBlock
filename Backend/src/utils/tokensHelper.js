@@ -2,10 +2,16 @@
 import jwt from "jsonwebtoken";
 import { TOKEN_CONFIG } from "../config/constants.js";
 
-export const createAccessToken = (payload) =>
-  jwt.sign(payload, process.env.JWT_ACCESS_SECRET, {
+export const createAccessToken = (payload, sessionId = null) => {
+  const tokenPayload = { ...payload };
+  // Incluir sessionId en el payload si se proporciona
+  if (sessionId) {
+    tokenPayload.sessionId = sessionId;
+  }
+  return jwt.sign(tokenPayload, process.env.JWT_ACCESS_SECRET, {
     expiresIn: TOKEN_CONFIG.ACCESS_TOKEN_EXPIRY,
   });
+};
 
 export const createRefreshToken = (payload) =>
   jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {

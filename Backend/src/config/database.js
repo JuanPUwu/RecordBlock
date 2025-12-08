@@ -108,6 +108,7 @@ db.serialize(async () => {
   db.run(`DROP TABLE IF EXISTS informacion_usuario`);
   db.run(`DROP TABLE IF EXISTS datos_minimos`);
   db.run(`DROP TABLE IF EXISTS token_blacklist`);
+  db.run(`DROP TABLE IF EXISTS user_sessions`);
 
   // Crear tabla de usuarios
   db.run(`
@@ -117,8 +118,7 @@ db.serialize(async () => {
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
       isAdmin BOOLEAN NOT NULL DEFAULT 0,
-      verificado BOOLEAN NOT NULL DEFAULT 0,
-      refresh_token TEXT
+      verificado BOOLEAN NOT NULL DEFAULT 0
     )
   `);
 
@@ -174,6 +174,34 @@ db.serialize(async () => {
       token TEXT NOT NULL,
       expiresAt INTEGER NOT NULL
     )
+  `);
+
+  // Tabla de sesiones de usuario (soporte para múltiples sesiones)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      refresh_token TEXT NOT NULL UNIQUE,
+      device_info TEXT,
+      ip_address TEXT,
+      user_agent TEXT,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME NOT NULL,
+      last_used_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES usuario(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Índice para búsquedas rápidas por refresh_token
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_refresh_token 
+    ON user_sessions(refresh_token)
+  `);
+
+  // Índice para búsquedas por usuario
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id 
+    ON user_sessions(user_id)
   `);
 
   // Insertar usuarios por defecto

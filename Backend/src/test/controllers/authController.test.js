@@ -34,8 +34,13 @@ const mocks = {
   // authHelper
   findUserByEmail: jest.fn(),
   getUserByRefreshToken: jest.fn(),
-  saveRefreshToken: jest.fn(),
+  createUserSession: jest.fn(),
+  updateSessionLastUsed: jest.fn(),
   clearRefreshTokenByValue: jest.fn(),
+  getUserSessions: jest.fn(),
+  deleteSessionById: jest.fn(),
+  clearAllUserSessions: jest.fn(),
+  getDeviceInfo: jest.fn(),
   setRefreshTokenCookie: jest.fn(),
   clearRefreshTokenCookie: jest.fn(),
   // tokensHelper
@@ -75,8 +80,13 @@ jest.unstable_mockModule("bcrypt", () => ({
 jest.unstable_mockModule("../../utils/authHelper.js", () => ({
   findUserByEmail: mocks.findUserByEmail,
   getUserByRefreshToken: mocks.getUserByRefreshToken,
-  saveRefreshToken: mocks.saveRefreshToken,
+  createUserSession: mocks.createUserSession,
+  updateSessionLastUsed: mocks.updateSessionLastUsed,
   clearRefreshTokenByValue: mocks.clearRefreshTokenByValue,
+  getUserSessions: mocks.getUserSessions,
+  deleteSessionById: mocks.deleteSessionById,
+  clearAllUserSessions: mocks.clearAllUserSessions,
+  getDeviceInfo: mocks.getDeviceInfo,
   setRefreshTokenCookie: mocks.setRefreshTokenCookie,
   clearRefreshTokenCookie: mocks.clearRefreshTokenCookie,
 }));
@@ -127,6 +137,9 @@ const {
   forgotPassword,
   showResetPasswordPage,
   resetPassword,
+  getMySessions,
+  deleteSession,
+  deleteAllOtherSessions,
 } = await import("../../controllers/authController.js");
 
 // ============================================================================
@@ -139,6 +152,8 @@ const mockReqRes = (options = {}) => ({
     params: options.params || {},
     cookies: options.cookies || {},
     headers: options.headers || {},
+    ip: options.ip || "192.168.1.1",
+    usuario: options.usuario || undefined,
   },
   res: {
     status: jest.fn().mockReturnThis(),
@@ -151,9 +166,14 @@ const mockReqRes = (options = {}) => ({
 const setupLoginExitoso = () => {
   mocks.findUserByEmail.mockResolvedValue({ ...usuarioBase });
   mocks.bcryptCompare.mockResolvedValue(true);
-  mocks.createAccessToken.mockReturnValue(MOCK_ACCESS_TOKEN);
   mocks.createRefreshToken.mockReturnValue(MOCK_REFRESH_TOKEN);
-  mocks.saveRefreshToken.mockResolvedValue();
+  mocks.getDeviceInfo.mockReturnValue({
+    deviceInfo: "Windows",
+    ipAddress: "192.168.1.1",
+    userAgent: "Mozilla/5.0",
+  });
+  mocks.createUserSession.mockResolvedValue(1); // Retorna sessionId
+  mocks.createAccessToken.mockReturnValue(MOCK_ACCESS_TOKEN);
   mocks.setRefreshTokenCookie.mockResolvedValue();
 };
 
@@ -234,6 +254,18 @@ describe("authController - loginUsuario", () => {
     setupLoginExitoso();
     await loginUsuario(req, res);
 
+    expect(mocks.createUserSession).toHaveBeenCalledWith(
+      usuarioBase.id,
+      MOCK_REFRESH_TOKEN,
+      "Windows",
+      "192.168.1.1",
+      "Mozilla/5.0"
+    );
+    expect(mocks.createAccessToken).toHaveBeenCalledWith(
+      { id: usuarioBase.id, isAdmin: usuarioBase.isAdmin },
+      1 // sessionId
+    );
+    expect(mocks.setRefreshTokenCookie).toHaveBeenCalledWith(res, MOCK_REFRESH_TOKEN);
     expect(res.json).toHaveBeenCalledWith({
       mensaje: "Login exitoso",
       accessToken: MOCK_ACCESS_TOKEN,
@@ -310,15 +342,30 @@ describe("authController - refreshToken", () => {
       nombre: "Test",
     };
 
-    mocks.getUserByRefreshToken.mockResolvedValue(usuario);
+    mocks.getUserByRefreshToken.mockResolvedValue({
+      ...usuario,
+      session_id: 1, // session_id actual
+    });
     mocks.verifyRefreshToken.mockReturnValue({ id: 1, isAdmin: 0 });
-    mocks.createAccessToken.mockReturnValue(MOCK_ACCESS_TOKEN);
     mocks.createRefreshToken.mockReturnValue(MOCK_REFRESH_TOKEN);
+    mocks.getDeviceInfo.mockReturnValue({
+      deviceInfo: "Windows",
+      ipAddress: "192.168.1.1",
+      userAgent: "Mozilla/5.0",
+    });
+    mocks.createUserSession.mockResolvedValue(2); // Nueva sesión con ID 2
+    mocks.createAccessToken.mockReturnValue(MOCK_ACCESS_TOKEN);
 
     await refreshToken(req, res);
 
-    expect(mocks.saveRefreshToken).toHaveBeenCalled();
-    expect(mocks.setRefreshTokenCookie).toHaveBeenCalled();
+    expect(mocks.updateSessionLastUsed).toHaveBeenCalledWith("validToken");
+    expect(mocks.clearRefreshTokenByValue).toHaveBeenCalledWith("validToken");
+    expect(mocks.createUserSession).toHaveBeenCalled();
+    expect(mocks.createAccessToken).toHaveBeenCalledWith(
+      { id: 1, isAdmin: 0 },
+      2 // nuevo sessionId
+    );
+    expect(mocks.setRefreshTokenCookie).toHaveBeenCalledWith(res, MOCK_REFRESH_TOKEN);
 
     expect(res.json).toHaveBeenCalledWith({
       accessToken: MOCK_ACCESS_TOKEN,
@@ -697,6 +744,256 @@ describe("authController - resetPassword", () => {
     expect(mocks.sendFile.mock.calls[0][0]).toContain(
       "resetPasswordFallida.html"
     );
+
+    consoleSpy.mockRestore();
+  });
+});
+
+// ============================================================================
+// TESTS - GET MY SESSIONS
+// ============================================================================
+
+describe("authController - getMySessions", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("retorna todas las sesiones activas del usuario", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+    });
+
+    const mockSessions = [
+      {
+        id: 1,
+        device_info: "Windows",
+        ip_address: "192.168.1.1",
+        user_agent: "Mozilla/5.0",
+        created_at: "2024-01-01T00:00:00.000Z",
+        last_used_at: "2024-01-01T12:00:00.000Z",
+        expires_at: "2024-01-01T20:00:00.000Z",
+      },
+      {
+        id: 2,
+        device_info: "Mobile Device",
+        ip_address: "192.168.1.2",
+        user_agent: "Mobile Safari",
+        created_at: "2024-01-01T01:00:00.000Z",
+        last_used_at: "2024-01-01T11:00:00.000Z",
+        expires_at: "2024-01-01T21:00:00.000Z",
+      },
+    ];
+
+    mocks.getUserSessions.mockResolvedValue(mockSessions);
+
+    await getMySessions(req, res);
+
+    expect(mocks.getUserSessions).toHaveBeenCalledWith(1);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      sessions: mockSessions.map((session) => ({
+        id: session.id,
+        deviceInfo: session.device_info,
+        ipAddress: session.ip_address,
+        userAgent: session.user_agent,
+        createdAt: session.created_at,
+        lastUsedAt: session.last_used_at,
+        expiresAt: session.expires_at,
+      })),
+    });
+  });
+
+  it("maneja errores del servidor", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+    });
+
+    const error = new Error("Database error");
+    mocks.getUserSessions.mockRejectedValue(error);
+
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    await getMySessions(req, res);
+
+    expect(consoleSpy).toHaveBeenCalledWith(error);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: "Error al obtener sesiones" });
+
+    consoleSpy.mockRestore();
+  });
+});
+
+// ============================================================================
+// TESTS - DELETE SESSION
+// ============================================================================
+
+describe("authController - deleteSession", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("retorna 400 si no se proporciona sessionId", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      params: {},
+    });
+
+    await deleteSession(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "ID de sesión requerido",
+    });
+  });
+
+  it("retorna 400 si intenta eliminar la sesión actual", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      params: { sessionId: "1" },
+      cookies: { refreshToken: "current-token" },
+    });
+
+    mocks.getUserByRefreshToken.mockResolvedValue({
+      id: 1,
+      session_id: 1,
+    });
+
+    await deleteSession(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "No puedes eliminar tu sesión actual. Usa /logout para cerrar sesión",
+    });
+  });
+
+  it("elimina sesión exitosamente", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      params: { sessionId: "2" },
+      cookies: { refreshToken: "current-token" },
+    });
+
+    mocks.getUserByRefreshToken.mockResolvedValue({
+      id: 1,
+      session_id: 1, // Sesión actual diferente a la que se elimina
+    });
+    mocks.deleteSessionById.mockResolvedValue(true);
+
+    await deleteSession(req, res);
+
+    expect(mocks.deleteSessionById).toHaveBeenCalledWith(2, 1);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: "Sesión eliminada correctamente",
+    });
+  });
+
+  it("retorna 404 si la sesión no existe", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      params: { sessionId: "999" },
+      cookies: { refreshToken: "current-token" },
+    });
+
+    mocks.getUserByRefreshToken.mockResolvedValue({
+      id: 1,
+      session_id: 1,
+    });
+    mocks.deleteSessionById.mockResolvedValue(false);
+
+    await deleteSession(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Sesión no encontrada o no tienes permisos para eliminarla",
+    });
+  });
+
+  it("maneja errores del servidor", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      params: { sessionId: "2" },
+      cookies: { refreshToken: "current-token" },
+    });
+
+    const error = new Error("Database error");
+    mocks.getUserByRefreshToken.mockResolvedValue({
+      id: 1,
+      session_id: 1,
+    });
+    mocks.deleteSessionById.mockRejectedValue(error);
+
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    await deleteSession(req, res);
+
+    expect(consoleSpy).toHaveBeenCalledWith(error);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: "Error al eliminar sesión" });
+
+    consoleSpy.mockRestore();
+  });
+});
+
+// ============================================================================
+// TESTS - DELETE ALL OTHER SESSIONS
+// ============================================================================
+
+describe("authController - deleteAllOtherSessions", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("retorna 401 si no hay sesión activa", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      cookies: {},
+    });
+
+    await deleteAllOtherSessions(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "No hay sesión activa",
+    });
+  });
+
+  it("elimina todas las demás sesiones exitosamente", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      cookies: { refreshToken: "current-token" },
+    });
+
+    mocks.run.mockResolvedValue({ changes: 3 });
+
+    await deleteAllOtherSessions(req, res);
+
+    expect(mocks.run).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM user_sessions"),
+      [1, "current-token"]
+    );
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: "Todas las demás sesiones han sido cerradas",
+    });
+  });
+
+  it("maneja errores del servidor", async () => {
+    const { req, res } = mockReqRes({
+      usuario: { id: 1 },
+      cookies: { refreshToken: "current-token" },
+    });
+
+    const error = new Error("Database error");
+    mocks.run.mockRejectedValue(error);
+
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    await deleteAllOtherSessions(req, res);
+
+    expect(consoleSpy).toHaveBeenCalledWith(error);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: "Error al eliminar sesiones" });
 
     consoleSpy.mockRestore();
   });
