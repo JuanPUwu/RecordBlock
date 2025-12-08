@@ -1,6 +1,7 @@
 import "../css/spinner.css";
 import Popup from "reactjs-popup";
 import { useState } from "react";
+import PropTypes from "prop-types";
 
 export default function SpinnerPages() {
   const [open, setOpen] = useState(true);

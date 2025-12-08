@@ -1,8 +1,8 @@
-// components/PrivateRoute.jsx
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import PropTypes from "prop-types";
 
-export const PrivateRoute = ({ children, roles }) => {
+export const PrivateRoute = ({ children, requireAdmin }) => {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) return <div>Cargando...</div>;
@@ -10,20 +10,18 @@ export const PrivateRoute = ({ children, roles }) => {
   // Si no está autenticado, lo mando a login
   if (!isAuthenticated()) return <Navigate to="/" replace />;
 
-  // Si la ruta requiere roles y el usuario no cumple con ninguno
-  if (roles) {
-    const allowed = roles.some((r) => {
-      if (r === "admin") return !!user.isAdmin;
-      if (r === "cliente") return !user.isAdmin;
-      return false;
-    });
+  // Si la ruta requiere un rol específico, verificar que el usuario lo cumpla
+  if (requireAdmin !== undefined) {
+    const isAdmin = !!user?.isAdmin;
 
-    if (!allowed) {
-      return user.isAdmin ? (
-        <Navigate to="/homeAdmin" replace />
-      ) : (
-        <Navigate to="/homeUsuario" replace />
-      );
+    // Si requiere admin y el usuario no es admin, redirigir
+    if (requireAdmin && !isAdmin) {
+      return <Navigate to="/homeUsuario" replace />;
+    }
+
+    // Si requiere cliente (requireAdmin === false) y el usuario es admin, redirigir
+    if (requireAdmin === false && isAdmin) {
+      return <Navigate to="/homeAdmin" replace />;
     }
   }
 
@@ -32,5 +30,5 @@ export const PrivateRoute = ({ children, roles }) => {
 
 PrivateRoute.propTypes = {
   children: PropTypes.node.isRequired,
-  roles: PropTypes.arrayOf(PropTypes.string).isRequired,
+  requireAdmin: PropTypes.bool,
 };

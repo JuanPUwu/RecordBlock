@@ -1,6 +1,7 @@
 import "../css/searchNav.css";
 import imgSearch from "../assets/img/busqueda.webp";
 import imgX from "../assets/img/x.webp";
+import PropTypes from "prop-types";
 
 export default function SearchNav({
   refDato,

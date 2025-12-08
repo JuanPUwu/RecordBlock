@@ -9,7 +9,7 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
 }
 
-.cont-searchNav label {
+.cont-searchNav div {
   width: 50%;
   height: 100%;
   padding: 0 0.9rem;
@@ -21,15 +21,15 @@
   position: relative;
 }
 
-.cont-searchNav label:first-of-type {
+.cont-searchNav div:first-of-type {
   border-radius: 0.5rem 0 0 0.5rem;
 }
 
-.cont-searchNav label:last-of-type {
+.cont-searchNav div:last-of-type {
   border-radius: 0;
 }
 
-.cont-searchNav label:focus-within {
+.cont-searchNav div:focus-within {
   outline: auto;
 }
 
@@ -52,7 +52,7 @@
   display: inline-block;
 }
 
-.cont-searchNav label button {
+.cont-searchNav div button {
   right: 0.4rem;
   height: 55%;
   position: absolute;
@@ -65,17 +65,17 @@
   cursor: pointer;
 }
 
-.cont-searchNav label button img {
+.cont-searchNav div button img {
   opacity: 0.6;
   transition: 0.1s ease-in;
   filter: invert(0);
 }
 
-.cont-searchNav label button:hover img {
+.cont-searchNav div button:hover img {
   opacity: 1;
 }
 
-.cont-searchNav label button.no-active {
+.cont-searchNav div button.no-active {
   opacity: 0;
   visibility: 0;
   pointer-events: none;

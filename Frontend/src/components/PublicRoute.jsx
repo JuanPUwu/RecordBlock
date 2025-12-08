@@ -1,5 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
 export const PublicRoute = ({ children }) => {
   const { isAuthenticated, getHomeRoute } = useAuth();

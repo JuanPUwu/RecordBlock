@@ -23,7 +23,7 @@ export default function AppRouter() {
         <Route
           path="/homeAdmin"
           element={
-            <PrivateRoute roles={["admin"]}>
+            <PrivateRoute requireAdmin={true}>
               <HomeAdmin />
             </PrivateRoute>
           }
@@ -31,7 +31,7 @@ export default function AppRouter() {
         <Route
           path="/homeUsuario"
           element={
-            <PrivateRoute roles={["cliente"]}>
+            <PrivateRoute requireAdmin={false}>
               <HomeUsuario />
             </PrivateRoute>
           }
