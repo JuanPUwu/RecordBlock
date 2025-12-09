@@ -79,8 +79,7 @@ async function seedInformacionUsuario(cantidadPorUsuario = 10) {
             telefono: faker.phone.number(),
             nacimiento: faker.date
               .birthdate({ min: 18, max: 65, mode: "age" })
-              .toISOString()
-              .split("T")[0],
+              .toLocaleDateString("es-ES"),
             bio: faker.lorem.sentence(),
           };
 

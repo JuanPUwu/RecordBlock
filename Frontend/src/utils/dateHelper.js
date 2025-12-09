@@ -1,5 +1,9 @@
 export const parseDateDMY = (str) => {
-  const [day, month, year] = str.split("/").map(Number);
+  // Aceptar tanto "/" como "-" como separadores
+  const separador = str.includes("/") ? "/" : str.includes("-") ? "-" : null;
+  if (!separador) return null;
+
+  const [day, month, year] = str.split(separador).map(Number);
 
   // Validar rangos básicos
   if (!day || !month || !year) return null;

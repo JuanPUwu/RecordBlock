@@ -333,49 +333,113 @@ export default function HomeAdmin() {
   const refDetalle = useRef();
   const [isDatoValue, setIsDatoValue] = useState(false);
   const [isDetalleValue, setIsDetalleValue] = useState(false);
-  const filtroInformacion = () => {
-    const dato = refDato.current.value.trim().toLowerCase();
-    const detalle = refDetalle.current.value.trim().toLowerCase();
+  const [filtrarPorFecha, setFiltrarPorFecha] = useState(false);
+
+  // Función para detectar si un valor es una fecha válida y convertirla
+  const obtenerFechaDeValor = (valor) => {
+    if (typeof valor !== "string") return null;
+    const valorTrimmed = valor.trim();
+    // Buscar patrón de fecha DD-MM-YYYY o DD/MM/YYYY
+    const fechaRegex = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/;
+    if (fechaRegex.test(valorTrimmed)) {
+      return parseDateDMY(valorTrimmed);
+    }
+    return null;
+  };
+
+  // Función para filtrar información por fechas de 3 meses
+  const filtrarPorFechas = (infoArray, activarFiltro) => {
+    // Si no se activa el filtro, retornar el array sin modificar
+    if (!activarFiltro) return infoArray;
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Normalizar a inicio del día
+
+    // Calcular la fecha límite (3 meses en el futuro)
+    const fechaLimite = new Date(hoy);
+    fechaLimite.setMonth(fechaLimite.getMonth() + 3);
+
+    return infoArray.filter((info) => {
+      // Buscar en todos los objetos de datos
+      for (const datoObj of info.datos) {
+        // Buscar específicamente en el campo "licenciamiento" (insensible a mayúsculas/minúsculas)
+        const campoBuscado = "licenciamiento";
+        const claveEncontrada = Object.keys(datoObj).find(
+          (key) => key.toLowerCase() === campoBuscado.toLowerCase()
+        );
+
+        if (claveEncontrada) {
+          const valorAComparar = datoObj[claveEncontrada];
+          if (valorAComparar) {
+            const fecha = obtenerFechaDeValor(valorAComparar);
+            if (fecha) {
+              // Si encontramos una fecha válida, verificar si está dentro de 3 meses
+              const fechaNormalizada = new Date(fecha);
+              fechaNormalizada.setHours(0, 0, 0, 0);
+
+              // Mantener el registro si la fecha es menor a 3 meses en el futuro
+              if (fechaNormalizada <= fechaLimite) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+      // Si no encontramos fechas válidas o ninguna está dentro del rango, quitar el registro
+      return false;
+    });
+  };
+
+  const filtroInformacion = (valorCheckbox = null) => {
+    // Usar el valor del parámetro o el estado actual
+    const debeFiltrarPorFecha =
+      valorCheckbox !== null ? valorCheckbox : filtrarPorFecha;
+
+    // Obtener valores de los refs si existen, sino usar strings vacíos
+    const dato = refDato.current?.value?.trim().toLowerCase() || "";
+    const detalle = refDetalle.current?.value?.trim().toLowerCase() || "";
 
     setTerminosBusqueda({ dato, detalle });
 
-    // Si no hay filtros, retorna todo
-    if (!dato && !detalle) {
-      setWhichInfo(refInformacion.current);
-      setIsInfoCargando(false);
-      setIsDatoValue(false);
-      setIsDetalleValue(false);
-      return;
-    }
+    // Aplicar filtro normal primero
+    let datosFiltrados = refInformacion.current;
 
-    if (dato) {
-      setIsDatoValue(true);
-    } else {
-      setIsDatoValue(false);
-    }
+    if (dato || detalle) {
+      if (dato) {
+        setIsDatoValue(true);
+      } else {
+        setIsDatoValue(false);
+      }
 
-    if (detalle) {
-      setIsDetalleValue(true);
-    } else {
-      setIsDetalleValue(false);
-    }
+      if (detalle) {
+        setIsDetalleValue(true);
+      } else {
+        setIsDetalleValue(false);
+      }
 
-    const filtrados = refInformacion.current.filter((info) => {
-      const dataObj = info.datos[0] || {};
-      const keys = Object.keys(dataObj);
+      datosFiltrados = refInformacion.current.filter((info) => {
+        const dataObj = info.datos[0] || {};
+        const keys = Object.keys(dataObj);
 
-      return keys.some((k) => {
-        const keyLower = k.toLowerCase();
-        const valueLower = String(dataObj[k]).toLowerCase();
+        return keys.some((k) => {
+          const keyLower = k.toLowerCase();
+          const valueLower = String(dataObj[k]).toLowerCase();
 
-        const matchDato = dato ? keyLower.includes(dato) : true;
-        const matchDetalle = detalle ? valueLower.includes(detalle) : true;
+          const matchDato = dato ? keyLower.includes(dato) : true;
+          const matchDetalle = detalle ? valueLower.includes(detalle) : true;
 
-        return matchDato && matchDetalle;
+          return matchDato && matchDetalle;
+        });
       });
-    });
+    } else {
+      setIsDatoValue(false);
+      setIsDetalleValue(false);
+    }
 
-    setWhichInfo(filtrados);
+    // Aplicar filtro de fechas si el checkbox está activo
+    datosFiltrados = filtrarPorFechas(datosFiltrados, debeFiltrarPorFecha);
+
+    setWhichInfo(datosFiltrados);
     setIsInfoCargando(false);
   };
   // ? <- Fin ver info cliente
@@ -1288,6 +1352,15 @@ export default function HomeAdmin() {
         </button>
         <div className="cont-cant-resultados">
           <span>{whichInfo.length} Resultados</span>
+          <input
+            type="checkbox"
+            checked={filtrarPorFecha}
+            onChange={(e) => {
+              const nuevoValor = e.target.checked;
+              setFiltrarPorFecha(nuevoValor);
+              filtroInformacion(nuevoValor);
+            }}
+          />
         </div>
         <button
           onClick={cerrarSesion}
