@@ -17,6 +17,7 @@ function MockDatabase(path) {
   const initRun = jest.fn(function (sql, params, cb) {
     if (typeof params === "function") {
       cb = params;
+      params = [];
     }
     if (cb) {
       const mockThis = { lastID: 0, changes: 0 };
@@ -36,15 +37,15 @@ function MockDatabase(path) {
         cb(null, [
           {
             datos:
-              '["direccion", "ciudad", "pais", "telefono", "nacimiento", "bio"]',
+              '["Hostname", "Plataforma", "Marca/Modelo", "Tipo", "Firmware/Version S.O", "Ubicación", "Licenciamiento"]',
           },
         ]);
       } else if (sql?.includes("COUNT(*)")) {
         // Para seedInformacionUsuario - conteo
         cb(null, [{ total: 0 }]);
-      } else if (sql?.includes("SELECT id FROM usuario")) {
-        // Para seedInformacionUsuario - usuarios
-        cb(null, [{ id: 1 }, { id: 2 }]);
+      } else if (sql?.includes("SELECT id FROM usuario") && sql?.includes("isAdmin = 0")) {
+        // Para seedInformacionUsuario - usuarios no admin
+        cb(null, [{ id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }]);
       } else {
         cb(null, []);
       }
@@ -99,21 +100,24 @@ jest.unstable_mockModule("bcrypt", () => ({
 // Mock de faker
 jest.unstable_mockModule("@faker-js/faker", () => ({
   faker: {
-    location: {
-      streetAddress: jest.fn().mockReturnValue("123 Main St"),
-      city: jest.fn().mockReturnValue("Test City"),
-      country: jest.fn().mockReturnValue("Test Country"),
+    internet: {
+      domainWord: jest.fn().mockReturnValue("testdomain"),
     },
-    phone: {
-      number: jest.fn().mockReturnValue("1234567890"),
+    string: {
+      alphanumeric: jest.fn().mockReturnValue("abc123"),
+    },
+    helpers: {
+      arrayElement: jest.fn((arr) => arr[0]),
+    },
+    number: {
+      int: jest.fn().mockReturnValue(5000),
+    },
+    location: {
+      city: jest.fn().mockReturnValue("Test City"),
+      state: jest.fn().mockReturnValue("Test State"),
     },
     date: {
-      birthdate: jest.fn().mockReturnValue({
-        toISOString: jest.fn().mockReturnValue("1990-01-01T00:00:00.000Z"),
-      }),
-    },
-    lorem: {
-      sentence: jest.fn().mockReturnValue("Test bio"),
+      between: jest.fn().mockReturnValue(new Date("2024-06-15")),
     },
   },
 }));

@@ -150,7 +150,12 @@ export default function Login() {
             ¿Olvidaste tu contraseña?
           </button>
 
-          <button type="submit" disabled={isSubmitting} className="btn-login">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-login"
+            title="Iniciar sesión"
+          >
             Ingresar
             {isSubmitting && <Spinner />}
           </button>
@@ -192,6 +197,7 @@ export default function Login() {
               className="btn-forgot-pass"
               type="submit"
               disabled={isSubmittingForgot}
+              title="Enviar correo de recuperación"
             >
               Enviar
               {isSubmittingForgot && <Spinner />}

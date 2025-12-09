@@ -274,7 +274,6 @@
   border: none;
   cursor: pointer;
   border-radius: 0.5rem;
-  background-color: #1e7e34;
   color: white;
   font-weight: 500;
   transition: 0.1s ease-in;
@@ -293,22 +292,29 @@
 
 .cont-popUp form button:hover {
   text-decoration: underline;
-  background-color: #1a6b2a;
 }
 
-.cont-popUp form button.btn-forgot-pass {
-  background-color: #0053b3;
+.cont-popUp form button[title="Crear cliente"] {
+  background-color: #37c45d;
 }
 
-.cont-popUp form button.btn-forgot-pass:hover {
-  background-color: #004697;
+.cont-popUp form button[title="Crear cliente"]:hover {
+  background-color: #2fa84d;
 }
 
-.cont-popUp form .btn-cambio-contraseña {
+.cont-popUp form button[title="Enviar correo de recuperación"] {
+  background-color: #007afb;
+}
+
+.cont-popUp form button[title="Enviar correo de recuperación"]:hover {
+  background-color: #0066d6;
+}
+
+.cont-popUp form button[title="Cambiar contraseña"] {
   background-color: #fc9403;
 }
 
-.cont-popUp form .btn-cambio-contraseña:hover {
+.cont-popUp form button[title="Cambiar contraseña"]:hover {
   background-color: #e68302;
 }
 

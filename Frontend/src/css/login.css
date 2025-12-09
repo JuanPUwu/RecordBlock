@@ -134,12 +134,11 @@ input {
   text-decoration: underline;
 }
 
-.cont-login form button:not(.btn-forgot-pass) {
+.cont-login form button {
   color: #ffffff;
   font-size: 1rem;
   font-weight: 500;
   border-radius: 0.6rem;
-  background-color: #007afb;
   margin-top: auto;
   cursor: pointer;
   border: none;
@@ -147,7 +146,11 @@ input {
   transition: 0.1s ease-in;
 }
 
-.cont-login form button:hover:not(.btn-forgot-pass) {
+.cont-login form button[title="Iniciar sesión"] {
+  background-color: #007afb;
+}
+
+.cont-login form button[title="Iniciar sesión"]:hover {
   text-decoration: underline;
   background-color: #0066d6;
 }
