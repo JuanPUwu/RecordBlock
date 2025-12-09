@@ -1,9 +1,11 @@
 // Estilos
 import "../css/home.css";
 import "../css/swalStyles.css";
+import "../css/swalTableCSVStyles.css";
 import selectNavStyles from "../css/selectNavStyles.js";
 import swalStyles from "../css/swalStyles.js";
 import swalStylesCSV from "../css/swalStylesCSV.js";
+import swalStylesConfirmCSV from "../css/swalStylesConfirmCSV.js";
 
 // Hooks
 import { useAuth } from "../context/AuthContext";
@@ -318,7 +320,6 @@ export default function HomeAdmin() {
   const cargarInformacion = async () => {
     setIsInfoCargando(true);
     const response = await obtenerInformacion(clienteSeleccionado?.value);
-    console.log(response);
     refInformacion.current = response.data.data;
     filtroInformacion();
   };
@@ -385,7 +386,8 @@ export default function HomeAdmin() {
   const [popUpCrearInfo, setPopUpCrearInfo] = useState(false);
   const [draftCrear, setDraftCrear] = useState([]);
 
-  const { crearInformacion, subirCSV } = useInfoUsuarioService();
+  const { crearInformacion } = useInfoUsuarioService();
+  const { subirCSV } = useInfoUsuarioService();
   const refInputFile = useRef(null);
 
   // Cambiar clave
@@ -486,25 +488,23 @@ export default function HomeAdmin() {
 
     let tablaHTML = `
       <div class="cont-tabla-csv">
-          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-            <thead>
-              <tr style="background-color: #f0f0f0; position: sticky; top: 0;">
+        <table>
+          <thead>
+            <tr>
     `;
 
     // Headers
     headers.forEach((header) => {
-      tablaHTML += `<th style="padding: 8px; text-align: left; font-weight: bold;">${header}</th>`;
+      tablaHTML += `<th>${header}</th>`;
     });
     tablaHTML += `</tr></thead><tbody>`;
 
     // Filas
-    filasAMostrar.forEach((fila, index) => {
-      tablaHTML += `<tr style="background-color: ${
-        index % 2 === 0 ? "#fff" : "#f9f9f9"
-      }">`;
+    filasAMostrar.forEach((fila) => {
+      tablaHTML += `<tr>`;
       headers.forEach((_, colIndex) => {
         const valor = fila[colIndex] || "";
-        tablaHTML += `<td style="padding: 6px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${valor}">${valor}</td>`;
+        tablaHTML += `<td title="${valor}">${valor}</td>`;
       });
       tablaHTML += `</tr>`;
     });
@@ -512,7 +512,7 @@ export default function HomeAdmin() {
     tablaHTML += `</tbody></table></div>`;
 
     if (hayMasFilas) {
-      tablaHTML += `<p style="margin-top: 0.9rem; color: #666; font-size: 16px;">Mostrando ${maxFilasMostrar} de ${filas.length} filas...</p>`;
+      tablaHTML += `<p>Mostrando ${maxFilasMostrar} de ${filas.length} filas...</p>`;
     }
 
     return tablaHTML;
@@ -560,7 +560,7 @@ export default function HomeAdmin() {
 
         // Paso 1: Mostrar tabla con las filas
         const resultadoVista = await Swal.fire({
-          title: `Vista previa`,
+          title: `Vista previa importación`,
           html: tablaHTML,
           icon: false,
           confirmButtonText: "Continuar",
@@ -578,20 +578,20 @@ export default function HomeAdmin() {
         // Paso 2: Mostrar confirmación
         const result = await Swal.fire({
           title:
-            "¿Estás seguro que quieres insertar el archivo CSV seleccionado?",
+            "¿Estás seguro que quieres importar el archivo CSV seleccionado?",
           html: `
-            <div style="text-align: left;">
-              <p style="margin-bottom: 10px;"><strong>⚠️ Esta acción es irreversible</strong></p>
-              <p style="margin-bottom: 10px;">Se intentarán insertar <strong>${filas.length} fila(s)</strong> de datos.</p>
-              <p>¿Deseas continuar con la inserción?</p>
+            <div class="confirmacion-csv">
+              <p><strong>⚠️ Esta acción es irreversible</strong></p>
+              <p>Se intentarán insertar <strong>${filas.length} fila(s)</strong> de registros.</p>
+              <p>¿Deseas continuar con la importación?</p>
             </div>
           `,
           icon: "warning",
           showCancelButton: true,
-          confirmButtonText: "Sí, Insertar archivo",
+          confirmButtonText: "Sí, Importar archivo",
           cancelButtonText: "Cancelar",
           confirmButtonColor: "#d33",
-          ...swalStyles,
+          ...swalStylesConfirmCSV,
         });
 
         if (result.isConfirmed) {
@@ -619,10 +619,12 @@ export default function HomeAdmin() {
                 : JSON.stringify(mensajeBackend, null, 2);
 
             await Swal.fire({
-              title: "¡Inserción completada!",
+              title: "¡Importación completada!",
               html: `
-                <div style="text-align: left;">
-                  <p style="margin-bottom: 10px;">${mensajeFormateado}</p>
+                <div">
+                  <p">${mensajeFormateado}</p>
+                  <p">✅ ${response.data.data.registros_insertados} registro(s) importado(s)</p>
+                  <p">⚠️ ${response.data.data.registros_con_error} registro(s) con error</p>
                 </div>
               `,
               icon: "success",
@@ -635,7 +637,7 @@ export default function HomeAdmin() {
           } else {
             // Mostrar error del backend
             await Swal.fire({
-              title: "Error en la inserción",
+              title: "Error en la importación",
               text: response.error || "No se pudo subir el archivo",
               icon: "error",
               ...swalStyles,

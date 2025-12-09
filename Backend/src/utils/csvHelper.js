@@ -248,7 +248,7 @@ export const procesarCSVCompletado = async (
         res.status(400).json({
           success: false,
           message:
-            "No se pudo procesar ningún registro del CSV, Asegurate que cumplan con los datos mínimos requeridos.",
+            "No se pudo procesar ningún registro del CSV, Asegurate que todas las filas cumplan con los datos mínimos requeridos.",
           errores,
         })
       );
@@ -259,7 +259,7 @@ export const procesarCSVCompletado = async (
     return promiseCallbacks.resolve(
       res.status(201).json({
         success: true,
-        message: `Carga masiva completada. ${registros.length} registro(s) insertado(s)`,
+        message: `Carga masiva completada`,
         data: {
           registros_insertados: registros.length,
           registros_con_error: errores.length,

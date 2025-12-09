@@ -1,5 +1,5 @@
 const swalStyles = {
-  background: "#f5f5f5",
+  background: "#fffff",
   color: "#222",
   width: "22rem",
   padding: "0.9rem",

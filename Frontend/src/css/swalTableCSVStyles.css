@@ -1,0 +1,88 @@
+/* ============================================
+   ESTILOS PARA LA TABLA CSV EN SWEETALERT
+   ============================================ */
+
+/* Contenedor principal de la tabla */
+.swal2-html-container {
+  margin-top: 1.2rem;
+}
+
+.swal2-html-container .cont-tabla-csv {
+  padding: 0.9rem;
+  background-color: #f3f2f7;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
+  max-height: 28.5rem;
+  overflow-y: auto;
+  border-radius: 0.5rem;
+}
+
+/* Estilos de la tabla */
+.swal2-html-container .cont-tabla-csv table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  border: none;
+}
+
+/* Encabezado de la tabla */
+.swal2-html-container .cont-tabla-csv thead tr {
+  background-color: #f1f1f1;
+}
+
+/* Celdas del encabezado */
+.swal2-html-container .cont-tabla-csv th {
+  padding: 8px;
+  text-align: left;
+  font-weight: bold;
+  border: none;
+}
+
+/* Filas del cuerpo de la tabla */
+.swal2-html-container .cont-tabla-csv tbody tr:nth-child(even) {
+  background-color: #f6f6f6;
+}
+
+.swal2-html-container .cont-tabla-csv tbody tr:nth-child(odd) {
+  background-color: #fff;
+}
+
+/* Celdas del cuerpo */
+.swal2-html-container .cont-tabla-csv td {
+  padding: 6px;
+  max-width: 200px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: none;
+}
+
+/* Mensaje de filas adicionales */
+.swal2-html-container .cont-tabla-csv + p {
+  margin-top: 0.9rem;
+  color: #666;
+  font-size: 16px;
+}
+
+/* ============================================
+   ESTILOS PARA EL PASO 2 DE CONFIRMACIÓN CSV
+   ============================================ */
+
+/* Contenedor del mensaje de confirmación */
+.swal2-html-container .confirmacion-csv {
+  text-align: center;
+}
+
+/* Párrafos del mensaje de confirmación */
+.swal2-html-container .confirmacion-csv p {
+  margin-bottom: 10px;
+}
+
+.swal2-html-container .confirmacion-csv p:last-child {
+  margin-bottom: 0;
+}
+
+/* Texto destacado en el mensaje */
+.swal2-html-container .confirmacion-csv strong {
+  font-weight: bold;
+}
