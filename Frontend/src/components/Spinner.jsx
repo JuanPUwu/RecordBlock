@@ -1,10 +1,9 @@
 import "../css/spinner.css";
 import Popup from "reactjs-popup";
 import { useState } from "react";
-import PropTypes from "prop-types";
 
 export default function Spinner() {
-  const [open, setOpen] = useState(true);
+  const [open] = useState(true);
 
   return (
     <Popup
@@ -22,8 +21,3 @@ export default function Spinner() {
     </Popup>
   );
 }
-
-Spinner.propTypes = {
-  open: PropTypes.bool.isRequired,
-  setOpen: PropTypes.func.isRequired,
-};

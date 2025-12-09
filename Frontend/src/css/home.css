@@ -153,7 +153,6 @@
   cursor: not-allowed;
   pointer-events: none;
   background-color: #ffffff;
-  color: #838383;
 }
 
 .btn-nav.btn-disabled img {
@@ -275,7 +274,7 @@
   border: none;
   cursor: pointer;
   border-radius: 0.5rem;
-  background-color: #37c45d;
+  background-color: #1e7e34;
   color: white;
   font-weight: 500;
   transition: 0.1s ease-in;
@@ -294,7 +293,7 @@
 
 .cont-popUp form button:hover {
   text-decoration: underline;
-  background-color: #2fa84d;
+  background-color: #1a6b2a;
 }
 
 .cont-popUp form button.btn-forgot-pass {
@@ -413,7 +412,7 @@
   padding: 1px 0;
   border-radius: 3px;
   font-weight: bold;
-  color: #1976d2;
+  color: #0d47a1;
 }
 
 section {

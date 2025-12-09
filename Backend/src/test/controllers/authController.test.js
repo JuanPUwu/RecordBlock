@@ -226,7 +226,7 @@ describe("authController - loginUsuario", () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
-      message: "Debes verificar tu correo antes de iniciar sesión",
+      message: "Debes verificar tu correo\nantes de iniciar sesión",
     });
   });
 

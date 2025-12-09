@@ -16,7 +16,7 @@ export default function App() {
 
     // Observar cambios en el atributo aria-hidden del root
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
+      for (const mutation of mutations) {
         if (
           mutation.type === "attributes" &&
           mutation.attributeName === "aria-hidden"
@@ -34,7 +34,7 @@ export default function App() {
             }
           }
         }
-      });
+      }
     });
 
     const root = document.getElementById("root");

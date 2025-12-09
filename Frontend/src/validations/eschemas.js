@@ -7,7 +7,7 @@ const passwordRules = yup
   .min(8, "Mínimo 8 caracteres")
   .matches(/[A-Z]/, "Minimo una letra mayúscula")
   .matches(/[a-z]/, "Minimo una letra minúscula")
-  .matches(/[0-9]/, "Minimo un número")
+  .matches(/\d/, "Minimo un número")
   .matches(/[!@#$%^&*(),.?":{}|<>]/, "Minimo un carácter especial");
 
 const confirmPasswordRules = yup

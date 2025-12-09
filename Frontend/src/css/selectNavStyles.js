@@ -43,19 +43,24 @@ const selectNavStyles = {
     ...base,
     padding: 0,
   }),
-  option: (base, state) => ({
-    ...base,
-    cursor: "pointer",
-    backgroundColor: state.isSelected
-      ? "#ebebeb"
-      : state.isFocused
-      ? "#f5f5f5"
-      : "white",
-    color: "#000",
-    ":active": {
-      backgroundColor: "#d6d6d6", // <- color cuando mantienes presionado el click
-    },
-  }),
+  option: (base, state) => {
+    let backgroundColor = "white";
+    if (state.isSelected) {
+      backgroundColor = "#ebebeb";
+    } else if (state.isFocused) {
+      backgroundColor = "#f5f5f5";
+    }
+
+    return {
+      ...base,
+      cursor: "pointer",
+      backgroundColor,
+      color: "#000",
+      ":active": {
+        backgroundColor: "#d6d6d6", // <- color cuando mantienes presionado el click
+      },
+    };
+  },
 };
 
 export default selectNavStyles;

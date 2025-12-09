@@ -11,14 +11,16 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
     // 🔹 1. Reunir todas las claves de manera dinámica
     const allKeys = new Set();
 
-    whichInfo.forEach((item) => {
+    for (const item of whichInfo) {
       allKeys.add("# Registro");
       allKeys.add("Cliente");
 
-      item.datos.forEach((detalle) => {
-        Object.keys(detalle).forEach((k) => allKeys.add(k));
-      });
-    });
+      for (const detalle of item.datos) {
+        for (const k of Object.keys(detalle)) {
+          allKeys.add(k);
+        }
+      }
+    }
 
     const headers = Array.from(allKeys);
 
@@ -34,7 +36,7 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
     }));
 
     // 🔹 3. Agregar filas
-    whichInfo.forEach((item) => {
+    for (const item of whichInfo) {
       const clienteObj = clientesArray.find(
         (c) =>
           (c.value !== undefined && c.value === item.usuario_id) ||
@@ -44,15 +46,15 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
       const clienteNombre =
         clienteObj?.label ?? clienteObj?.nombre ?? item.usuario_id;
 
-      item.datos.forEach((detalle) => {
+      for (const detalle of item.datos) {
         const row = {
           "# Registro": `°${item.info_id}`,
           Cliente: clienteNombre,
           ...detalle,
         };
         worksheet.addRow(row);
-      });
-    });
+      }
+    }
 
     // 🔹 4. Dar estilo a los encabezados
     worksheet.getRow(1).font = { bold: true };
@@ -61,14 +63,14 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
     worksheet.getColumn("# Registro").alignment = { horizontal: "left" };
 
     // 🔹 5.5 Ajustar ancho de columnas automáticamente
-    worksheet.columns.forEach((column) => {
+    for (const column of worksheet.columns) {
       let maxLength = 0;
       column.eachCell({ includeEmpty: true }, (cell) => {
         const cellValue = cell.value ? cell.value.toString() : "";
         maxLength = Math.max(maxLength, cellValue.length);
       });
-      column.width = maxLength < 15 ? 15 : maxLength;
-    });
+      column.width = Math.max(15, maxLength);
+    }
 
     // 🔹 6. Exportar archivo
     const buffer = await workbook.xlsx.writeBuffer();

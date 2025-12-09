@@ -329,6 +329,13 @@ export default function HomeAdmin() {
   const [isDatoValue, setIsDatoValue] = useState(false);
   const [isDetalleValue, setIsDetalleValue] = useState(false);
   const [filtrarPorFecha, setFiltrarPorFecha] = useState(false);
+  // Ref para mantener el valor más reciente de filtrarPorFecha y evitar problemas de closure
+  const refFiltrarPorFecha = useRef(filtrarPorFecha);
+
+  // Actualizar el ref cuando cambia el estado
+  useEffect(() => {
+    refFiltrarPorFecha.current = filtrarPorFecha;
+  }, [filtrarPorFecha]);
 
   // Función para detectar si un valor es una fecha válida y convertirla
   const obtenerFechaDeValor = (valor) => {
@@ -386,18 +393,26 @@ export default function HomeAdmin() {
   };
 
   const filtroInformacion = (valorCheckbox = null) => {
-    // Usar el valor del parámetro o el estado actual
-    const debeFiltrarPorFecha = valorCheckbox ?? filtrarPorFecha;
+    // Si se pasa un valor explícito del checkbox (true o false), usarlo
+    // Si se pasa null o undefined, usar el estado actual directamente (no el ref)
+    // Esto asegura que siempre tengamos el valor más reciente del estado
+    const debeFiltrarPorFecha =
+      valorCheckbox === true || valorCheckbox === false
+        ? valorCheckbox
+        : filtrarPorFecha;
 
     // Obtener valores de los refs si existen, sino usar strings vacíos
-    const dato = refDato.current?.value?.trim().toLowerCase() || "";
-    const detalle = refDetalle.current?.value?.trim().toLowerCase() || "";
+    const valorDato = refDato.current?.value || "";
+    const valorDetalle = refDetalle.current?.value || "";
+    const dato = valorDato.trim().toLowerCase();
+    const detalle = valorDetalle.trim().toLowerCase();
 
     setTerminosBusqueda({ dato, detalle });
 
-    // Aplicar filtro normal primero
-    let datosFiltrados = refInformacion.current;
+    // Empezar con todos los datos originales
+    let datosFiltrados = refInformacion.current || [];
 
+    // Aplicar filtro de búsqueda sobre los datos originales
     if (dato || detalle) {
       if (dato) {
         setIsDatoValue(true);
@@ -411,7 +426,7 @@ export default function HomeAdmin() {
         setIsDetalleValue(false);
       }
 
-      datosFiltrados = refInformacion.current.filter((info) => {
+      datosFiltrados = datosFiltrados.filter((info) => {
         const dataObj = info.datos[0] || {};
         const keys = Object.keys(dataObj);
 
@@ -430,7 +445,8 @@ export default function HomeAdmin() {
       setIsDetalleValue(false);
     }
 
-    // Aplicar filtro de fechas si el checkbox está activo
+    // Aplicar filtro de fechas SOLO si el checkbox está activado
+    // Esto debe aplicarse después del filtro de búsqueda
     datosFiltrados = filtrarPorFechas(datosFiltrados, debeFiltrarPorFecha);
 
     setWhichInfo(datosFiltrados);
@@ -551,20 +567,20 @@ export default function HomeAdmin() {
     `;
 
     // Headers
-    headers.forEach((header) => {
+    for (const header of headers) {
       tablaHTML += `<th>${header}</th>`;
-    });
+    }
     tablaHTML += `</tr></thead><tbody>`;
 
     // Filas
-    filasAMostrar.forEach((fila) => {
+    for (const fila of filasAMostrar) {
       tablaHTML += `<tr>`;
-      headers.forEach((_, colIndex) => {
+      for (let colIndex = 0; colIndex < headers.length; colIndex++) {
         const valor = fila[colIndex] || "";
         tablaHTML += `<td title="${valor}">${valor}</td>`;
-      });
+      }
       tablaHTML += `</tr>`;
-    });
+    }
 
     tablaHTML += `</tbody></table></div>`;
 
@@ -1179,9 +1195,10 @@ export default function HomeAdmin() {
     const mitad = Math.ceil(entries.length / 2);
     const colIzq = entries.slice(0, mitad);
     const colDer = entries.slice(mitad);
+    const uniqueKey = Object.keys(dato).join("-") || `dato-${i}`;
 
     return (
-      <div className="cont-dato" key={i}>
+      <div className="cont-dato" key={uniqueKey}>
         <div className="columna">{renderizarColumnaDatos(colIzq)}</div>
         <div className="columna">{renderizarColumnaDatos(colDer)}</div>
       </div>
@@ -1221,13 +1238,17 @@ export default function HomeAdmin() {
       );
     }
 
-    return [0, 1].map((col) => (
-      <div key={col}>
-        {whichInfo.map((info, index) =>
-          index % 2 === col ? renderizarItemInfo(info) : null
-        )}
-      </div>
-    ));
+    return (
+      <>
+        {[0, 1].map((col) => (
+          <div key={col}>
+            {whichInfo.map((info, index) =>
+              index % 2 === col ? renderizarItemInfo(info) : null
+            )}
+          </div>
+        ))}
+      </>
+    );
   };
 
   return (
@@ -1282,16 +1303,20 @@ export default function HomeAdmin() {
             setResultadosBusquedaClientes([]);
             toast.success("Cliente restablecido");
           }}
-          className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
+          className={`btn-nav ${
+            clienteSeleccionado === null ? "btn-disabled" : ""
+          }`}
           title="Restablecer cliente seleccionado"
-          disabled={!clienteSeleccionado}
+          disabled={clienteSeleccionado === null}
         >
           <img src={imgLimpiar} alt="" />
         </button>
         <button
-          className={`btn-nav ${!clienteSeleccionado ? "btn-disabled" : ""}`}
+          className={`btn-nav ${
+            clienteSeleccionado === null ? "btn-disabled" : ""
+          }`}
           title="Crear registro"
-          disabled={!clienteSeleccionado}
+          disabled={clienteSeleccionado === null}
           onClick={async () => {
             await obtenerDatosMin();
             setPopUpCrearInfo(true);
@@ -1384,7 +1409,10 @@ export default function HomeAdmin() {
           />
           <div className="cont-tb-usuarios">
             <div className="cont-search-new">
-              <label className="cont-searcher">
+              <label
+                className="cont-searcher"
+                aria-label="Buscar usuario o cliente"
+              >
                 <input
                   type="text"
                   placeholder="Buscar usuario/cliente..."
@@ -1436,10 +1464,11 @@ export default function HomeAdmin() {
           <form onSubmit={handleSubmitCrear(crearCliente)}>
             {/* Nombre */}
             <div className="cont-label">
-              <label>Nombre de usuario:</label>
+              <label htmlFor="crear-nombre">Nombre de usuario:</label>
               {errorsCrear.nombre && <span>{errorsCrear.nombre.message}</span>}
             </div>
             <input
+              id="crear-nombre"
               type="text"
               {...registerCrear("nombre")}
               placeholder="alpina"
@@ -1447,10 +1476,11 @@ export default function HomeAdmin() {
 
             {/* Email */}
             <div className="cont-label">
-              <label>Correo:</label>
+              <label htmlFor="crear-email">Correo:</label>
               {errorsCrear.email && <span>{errorsCrear.email.message}</span>}
             </div>
             <input
+              id="crear-email"
               type="text"
               {...registerCrear("email")}
               placeholder="alpina@example.com"
@@ -1458,13 +1488,14 @@ export default function HomeAdmin() {
 
             {/* Password */}
             <div className="cont-label">
-              <label>Contraseña:</label>
+              <label htmlFor="crear-password">Contraseña:</label>
               {errorsCrear.password && (
                 <span>{errorsCrear.password.message}</span>
               )}
             </div>
             <div className="cont-pass">
               <input
+                id="crear-password"
                 type={verPassword}
                 {...registerCrear("password")}
                 placeholder="∗∗∗∗∗∗∗∗∗∗"
@@ -1481,13 +1512,14 @@ export default function HomeAdmin() {
 
             {/* Password2 */}
             <div className="cont-label">
-              <label>Confirmar contraseña:</label>
+              <label htmlFor="crear-password2">Confirmar contraseña:</label>
               {errorsCrear.password2 && (
                 <span>{errorsCrear.password2.message}</span>
               )}
             </div>
             <div className="cont-pass">
               <input
+                id="crear-password2"
                 type={verPassword2}
                 {...registerCrear("password2")}
                 placeholder="∗∗∗∗∗∗∗∗∗∗"
@@ -1535,13 +1567,14 @@ export default function HomeAdmin() {
           <form onSubmit={handleSubmitCambiar(editarContraseña)}>
             {/* Password 1*/}
             <div className="cont-label">
-              <label>Contraseña:</label>
+              <label htmlFor="cambiar-password">Contraseña:</label>
               {errorsCambiar.password && (
                 <span>{errorsCambiar.password.message}</span>
               )}
             </div>
             <div className="cont-pass">
               <input
+                id="cambiar-password"
                 type={verPassword}
                 {...registerCambiar("password")}
                 placeholder="∗∗∗∗∗∗∗∗∗∗"
@@ -1558,13 +1591,14 @@ export default function HomeAdmin() {
 
             {/* Password 2*/}
             <div className="cont-label">
-              <label>Confirmar contraseña:</label>
+              <label htmlFor="cambiar-password2">Confirmar contraseña:</label>
               {errorsCambiar.password2 && (
                 <span>{errorsCambiar.password2.message}</span>
               )}
             </div>
             <div className="cont-pass">
               <input
+                id="cambiar-password2"
                 type={verPassword2}
                 {...registerCambiar("password2")}
                 placeholder="∗∗∗∗∗∗∗∗∗∗"
@@ -1636,9 +1670,10 @@ export default function HomeAdmin() {
           <div ref={scrollCrearRef}>
             {draftCrear.map(({ key, value }, i, array) => {
               const esObligatorio = i < datosMinimos.length;
+              const uniqueKey = `crear-${i}-${key || "empty"}`;
 
               return (
-                <div key={i} className="cont-dato-editar">
+                <div key={uniqueKey} className="cont-dato-editar">
                   {esObligatorio ? (
                     <span>{key}</span>
                   ) : (
@@ -1681,7 +1716,7 @@ export default function HomeAdmin() {
               title="Agregar campo"
             >
               <img src={imgAgregarFila} alt="" />
-              Agregar campo
+              <span>Agregar campo</span>
             </button>
             <button
               type="button"
@@ -1690,7 +1725,7 @@ export default function HomeAdmin() {
               title="Crear registro"
             >
               <img src={imgCrearRegistro} alt="" />
-              Crear
+              <span>Crear</span>
             </button>
           </div>
         </div>
@@ -1720,9 +1755,10 @@ export default function HomeAdmin() {
             {draftDatos.map(({ key, value }, i, array) => {
               const esObligatorio =
                 i < infoAEditar?.datos_minimos_iniciales?.length;
+              const uniqueKey = `editar-${i}-${key || "empty"}`;
 
               return (
-                <div key={i} className="cont-dato-editar">
+                <div key={uniqueKey} className="cont-dato-editar">
                   {esObligatorio ? (
                     <span>{key}</span>
                   ) : (
@@ -1764,7 +1800,7 @@ export default function HomeAdmin() {
               title="Agregar campo"
             >
               <img src={imgAgregarFila} alt="" />
-              Agregar campo
+              <span>Agregar campo</span>
             </button>
             <button
               type="button"
@@ -1772,7 +1808,7 @@ export default function HomeAdmin() {
               title="Guardar registro"
             >
               <img src={imgEditar} alt="" />
-              Guardar
+              <span>Guardar</span>
             </button>
           </div>
         </div>
@@ -1791,25 +1827,28 @@ export default function HomeAdmin() {
         <div className="cont-popUp-editarInfo">
           <h2>Editar datos mínimos</h2>
           <div ref={scrollDatosMinimosRef} className="cont-datos-minimos">
-            {draftDatosMinimos.map((dato, i, array) => (
-              <div key={i} className="cont-dato-editar">
-                <input
-                  type="text"
-                  placeholder="Dato mínimo..."
-                  className="inp-dato-minimo"
-                  value={dato}
-                  onChange={(e) => cambiarDatoMinimo(i, e.target.value)}
-                  ref={i === array.length - 1 ? inputDatosMinimosRef : null}
-                />
-                <button
-                  type="button"
-                  onClick={() => eliminarDatoMinimo(i)}
-                  title="Eliminar dato"
-                >
-                  <img src={imgBorrar} alt="Eliminar" />
-                </button>
-              </div>
-            ))}
+            {draftDatosMinimos.map((dato, i, array) => {
+              const uniqueKey = `dato-min-${i}-${dato || "empty"}`;
+              return (
+                <div key={uniqueKey} className="cont-dato-editar">
+                  <input
+                    type="text"
+                    placeholder="Dato mínimo..."
+                    className="inp-dato-minimo"
+                    value={dato}
+                    onChange={(e) => cambiarDatoMinimo(i, e.target.value)}
+                    ref={i === array.length - 1 ? inputDatosMinimosRef : null}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => eliminarDatoMinimo(i)}
+                    title="Eliminar dato"
+                  >
+                    <img src={imgBorrar} alt="Eliminar" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
           <div className="sep-hrz"></div>
           <div className="cont-btns">
@@ -1819,7 +1858,7 @@ export default function HomeAdmin() {
               title="Agregar dato"
             >
               <img src={imgAgregarFila} alt="" />
-              Agregar dato
+              <span>Agregar dato</span>
             </button>
             <button
               type="button"
@@ -1828,7 +1867,7 @@ export default function HomeAdmin() {
               title="Guardar datos mínimos"
             >
               <img src={imgGuardar} alt="" />
-              Guardar
+              <span>Guardar</span>
             </button>
           </div>
         </div>

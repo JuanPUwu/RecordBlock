@@ -20,6 +20,7 @@ export default function SearchNav({
           type="text"
           placeholder="Buscar por dato..."
           ref={refDato}
+          onChange={onInputDato}
           onInput={onInputDato}
         />
         <button
@@ -38,6 +39,7 @@ export default function SearchNav({
           type="text"
           placeholder="Buscar por detalle..."
           ref={refDetalle}
+          onChange={onInputDetalle}
           onInput={onInputDetalle}
         />
         <button
