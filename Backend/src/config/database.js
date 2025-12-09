@@ -29,12 +29,13 @@ export function run(sql, params = []) {
 // Obtener la lista de datos_minimos para usar como iniciales en informacion_usuario
 async function obtenerDatosMinimosIniciales() {
   const fallback = [
-    "direccion",
-    "ciudad",
-    "pais",
-    "telefono",
-    "nacimiento",
-    "bio",
+    "Hostname",
+    "Plataforma",
+    "Marca/Modelo",
+    "Tipo",
+    "Firmware/Version S.O",
+    "Ubicación",
+    "Licenciamiento",
   ];
 
   try {
@@ -54,7 +55,7 @@ async function obtenerDatosMinimosIniciales() {
 }
 
 // Poblar informacion_usuario con datos de ejemplo
-async function seedInformacionUsuario(cantidadPorUsuario = 10) {
+async function seedInformacionUsuario(cantidadPorUsuario = 25) {
   try {
     const usuarios = await all("SELECT id FROM usuario WHERE isAdmin = 0");
     const datosMinimosIniciales = await obtenerDatosMinimosIniciales();
@@ -72,15 +73,77 @@ async function seedInformacionUsuario(cantidadPorUsuario = 10) {
         if (existentes >= cantidadPorUsuario) return;
 
         for (let i = existentes; i < cantidadPorUsuario; i++) {
+          const marcas = [
+            "Dell",
+            "HP",
+            "Lenovo",
+            "Apple",
+            "Samsung",
+            "Asus",
+            "Acer",
+            "Microsoft",
+          ];
+          const tipos = [
+            "Servidor",
+            "Workstation",
+            "Laptop",
+            "Desktop",
+            "Dispositivo móvil",
+            "Tablet",
+          ];
+          const plataformas = [
+            "Windows",
+            "Linux",
+            "macOS",
+            "iOS",
+            "Android",
+            "Ubuntu",
+            "CentOS",
+          ];
+          const versionesSO = [
+            "Windows 11 Pro",
+            "Windows 10 Enterprise",
+            "Ubuntu 22.04 LTS",
+            "macOS 14.0 Sonoma",
+            "iOS 17.0",
+            "Android 13",
+            "CentOS 8",
+            "Debian 12",
+          ];
+          // Generar fecha de licenciamiento en formato DD/MM/YYYY o DD-MM-YYYY
+          // Algunas fechas serán pasadas (hasta 3 meses atrás) y otras futuras
+          const hoy = new Date();
+          const tresMesesAtras = new Date();
+          tresMesesAtras.setMonth(hoy.getMonth() - 3);
+          const cincoAnosFuturo = new Date();
+          cincoAnosFuturo.setFullYear(hoy.getFullYear() + 5);
+
+          // Generar fecha aleatoria entre 3 meses atrás y 5 años en el futuro
+          const fechaLicencia = faker.date.between({
+            from: tresMesesAtras,
+            to: cincoAnosFuturo,
+          });
+
+          const dia = String(fechaLicencia.getDate()).padStart(2, "0");
+          const mes = String(fechaLicencia.getMonth() + 1).padStart(2, "0");
+          const año = fechaLicencia.getFullYear();
+          const formato = faker.helpers.arrayElement(["/", "-"]);
+          const fechaFormateada = `${dia}${formato}${mes}${formato}${año}`;
+
           const datos = {
-            direccion: faker.location.streetAddress(),
-            ciudad: faker.location.city(),
-            pais: faker.location.country(),
-            telefono: faker.phone.number(),
-            nacimiento: faker.date
-              .birthdate({ min: 18, max: 65, mode: "age" })
-              .toLocaleDateString("es-ES"),
-            bio: faker.lorem.sentence(),
+            Hostname: `${faker.internet.domainWord()}-${faker.string
+              .alphanumeric(4)
+              .toUpperCase()}`,
+            Plataforma: faker.helpers.arrayElement(plataformas),
+            "Marca/Modelo": `${faker.helpers.arrayElement(
+              marcas
+            )} ${faker.string.alphanumeric(3).toUpperCase()}-${faker.number.int(
+              { min: 1000, max: 9999 }
+            )}`,
+            Tipo: faker.helpers.arrayElement(tipos),
+            "Firmware/Version S.O": faker.helpers.arrayElement(versionesSO),
+            Ubicación: `${faker.location.city()}, ${faker.location.state()}`,
+            Licenciamiento: fechaFormateada,
           };
 
           await run(
@@ -163,7 +226,7 @@ db.serialize(async () => {
   `);
 
   db.run(`
-    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('["direccion", "ciudad", "pais", "telefono", "nacimiento", "bio"]')
+    INSERT OR IGNORE INTO datos_minimos (datos) VALUES ('["Hostname", "Plataforma", "Marca/Modelo", "Tipo", "Firmware/Version S.O", "Ubicación", "Licenciamiento"]')
   `);
 
   // Blacklist

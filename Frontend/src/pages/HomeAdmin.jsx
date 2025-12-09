@@ -61,8 +61,6 @@ import imgGuardar from "../assets/img/guardar.webp";
 import imgSubirArchivo from "../assets/img/subirArchivo.webp";
 
 export default function HomeAdmin() {
-  // Todo Funciones Nav
-
   // ? Inicio Manejo formularios ->
   // Formulario Crear Usuario
   const {
@@ -270,7 +268,6 @@ export default function HomeAdmin() {
     } else {
       setIsLoading(false);
       toast.error(response.error);
-      return;
     }
   };
   // ? <- Fin editar cliente/acciones
@@ -310,8 +307,6 @@ export default function HomeAdmin() {
     }
   };
   // ? <- Fin eliminar cliente/acciones
-
-  // Todo Funciones section
 
   // ? -> Inicio ver info cliente
   const { obtenerInformacion } = useInfoUsuarioService();
@@ -392,8 +387,7 @@ export default function HomeAdmin() {
 
   const filtroInformacion = (valorCheckbox = null) => {
     // Usar el valor del parámetro o el estado actual
-    const debeFiltrarPorFecha =
-      valorCheckbox !== null ? valorCheckbox : filtrarPorFecha;
+    const debeFiltrarPorFecha = valorCheckbox ?? filtrarPorFecha;
 
     // Obtener valores de los refs si existen, sino usar strings vacíos
     const dato = refDato.current?.value?.trim().toLowerCase() || "";
@@ -519,18 +513,17 @@ export default function HomeAdmin() {
       let valorActual = "";
       let dentroComillas = false;
 
-      for (let i = 0; i < linea.length; i++) {
-        const char = linea[i];
+      for (const char of linea) {
         if (char === '"') {
           dentroComillas = !dentroComillas;
         } else if (char === ";" && !dentroComillas) {
-          valores.push(valorActual.trim().replace(/^"|"$/g, ""));
+          valores.push(valorActual.trim().replaceAll(/(?:^"|"$)/g, ""));
           valorActual = "";
         } else {
           valorActual += char;
         }
       }
-      valores.push(valorActual.trim().replace(/^"|"$/g, "")); // Último valor
+      valores.push(valorActual.trim().replaceAll(/(?:^"|"$)/g, "")); // Último valor
 
       return valores;
     };
@@ -607,124 +600,114 @@ export default function HomeAdmin() {
     }
 
     // Leer el archivo
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const texto = e.target.result;
-        const { headers, filas } = parsearCSV(texto);
+    try {
+      const texto = await file.text();
+      const { headers, filas } = parsearCSV(texto);
 
-        if (filas.length === 0) {
-          toast.error("El archivo CSV está vacío o no tiene filas de datos");
-          event.target.value = ""; // Limpiar el input
-          return;
-        }
-
-        // Generar tabla HTML
-        const tablaHTML = generarTablaCSV(headers, filas);
-
-        // Paso 1: Mostrar tabla con las filas
-        const resultadoVista = await Swal.fire({
-          title: `Vista previa importación`,
-          html: tablaHTML,
-          icon: false,
-          confirmButtonText: "Continuar",
-          cancelButtonText: "Cancelar",
-          showCancelButton: true,
-          width: "40rem",
-          ...swalStylesCSV,
-        });
-
-        if (!resultadoVista.isConfirmed) {
-          event.target.value = ""; // Limpiar el input
-          return;
-        }
-
-        // Paso 2: Mostrar confirmación
-        const result = await Swal.fire({
-          title:
-            "¿Estás seguro que quieres importar el archivo CSV seleccionado?",
-          html: `
-            <div class="confirmacion-csv">
-              <p><strong>⚠️ Esta acción es irreversible</strong></p>
-              <p>Se intentarán insertar <strong>${filas.length} fila(s)</strong> de registros.</p>
-              <p>¿Deseas continuar con la importación?</p>
-            </div>
-          `,
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "Sí, Importar archivo",
-          cancelButtonText: "Cancelar",
-          confirmButtonColor: "#d33",
-          ...swalStylesConfirmCSV,
-        });
-
-        if (result.isConfirmed) {
-          // Crear FormData y subir el archivo
-          const formData = new FormData();
-          formData.append("archivo", file);
-          // Agregar el usuario_id si el backend lo requiere
-          if (clienteSeleccionado?.value) {
-            formData.append("usuario_id", clienteSeleccionado.value);
-          }
-
-          setIsLoading(true);
-          const response = await subirCSV(formData);
-
-          // Paso 3: Mostrar resumen del backend
-          if (response.success) {
-            // Mostrar mensaje del backend (puede ser un objeto con detalles)
-            const mensajeBackend =
-              response.data?.message ||
-              response.data ||
-              "Archivo subido exitosamente";
-            const mensajeFormateado =
-              typeof mensajeBackend === "string"
-                ? mensajeBackend
-                : JSON.stringify(mensajeBackend, null, 2);
-
-            await Swal.fire({
-              title: "¡Importación completada!",
-              html: `
-                <div">
-                  <p">${mensajeFormateado}</p>
-                  <p">✅ ${response.data.data.registros_insertados} registro(s) importado(s)</p>
-                  <p">⚠️ ${response.data.data.registros_con_error} registro(s) con error</p>
-                </div>
-              `,
-              icon: "success",
-              ...swalStyles,
-            });
-            // Recargar la información
-            cargarInformacion();
-            // Cerrar el popup de crear info
-            setPopUpCrearInfo(false);
-          } else {
-            // Mostrar error del backend
-            await Swal.fire({
-              title: "Error en la importación",
-              text: response.error || "No se pudo subir el archivo",
-              icon: "error",
-              ...swalStyles,
-            });
-          }
-          setIsLoading(false);
-        }
-
-        // Limpiar el input
-        event.target.value = "";
-      } catch (error) {
-        console.error("Error al leer el archivo:", error);
-        toast.error("Error al leer el archivo CSV");
+      if (filas.length === 0) {
+        toast.error("El archivo CSV está vacío o no tiene filas de datos");
         event.target.value = ""; // Limpiar el input
+        return;
       }
-    };
 
-    reader.onerror = () => {
-      toast.error("Error al leer el archivo");
+      // Generar tabla HTML
+      const tablaHTML = generarTablaCSV(headers, filas);
+
+      // Paso 1: Mostrar tabla con las filas
+      const resultadoVista = await Swal.fire({
+        title: `Vista previa importación`,
+        html: tablaHTML,
+        icon: false,
+        confirmButtonText: "Continuar",
+        cancelButtonText: "Cancelar",
+        showCancelButton: true,
+        width: "40rem",
+        ...swalStylesCSV,
+      });
+
+      if (!resultadoVista.isConfirmed) {
+        event.target.value = ""; // Limpiar el input
+        return;
+      }
+
+      // Paso 2: Mostrar confirmación
+      const result = await Swal.fire({
+        title:
+          "¿Estás seguro que quieres importar el archivo CSV seleccionado?",
+        html: `
+          <div class="confirmacion-csv">
+            <p><strong>⚠️ Esta acción es irreversible</strong></p>
+            <p>Se intentarán insertar <strong>${filas.length} fila(s)</strong> de registros.</p>
+            <p>¿Deseas continuar con la importación?</p>
+          </div>
+        `,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, Importar archivo",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#d33",
+        ...swalStylesConfirmCSV,
+      });
+
+      if (result.isConfirmed) {
+        // Crear FormData y subir el archivo
+        const formData = new FormData();
+        formData.append("archivo", file);
+        // Agregar el usuario_id si el backend lo requiere
+        if (clienteSeleccionado?.value) {
+          formData.append("usuario_id", clienteSeleccionado.value);
+        }
+
+        setIsLoading(true);
+        const response = await subirCSV(formData);
+
+        // Paso 3: Mostrar resumen del backend
+        if (response.success) {
+          // Mostrar mensaje del backend (puede ser un objeto con detalles)
+          const mensajeBackend =
+            response.data?.message ||
+            response.data ||
+            "Archivo subido exitosamente";
+          const mensajeFormateado =
+            typeof mensajeBackend === "string"
+              ? mensajeBackend
+              : JSON.stringify(mensajeBackend, null, 2);
+
+          await Swal.fire({
+            title: "¡Importación completada!",
+            html: `
+              <div">
+                <p">${mensajeFormateado}</p>
+                <p">✅ ${response.data.data.registros_insertados} registro(s) importado(s)</p>
+                <p">⚠️ ${response.data.data.registros_con_error} registro(s) con error</p>
+              </div>
+            `,
+            icon: "success",
+            ...swalStyles,
+          });
+          // Recargar la información
+          cargarInformacion();
+          // Cerrar el popup de crear info
+          setPopUpCrearInfo(false);
+        } else {
+          // Mostrar error del backend
+          await Swal.fire({
+            title: "Error en la importación",
+            text: response.error || "No se pudo subir el archivo",
+            icon: "error",
+            ...swalStyles,
+          });
+        }
+        setIsLoading(false);
+      }
+
+      // Limpiar el input
+      event.target.value = "";
+    } catch (error) {
+      console.error("Error al leer el archivo:", error);
+      toast.error("Error al leer el archivo CSV");
       event.target.value = ""; // Limpiar el input
-    };
-
-    reader.readAsText(file);
+    }
   };
 
   // Guardar nueva información
@@ -1089,8 +1072,12 @@ export default function HomeAdmin() {
       .filter((d) => d !== "");
 
     // Normalizar arrays para comparación (ordenar y convertir a minúsculas)
-    const normalizedDraft = cleanedDraft.map((d) => d.toLowerCase()).sort();
-    const normalizedOriginal = datosMinimos.map((d) => d.toLowerCase()).sort();
+    const normalizedDraft = cleanedDraft
+      .map((d) => d.toLowerCase())
+      .sort((a, b) => a.localeCompare(b));
+    const normalizedOriginal = datosMinimos
+      .map((d) => d.toLowerCase())
+      .sort((a, b) => a.localeCompare(b));
 
     // Si no hay cambios, cerrar popup y no hacer nada
     if (
@@ -1166,6 +1153,59 @@ export default function HomeAdmin() {
   };
   // ? <- Fin logout/acciones
 
+  // Función para manejar el click de editar información
+  const handleEditarInfo = (info) => {
+    setInfoSeleccionada(info);
+    setInfoAEditar({
+      ...info,
+      datos: info.datos.map((dato) => ({ ...dato })),
+    });
+    setPopUpEditarInfo(true);
+  };
+
+  // Función para renderizar una columna de datos
+  const renderizarColumnaDatos = (entries) => {
+    return entries.map(([key, value]) => (
+      <p key={key}>
+        <strong>{resaltarTexto(key, terminosBusqueda.dato, true)}:</strong>{" "}
+        {resaltarTexto(value, terminosBusqueda.detalle, false)}
+      </p>
+    ));
+  };
+
+  // Función para renderizar los datos de un registro
+  const renderizarDatosRegistro = (dato, i) => {
+    const entries = Object.entries(dato);
+    const mitad = Math.ceil(entries.length / 2);
+    const colIzq = entries.slice(0, mitad);
+    const colDer = entries.slice(mitad);
+
+    return (
+      <div className="cont-dato" key={i}>
+        <div className="columna">{renderizarColumnaDatos(colIzq)}</div>
+        <div className="columna">{renderizarColumnaDatos(colDer)}</div>
+      </div>
+    );
+  };
+
+  // Función para renderizar un item de información
+  const renderizarItemInfo = (info) => {
+    return (
+      <div className="item" key={info.info_id}>
+        <h3>
+          <button onClick={() => handleEditarInfo(info)}>
+            <img src={imgEditar} alt="" />
+          </button>
+          {`Registro °${info.info_id} - ${info.usuario_nombre}`}
+          <button onClick={() => eliminarInformacionCliente(info)}>
+            <img src={imgBorrar} alt="" />
+          </button>
+        </h3>
+        {info.datos.map((dato, i) => renderizarDatosRegistro(dato, i))}
+      </div>
+    );
+  };
+
   // Función para renderizar el contenido principal
   const renderizarContenidoPrincipal = () => {
     if (isInfoCargando) {
@@ -1184,68 +1224,7 @@ export default function HomeAdmin() {
     return [0, 1].map((col) => (
       <div key={col}>
         {whichInfo.map((info, index) =>
-          index % 2 === col ? (
-            <div className="item" key={info.info_id}>
-              <h3>
-                <button
-                  onClick={() => {
-                    setInfoSeleccionada(info);
-                    setInfoAEditar({
-                      ...info,
-                      datos: info.datos.map((dato) => ({ ...dato })),
-                    });
-                    setPopUpEditarInfo(true);
-                  }}
-                >
-                  <img src={imgEditar} alt="" />
-                </button>
-                {`Registro °${info.info_id} - ${info.usuario_nombre}`}
-                <button onClick={() => eliminarInformacionCliente(info)}>
-                  <img src={imgBorrar} alt="" />
-                </button>
-              </h3>
-
-              {info.datos.map((dato, i) => {
-                const entries = Object.entries(dato);
-                const mitad = Math.ceil(entries.length / 2);
-                const colIzq = entries.slice(0, mitad);
-                const colDer = entries.slice(mitad);
-
-                return (
-                  <div className="cont-dato" key={i}>
-                    <div className="columna">
-                      {colIzq.map(([key, value]) => (
-                        <p key={key}>
-                          <strong>
-                            {resaltarTexto(key, terminosBusqueda.dato, true)}:
-                          </strong>{" "}
-                          {resaltarTexto(
-                            value,
-                            terminosBusqueda.detalle,
-                            false
-                          )}
-                        </p>
-                      ))}
-                    </div>
-                    <div className="columna">
-                      {colDer.map(([key, value]) => (
-                        <p key={key}>
-                          <strong>
-                            {resaltarTexto(key, terminosBusqueda.dato, true)}:
-                          </strong>{" "}
-                          {resaltarTexto(
-                            value,
-                            terminosBusqueda.detalle,
-                            false
-                          )}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : null
+          index % 2 === col ? renderizarItemInfo(info) : null
         )}
       </div>
     ));
@@ -1352,15 +1331,22 @@ export default function HomeAdmin() {
         </button>
         <div className="cont-cant-resultados">
           <span>{whichInfo.length} Resultados</span>
-          <input
-            type="checkbox"
-            checked={filtrarPorFecha}
-            onChange={(e) => {
-              const nuevoValor = e.target.checked;
-              setFiltrarPorFecha(nuevoValor);
-              filtroInformacion(nuevoValor);
-            }}
-          />
+          <label
+            className="checkbox-moderno"
+            aria-label="Mostrar licenamiento proximo a vencer"
+            title="Mostrar licenamiento proximo a vencer"
+          >
+            <input
+              type="checkbox"
+              checked={filtrarPorFecha}
+              onChange={(e) => {
+                const nuevoValor = e.target.checked;
+                setFiltrarPorFecha(nuevoValor);
+                filtroInformacion(nuevoValor);
+              }}
+            />
+            <span className="checkbox-slider"></span>
+          </label>
         </div>
         <button
           onClick={cerrarSesion}
