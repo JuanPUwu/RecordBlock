@@ -1,3 +1,6 @@
+/* ============================================
+   OVERRIDES DE LIBRERÍAS EXTERNAS
+   ============================================ */
 .go2534082608 {
   background: #fa3d37 !important;
 }
@@ -6,6 +9,9 @@
   padding-right: 0 !important;
 }
 
+/* ============================================
+   NAVEGACIÓN - BÚSQUEDA DE CLIENTES
+   ============================================ */
 .cont-inpNav {
   width: 13%;
   height: 100%;
@@ -73,6 +79,9 @@
   background-color: #ebebeb;
 }
 
+/* ============================================
+   BOTONES DE NAVEGACIÓN
+   ============================================ */
 .btn-nav {
   height: 100%;
   aspect-ratio: 1/1;
@@ -87,37 +96,46 @@
   transition: 0.1s ease-in;
 }
 
-.btn-nav[title="Restablecer cliente seleccionado"] {
+.btn-nav img {
+  height: 50%;
+  filter: invert(100%);
+  transition: 0.1s ease-in;
+}
+
+/* Variantes de color de botones nav */
+.btn-nav-secondary {
   background-color: #8d8c91;
 }
 
-.btn-nav[title="Restablecer cliente seleccionado"]:hover {
+.btn-nav-secondary:hover {
   background-color: #7a7980;
 }
 
-.btn-nav[title="Refrescar registros"] {
-  background-color: #8d8c91;
-}
-
-.btn-nav[title="Refrescar registros"]:hover {
-  background-color: #7a7980;
-}
-
-.btn-nav[title="Crear registro"],
-.btn-nav[title="Exportar a excel"] {
+.btn-nav-success {
   background-color: #37c45d;
 }
 
-.btn-nav[title="Crear registro"]:hover,
-.btn-nav[title="Exportar a excel"]:hover {
+.btn-nav-success:hover {
   background-color: #2fa84d;
 }
 
-.btn-nav[title="Gestión de usuarios"],
-.btn-nav[title="Gestión de usuario"] {
+.btn-nav-primary {
   background-color: #007afb;
 }
 
+.btn-nav-primary:hover {
+  background-color: #0066d6;
+}
+
+.btn-nav-danger {
+  background-color: #fa3d37;
+}
+
+.btn-nav-danger:hover {
+  background-color: #e13732;
+}
+
+/* Botón de usuario especial */
 .btn-nav.btn-user {
   width: 10%;
   justify-content: flex-start;
@@ -134,21 +152,7 @@
   display: inline-block;
 }
 
-.btn-nav[title="Gestión de usuarios"]:hover,
-.btn-nav[title="Gestión de usuario"]:hover {
-  background-color: #0066d6;
-}
-
-.btn-nav[title="Cerrar sesión"],
-.btn-nav[title="Exportar a pdf"] {
-  background-color: #fa3d37;
-}
-
-.btn-nav[title="Cerrar sesión"]:hover,
-.btn-nav[title="Exportar a pdf"]:hover {
-  background-color: #e13732;
-}
-
+/* Estado deshabilitado */
 .btn-nav.btn-disabled {
   cursor: not-allowed;
   pointer-events: none;
@@ -160,12 +164,9 @@
   filter: invert(0);
 }
 
-.btn-nav img {
-  height: 50%;
-  filter: invert(100%);
-  transition: 0.1s ease-in;
-}
-
+/* ============================================
+   POPUPS Y MODALES
+   ============================================ */
 .popup-overlay {
   background: rgba(33, 33, 33, 0.3);
 }
@@ -183,20 +184,35 @@
   box-shadow: 0 4px 11px rgba(0, 0, 0, 0.1);
 }
 
-.inp-hiden {
-  height: 0;
-  flex: none;
-  position: absolute;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-}
-
 .cont-popUp h2 {
   font-size: 1.875rem;
-  margin: 1rem 0 1rem 0;
+  margin: 1rem 0;
   text-align: center;
 }
 
+.cont-popUp-editarInfo {
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 1rem;
+  gap: 0.9rem;
+  padding: 0.9rem;
+  box-shadow: 0 4px 11px rgba(0, 0, 0, 0.1);
+}
+
+.cont-popUp-editarInfo h2 {
+  font-size: 1.87rem;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+/* ============================================
+   FORMULARIOS EN POPUPS
+   ============================================ */
 .cont-popUp form {
   display: flex;
   flex-direction: column;
@@ -217,6 +233,23 @@
   font-size: 1rem;
 }
 
+.cont-popUp form input {
+  font-size: 1rem;
+  width: 34rem;
+  height: 2.7rem;
+  border-radius: 0.5rem;
+  padding: 0 0.8rem;
+  border: none;
+  flex: none;
+  background-color: #f3f2f7;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cont-popUp form input.forgot-pass {
+  width: 30rem;
+}
+
+/* Contenedor de contraseña */
 .cont-pass {
   position: relative;
 }
@@ -251,22 +284,7 @@
   opacity: 1;
 }
 
-.cont-popUp form input {
-  font-size: 1rem;
-  width: 34rem;
-  height: 2.7rem;
-  border-radius: 0.5rem;
-  padding: 0 0.8rem;
-  border: none;
-  flex: none;
-  background-color: #f3f2f7;
-  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
-}
-
-.cont-popUp form input.forgot-pass {
-  width: 30rem;
-}
-
+/* Botones de formulario */
 .cont-popUp form button {
   width: 100%;
   height: 2.7rem;
@@ -294,30 +312,34 @@
   text-decoration: underline;
 }
 
-.cont-popUp form button[title="Crear cliente"] {
+/* Variantes de botones de formulario */
+.btn-form-success {
   background-color: #37c45d;
 }
 
-.cont-popUp form button[title="Crear cliente"]:hover {
+.btn-form-success:hover {
   background-color: #2fa84d;
 }
 
-.cont-popUp form button[title="Enviar correo de recuperación"] {
+.btn-form-primary {
   background-color: #007afb;
 }
 
-.cont-popUp form button[title="Enviar correo de recuperación"]:hover {
+.btn-form-primary:hover {
   background-color: #0066d6;
 }
 
-.cont-popUp form button[title="Cambiar contraseña"] {
+.btn-form-warning {
   background-color: #fc9403;
 }
 
-.cont-popUp form button[title="Cambiar contraseña"]:hover {
+.btn-form-warning:hover {
   background-color: #e68302;
 }
 
+/* ============================================
+   TABLA DE USUARIOS
+   ============================================ */
 .cont-tb-usuarios {
   width: 40rem;
   height: 55vh;
@@ -405,22 +427,9 @@
   gap: 0.9rem;
 }
 
-.highlight {
-  background-color: #ffebee;
-  padding: 1px 0;
-  border-radius: 3px;
-  font-weight: bold;
-  color: #c62828;
-}
-
-.highlight-key {
-  background-color: #e3f2fd;
-  padding: 1px 0;
-  border-radius: 3px;
-  font-weight: bold;
-  color: #0d47a1;
-}
-
+/* ============================================
+   SECCIÓN PRINCIPAL - REGISTROS
+   ============================================ */
 section {
   display: flex;
   gap: 0.9rem;
@@ -462,6 +471,9 @@ section div {
   font-size: 1.3rem;
 }
 
+/* ============================================
+   ITEMS DE REGISTRO
+   ============================================ */
 .item {
   width: 100%;
   height: auto;
@@ -474,7 +486,7 @@ section div {
 
 .item h3 {
   text-align: center;
-  margin: 1rem 0 1rem 0;
+  margin: 1rem 0;
 }
 
 .item h3 button {
@@ -536,6 +548,28 @@ section div {
   hyphens: auto;
 }
 
+/* ============================================
+   RESALTADO DE TEXTO
+   ============================================ */
+.highlight {
+  background-color: #ffebee;
+  padding: 1px 0;
+  border-radius: 3px;
+  font-weight: bold;
+  color: #c62828;
+}
+
+.highlight-key {
+  background-color: #e3f2fd;
+  padding: 1px 0;
+  border-radius: 3px;
+  font-weight: bold;
+  color: #0d47a1;
+}
+
+/* ============================================
+   SKELETON LOADERS
+   ============================================ */
 .skeleton {
   height: 100%;
 }
@@ -592,26 +626,9 @@ section div {
   }
 }
 
-.cont-popUp-editarInfo {
-  width: auto;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  background-color: #ffffff;
-  border-radius: 1rem;
-  gap: 0.9rem;
-  padding: 0.9rem;
-  box-shadow: 0 4px 11px rgba(0, 0, 0, 0.1);
-}
-
-.cont-popUp-editarInfo h2 {
-  font-size: 1.87rem;
-  margin: 1rem 0 1rem 0;
-  text-align: center;
-}
-
+/* ============================================
+   POPUP EDITAR INFORMACIÓN
+   ============================================ */
 .cont-popUp-editarInfo .btn-change {
   height: 2.7rem;
   aspect-ratio: 1/1;
@@ -666,6 +683,9 @@ section div {
   max-height: 50dvh;
 }
 
+/* ============================================
+   FORMULARIOS DE EDICIÓN DE DATOS
+   ============================================ */
 .cont-dato-editar {
   display: flex;
   flex-direction: row;
@@ -736,6 +756,9 @@ section div {
   transition: 0.1s ease-in;
 }
 
+/* ============================================
+   CONTENEDOR DE BOTONES
+   ============================================ */
 .cont-btns {
   display: flex;
   flex-direction: row;
@@ -795,6 +818,9 @@ section div {
   background-color: #2fa84d;
 }
 
+/* ============================================
+   CONTADOR DE RESULTADOS Y CHECKBOX
+   ============================================ */
 .cont-cant-resultados {
   width: 10%;
   height: 100%;
@@ -865,4 +891,15 @@ section div {
 
 .checkbox-moderno input:checked + .checkbox-slider::before {
   transform: translate(1.1rem, -50%);
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+.inp-hiden {
+  height: 0;
+  flex: none;
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }

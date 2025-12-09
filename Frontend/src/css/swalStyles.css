@@ -1,7 +1,13 @@
+/* ============================================
+   ESTILOS PARA SWEETALERT2
+   ============================================ */
+
+/* Contenedor principal */
 .cfm-cont {
   border-radius: 1rem;
 }
 
+/* Botones de confirmación */
 .cfm-boton,
 .cfm-boton-cancel {
   border-radius: 0.5rem;
@@ -11,10 +17,12 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
 }
 
+/* Icono de advertencia */
 .swal2-icon.swal2-warning {
   margin: 0.9rem auto 0 auto;
 }
 
+/* Contenedor de acciones (botones) */
 .swal2-actions {
   display: flex;
   flex-direction: row;
@@ -26,6 +34,7 @@
   margin-top: 1.2rem;
 }
 
+/* Contenedor HTML */
 .swal2-html-container {
   padding: 0;
 }

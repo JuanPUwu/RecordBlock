@@ -1,5 +1,11 @@
+/* ============================================
+   IMPORTACIÓN DE FUENTES
+   ============================================ */
 @import url("./assets/fonts/stylesheet.css");
 
+/* ============================================
+   RESET Y ESTILOS GLOBALES
+   ============================================ */
 * {
   font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -8,6 +14,9 @@
   box-sizing: border-box;
 }
 
+/* ============================================
+   HTML Y BODY
+   ============================================ */
 html,
 body {
   width: 100%;
@@ -15,10 +24,16 @@ body {
   background-color: #f3f2f7;
 }
 
+/* ============================================
+   OVERRIDE PARA SWEETALERT2
+   ============================================ */
 body.swal2-shown.swal2-height-auto {
   padding-right: 0 !important;
 }
 
+/* ============================================
+   CONTENEDOR PRINCIPAL (ROOT)
+   ============================================ */
 #root {
   width: 100%;
   height: 100%;
@@ -29,6 +44,9 @@ body.swal2-shown.swal2-height-auto {
   min-width: 52rem;
 }
 
+/* ============================================
+   IMÁGENES
+   ============================================ */
 img {
   user-select: none;
   -webkit-user-drag: none;

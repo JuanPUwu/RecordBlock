@@ -1,3 +1,6 @@
+/* ============================================
+   CONTENEDOR PRINCIPAL DE BÚSQUEDA
+   ============================================ */
 .cont-searchNav {
   flex: 1;
   height: 100%;
@@ -9,7 +12,11 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
 }
 
-.cont-searchNav div {
+/* ============================================
+   GRUPOS DE INPUT
+   ============================================ */
+.cont-searchNav div,
+.cont-searchNav .input-group {
   width: 50%;
   height: 100%;
   padding: 0 0.9rem;
@@ -33,6 +40,9 @@
   outline: auto;
 }
 
+/* ============================================
+   SEPARADOR VERTICAL
+   ============================================ */
 .cont-searchNav .sep-vrtSearch {
   width: 1px;
   height: calc(100% - 1.8rem);
@@ -40,6 +50,9 @@
   background-color: #e3e3e3;
 }
 
+/* ============================================
+   INPUTS DE BÚSQUEDA
+   ============================================ */
 .cont-searchNav input {
   width: 100%;
   border: none;
@@ -52,6 +65,9 @@
   display: inline-block;
 }
 
+/* ============================================
+   BOTONES DE LIMPIAR BÚSQUEDA
+   ============================================ */
 .cont-searchNav div button {
   right: 0.4rem;
   height: 55%;
@@ -83,6 +99,9 @@
   cursor: default;
 }
 
+/* ============================================
+   BOTÓN DE BÚSQUEDA
+   ============================================ */
 .cont-searchNav button {
   height: 100%;
   aspect-ratio: 1/1;

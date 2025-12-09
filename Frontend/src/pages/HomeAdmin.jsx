@@ -1263,7 +1263,7 @@ export default function HomeAdmin() {
             obtenerClientes();
             setPopUpUsuarios(true);
           }}
-          className="btn-nav"
+          className="btn-nav btn-nav-primary"
           title="Gestión de usuarios"
         >
           <img src={imgUsuario} alt="" />
@@ -1303,7 +1303,7 @@ export default function HomeAdmin() {
             setResultadosBusquedaClientes([]);
             toast.success("Cliente restablecido");
           }}
-          className={`btn-nav ${
+          className={`btn-nav btn-nav-secondary ${
             clienteSeleccionado === null ? "btn-disabled" : ""
           }`}
           title="Restablecer cliente seleccionado"
@@ -1312,7 +1312,7 @@ export default function HomeAdmin() {
           <img src={imgLimpiar} alt="" />
         </button>
         <button
-          className={`btn-nav ${
+          className={`btn-nav btn-nav-success ${
             clienteSeleccionado === null ? "btn-disabled" : ""
           }`}
           title="Crear registro"
@@ -1342,14 +1342,14 @@ export default function HomeAdmin() {
         />
         <button
           onClick={() => exportarComoPDF()}
-          className="btn-nav"
+          className="btn-nav btn-nav-danger"
           title="Exportar a pdf"
         >
           <img src={imgPdf} alt="" />
         </button>
         <button
           onClick={() => exportarComoExcell()}
-          className="btn-nav"
+          className="btn-nav btn-nav-success"
           title="Exportar a excel"
         >
           <img src={imgExcell} alt="" />
@@ -1375,7 +1375,7 @@ export default function HomeAdmin() {
         </div>
         <button
           onClick={cerrarSesion}
-          className="btn-nav"
+          className="btn-nav btn-nav-danger"
           title="Cerrar sesión"
         >
           <img src={imgSalir} alt="" />
@@ -1537,6 +1537,7 @@ export default function HomeAdmin() {
             <button
               type="submit"
               disabled={isSubmittingCrear}
+              className="btn-form-success"
               title="Crear cliente"
             >
               <img src={imgCrearCliente} alt="" />
@@ -1614,7 +1615,7 @@ export default function HomeAdmin() {
             </div>
             <div className="sep-hrz"></div>
             <button
-              className="btn-cambio-contraseña"
+              className="btn-form-warning"
               type="submit"
               disabled={isSubmittingCambiar}
               title="Cambiar contraseña"

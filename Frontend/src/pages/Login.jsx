@@ -153,7 +153,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-login"
+            className="btn-login btn-form-primary"
             title="Iniciar sesión"
           >
             Ingresar
@@ -194,7 +194,7 @@ export default function Login() {
             <div className="sep-hrz"></div>
 
             <button
-              className="btn-forgot-pass"
+              className="btn-forgot-pass btn-form-primary"
               type="submit"
               disabled={isSubmittingForgot}
               title="Enviar correo de recuperación"
