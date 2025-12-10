@@ -329,8 +329,6 @@ export default function HomeAdmin() {
     if (success) {
       setPopUpEditarInfo(false);
     }
-    // Si success es false, significa que hubo un error y ya se mostró el mensaje
-    // Si success es true, significa que se guardó correctamente o no había cambios
   };
   // ? <- Fin editar info cliente
 

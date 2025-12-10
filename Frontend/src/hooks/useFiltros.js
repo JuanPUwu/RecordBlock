@@ -150,4 +150,3 @@ export const useFiltros = (refInformacion) => {
     filtroInformacion,
   };
 };
-
