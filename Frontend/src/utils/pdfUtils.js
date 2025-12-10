@@ -4,7 +4,7 @@ import { saveAs } from "file-saver";
 // 🔹 Plantilla PDF fija
 import plantillaPdf from "../assets/docs/Plantilla Documento Axity Horizontal.pdf";
 
-// Función para dividir texto en líneas
+// Función para dividir texto en líneas (solo para encabezados - divide por "/")
 const splitTextToLines = (text, width, font, fontSize) => {
   if (!text) return [""];
   const parts = text.split("/");
@@ -25,6 +25,25 @@ const splitTextToLines = (text, width, font, fontSize) => {
     }
     if (tempLine) lines.push(tempLine);
   }
+  return lines;
+};
+
+// Función para dividir texto en líneas (para cuerpo de tabla - NO divide por "/")
+const splitTextToLinesBody = (text, width, font, fontSize) => {
+  if (!text) return [""];
+  let tempLine = "";
+  const lines = [];
+  for (const char of text) {
+    const testLine = tempLine + char;
+    const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+    if (textWidth > width - 4) {
+      lines.push(tempLine.trimEnd() + "-");
+      tempLine = char;
+    } else {
+      tempLine = testLine;
+    }
+  }
+  if (tempLine) lines.push(tempLine);
   return lines;
 };
 
@@ -223,7 +242,7 @@ const calcularLineasCeldas = (config) => {
     getColWidth,
     font,
     fontSize,
-    splitTextToLines,
+    splitTextToLinesBody,
     baseRowHeight,
   } = config;
   const cellLines = {};
@@ -232,7 +251,7 @@ const calcularLineasCeldas = (config) => {
   for (const h of headers) {
     const colWidth = getColWidth(h);
     const value = String(row[h] ?? "");
-    const lines = splitTextToLines(value, colWidth, font, fontSize);
+    const lines = splitTextToLinesBody(value, colWidth, font, fontSize);
     cellLines[h] = lines;
     if (lines.length > maxLines) maxLines = lines.length;
   }
@@ -337,7 +356,7 @@ const dibujarFilas = async (config) => {
     headerColor,
     cellBgColor,
     textColor,
-    splitTextToLines,
+    splitTextToLinesBody,
   } = config;
   let currentY = y;
   let currentPage = page;
@@ -351,7 +370,7 @@ const dibujarFilas = async (config) => {
         getColWidth,
         font,
         fontSize,
-        splitTextToLines,
+        splitTextToLinesBody,
         baseRowHeight,
       });
 
@@ -421,6 +440,7 @@ const dibujarTablaCliente = async (config) => {
     textColor,
     baseRowHeight,
     splitTextToLines,
+    splitTextToLinesBody,
   } = config;
   const clienteNombre = obtenerNombreCliente(
     clienteRegistros,
@@ -477,7 +497,7 @@ const dibujarTablaCliente = async (config) => {
     headerColor,
     cellBgColor,
     textColor,
-    splitTextToLines,
+    splitTextToLinesBody,
   });
 
   return { page: newPage, y: finalY };
@@ -541,6 +561,7 @@ export const exportarPDF = async (whichInfo, opcionesClientes) => {
         textColor,
         baseRowHeight,
         splitTextToLines,
+        splitTextToLinesBody,
       });
       currentPage = resultado.page;
       currentY = resultado.y;

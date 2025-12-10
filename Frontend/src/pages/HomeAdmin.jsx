@@ -295,11 +295,17 @@ export default function HomeAdmin() {
       if (response.success) {
         setIsLoading(false);
         toast.success(`Cliente ${cliente.nombre} eliminado`);
-        obtenerClientes();
-        cargarInformacion();
-        if (clienteSeleccionado?.id === cliente.id) {
+        // Si el cliente eliminado estaba seleccionado, limpiar la selección
+        if (clienteSeleccionado?.value === cliente.id) {
           setClienteSeleccionado(null);
+          refBusquedaCliente.current.value = "";
+          setResultadosBusquedaClientes([]);
         }
+        // Actualizar la lista de clientes
+        obtenerClientes();
+        // No es necesario recargar la información:
+        // - Si el cliente eliminado era el seleccionado, ya limpiamos la selección
+        // - Si el cliente eliminado NO era el seleccionado, la información mostrada sigue siendo válida
       } else {
         setIsLoading(false);
         toast.error(response.error || "No se pudo eliminar el cliente");
@@ -480,11 +486,15 @@ export default function HomeAdmin() {
 
   // Eliminar par
   const eliminarDatoCrear = (index) => {
-    if (draftCrear.length > 1) {
-      const copy = [...draftCrear];
-      copy.splice(index, 1);
-      setDraftCrear(copy);
+    // No permitir eliminar si solo queda un campo (debe haber mínimo uno)
+    if (draftCrear.length <= 1) {
+      toast.error("Debe haber al menos un campo");
+      return;
     }
+
+    const copy = [...draftCrear];
+    copy.splice(index, 1);
+    setDraftCrear(copy);
   };
 
   // Agregar par nuevo
@@ -823,7 +833,8 @@ export default function HomeAdmin() {
         key: k,
         value: v,
       }));
-      setDraftDatos(entries);
+      // Siempre agregar un campo vacío adicional para poder agregar nuevos datos
+      setDraftDatos([...entries, { key: "", value: "" }]);
     }
   }, [infoAEditar]);
 
@@ -843,6 +854,12 @@ export default function HomeAdmin() {
 
   // Eliminar par
   const eliminarDatoDraft = (index) => {
+    // No permitir eliminar si solo queda un campo (debe haber mínimo uno)
+    if (draftDatos.length <= 1) {
+      toast.error("Debe haber al menos un campo");
+      return;
+    }
+
     const copy = [...draftDatos];
     copy.splice(index, 1);
     setDraftDatos(copy);
@@ -907,8 +924,17 @@ export default function HomeAdmin() {
       return;
     }
 
+    // 🔹 Validar que quede al menos un par válido (clave y valor completos)
+    const paresValidos = cleanedDraft.filter(
+      (d) => d.key.trim() !== "" && d.value.trim() !== ""
+    );
+    if (paresValidos.length === 0) {
+      toast.error("El registro debe tener por lo menos un dato válido");
+      return;
+    }
+
     // 🔹 Validar que no haya emojis en keys ni values
-    for (const { key, value } of cleanedDraft) {
+    for (const { key, value } of paresValidos) {
       if (!noEmojisRegex.test(key.trim())) {
         toast.error(`El dato "${key}" contiene emojis, no es valido`);
         return;
@@ -920,7 +946,7 @@ export default function HomeAdmin() {
     }
 
     // 🔹 Validar duplicados (ignorando mayúsculas/minúsculas)
-    const keys = cleanedDraft.map((d) => d.key.trim());
+    const keys = paresValidos.map((d) => d.key.trim());
     const lowerKeys = keys.map((k) => k.toLowerCase());
     const seen = new Map();
     for (let i = 0; i < lowerKeys.length; i++) {
@@ -932,8 +958,8 @@ export default function HomeAdmin() {
       seen.set(k, true);
     }
 
-    // 🔹 Convertir a objeto limpio
-    const obj = cleanedDraft.reduce((acc, { key, value }) => {
+    // 🔹 Convertir a objeto limpio (solo pares válidos)
+    const obj = paresValidos.reduce((acc, { key, value }) => {
       acc[key.trim()] = value.trim();
       return acc;
     }, {});
@@ -1240,13 +1266,27 @@ export default function HomeAdmin() {
 
     return (
       <>
-        {[0, 1].map((col) => (
-          <div key={col}>
-            {whichInfo.map((info, index) =>
-              index % 2 === col ? renderizarItemInfo(info) : null
-            )}
-          </div>
-        ))}
+        {[0, 1].map((col) => {
+          // Obtener los índices de los elementos que pertenecen a esta columna
+          const indicesColumna = whichInfo
+            .map((_, index) => (index % 2 === col ? index : null))
+            .filter((idx) => idx !== null);
+
+          // Verificar si hay registros en esta columna
+          const tieneRegistros = indicesColumna.length > 0;
+
+          return (
+            <div key={col}>
+              {whichInfo.map((info, index) => {
+                if (index % 2 === col) {
+                  return renderizarItemInfo(info);
+                }
+                return null;
+              })}
+              {tieneRegistros && <div className="cont-final-columna"></div>}
+            </div>
+          );
+        })}
       </>
     );
   };
@@ -1671,7 +1711,8 @@ export default function HomeAdmin() {
           <div ref={scrollCrearRef}>
             {draftCrear.map(({ key, value }, i, array) => {
               const esObligatorio = i < datosMinimos.length;
-              const uniqueKey = `crear-${i}-${key || "empty"}`;
+              // Usar solo el índice como key para evitar que React re-renderice y pierda el foco
+              const uniqueKey = `crear-${i}`;
 
               return (
                 <div key={uniqueKey} className="cont-dato-editar">
@@ -1756,7 +1797,8 @@ export default function HomeAdmin() {
             {draftDatos.map(({ key, value }, i, array) => {
               const esObligatorio =
                 i < infoAEditar?.datos_minimos_iniciales?.length;
-              const uniqueKey = `editar-${i}-${key || "empty"}`;
+              // Usar solo el índice como key para evitar que React re-renderice y pierda el foco
+              const uniqueKey = `editar-${i}`;
 
               return (
                 <div key={uniqueKey} className="cont-dato-editar">
@@ -1829,7 +1871,8 @@ export default function HomeAdmin() {
           <h2>Editar datos mínimos</h2>
           <div ref={scrollDatosMinimosRef} className="cont-datos-minimos">
             {draftDatosMinimos.map((dato, i, array) => {
-              const uniqueKey = `dato-min-${i}-${dato || "empty"}`;
+              // Usar solo el índice como key para evitar que React re-renderice y pierda el foco
+              const uniqueKey = `dato-min-${i}`;
               return (
                 <div key={uniqueKey} className="cont-dato-editar">
                   <input

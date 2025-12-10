@@ -232,11 +232,15 @@ export default function HomeUsuario() {
 
   // Eliminar par
   const eliminarDatoCrear = (index) => {
-    if (draftCrear.length > 1) {
-      const copy = [...draftCrear];
-      copy.splice(index, 1);
-      setDraftCrear(copy);
+    // No permitir eliminar si solo queda un campo (debe haber mínimo uno)
+    if (draftCrear.length <= 1) {
+      toast.error("Debe haber al menos un campo");
+      return;
     }
+
+    const copy = [...draftCrear];
+    copy.splice(index, 1);
+    setDraftCrear(copy);
   };
 
   // Agregar par nuevo
@@ -378,6 +382,12 @@ export default function HomeUsuario() {
 
   // Eliminar par
   const eliminarDatoDraft = (index) => {
+    // No permitir eliminar si solo queda un campo (debe haber mínimo uno)
+    if (draftDatos.length <= 1) {
+      toast.error("Debe haber al menos un campo");
+      return;
+    }
+
     const copy = [...draftDatos];
     copy.splice(index, 1);
     setDraftDatos(copy);
@@ -433,8 +443,17 @@ export default function HomeUsuario() {
       return;
     }
 
+    // 🔹 Validar que quede al menos un par válido (clave y valor completos)
+    const paresValidos = cleanedDraft.filter(
+      (d) => d.key.trim() !== "" && d.value.trim() !== ""
+    );
+    if (paresValidos.length === 0) {
+      toast.error("El registro debe tener por lo menos un dato válido");
+      return;
+    }
+
     // 🔹 Validar que no haya emojis en keys ni values
-    for (const { key, value } of cleanedDraft) {
+    for (const { key, value } of paresValidos) {
       if (!noEmojisRegex.test(key.trim())) {
         toast.error(`El dato "${key}" contiene emojis, no es valido`);
         return;
@@ -446,7 +465,7 @@ export default function HomeUsuario() {
     }
 
     // 🔹 Validar duplicados (ignorando mayúsculas/minúsculas)
-    const keys = cleanedDraft.map((d) => d.key.trim());
+    const keys = paresValidos.map((d) => d.key.trim());
     const lowerKeys = keys.map((k) => k.toLowerCase());
     const seen = new Map();
     for (let i = 0; i < lowerKeys.length; i++) {
@@ -458,8 +477,8 @@ export default function HomeUsuario() {
       seen.set(k, true);
     }
 
-    // 🔹 Convertir a objeto limpio
-    const obj = cleanedDraft.reduce((acc, { key, value }) => {
+    // 🔹 Convertir a objeto limpio (solo pares válidos)
+    const obj = paresValidos.reduce((acc, { key, value }) => {
       acc[key.trim()] = value.trim();
       return acc;
     }, {});

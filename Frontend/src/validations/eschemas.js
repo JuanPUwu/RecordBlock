@@ -26,7 +26,6 @@ export const schemaCrearUsuario = yup.object().shape({
   email: yup
     .string()
     .required("Correo requerido")
-    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Correo inválido")
     .email("No es un correo válido")
     .matches(noEmojisRegex, "No se permiten emojis"),
   password: passwordRules.matches(noEmojisRegex, "No se permiten emojis"),

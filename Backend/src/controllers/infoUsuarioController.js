@@ -237,6 +237,21 @@ export const actualizarInformacion = async (req, res) => {
         )}`,
       });
 
+    // 3) Validar que al menos haya un dato con valor (no vacío)
+    const datosConValor = Object.entries(datos).filter(([clave, valor]) => {
+      // Verificar que el valor no sea null, undefined, o string vacío
+      if (valor === null || valor === undefined) return false;
+      if (typeof valor === "string" && valor.trim() === "") return false;
+      return true;
+    });
+
+    if (datosConValor.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "La información debe tener al menos un dato con valor",
+      });
+    }
+
     // Actualizar
     await runAsync("UPDATE informacion_usuario SET datos = ? WHERE id = ?", [
       JSON.stringify(datos),

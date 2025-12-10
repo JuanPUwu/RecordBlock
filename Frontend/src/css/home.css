@@ -548,6 +548,11 @@ section div {
   hyphens: auto;
 }
 
+.cont-final-columna {
+  width: 100%;
+  padding-top: 1px;
+}
+
 /* ============================================
    RESALTADO DE TEXTO
    ============================================ */

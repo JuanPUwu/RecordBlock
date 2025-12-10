@@ -755,6 +755,115 @@ describe("infoUsuarioController", () => {
         },
       });
     });
+
+    it("rechaza si todos los datos están vacíos (null)", async () => {
+      const { req, res } = mockReqRes({ id: 1, isAdmin: 1 });
+      req.body = {
+        info_id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: { hostname: null, ip: null }, // todos los datos son null
+      };
+
+      mocks.obtenerUsuarioDestino.mockResolvedValue({ usuario_id: 2 });
+      mocks.getAsync.mockResolvedValue({
+        id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: JSON.stringify(MOCK_DATOS),
+        datos_minimos: JSON.stringify(["hostname", "ip"]),
+      });
+      mocks.normalizar.mockImplementation(safeNormalize);
+
+      await actualizarInformacion(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        message: "La información debe tener al menos un dato con valor",
+      });
+    });
+
+    it("rechaza si todos los datos están vacíos (strings vacíos)", async () => {
+      const { req, res } = mockReqRes({ id: 1, isAdmin: 1 });
+      req.body = {
+        info_id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: { hostname: "", ip: "   " }, // todos los datos son strings vacíos o solo espacios
+      };
+
+      mocks.obtenerUsuarioDestino.mockResolvedValue({ usuario_id: 2 });
+      mocks.getAsync.mockResolvedValue({
+        id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: JSON.stringify(MOCK_DATOS),
+        datos_minimos: JSON.stringify(["hostname", "ip"]),
+      });
+      mocks.normalizar.mockImplementation(safeNormalize);
+
+      await actualizarInformacion(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        message: "La información debe tener al menos un dato con valor",
+      });
+    });
+
+    it("rechaza si todos los datos están vacíos (undefined)", async () => {
+      const { req, res } = mockReqRes({ id: 1, isAdmin: 1 });
+      req.body = {
+        info_id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: { hostname: undefined, ip: undefined }, // todos los datos son undefined
+      };
+
+      mocks.obtenerUsuarioDestino.mockResolvedValue({ usuario_id: 2 });
+      mocks.getAsync.mockResolvedValue({
+        id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: JSON.stringify(MOCK_DATOS),
+        datos_minimos: JSON.stringify(["hostname", "ip"]),
+      });
+      mocks.normalizar.mockImplementation(safeNormalize);
+
+      await actualizarInformacion(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        message: "La información debe tener al menos un dato con valor",
+      });
+    });
+
+    it("permite actualización si al menos un dato tiene valor", async () => {
+      const { req, res } = mockReqRes({ id: 1, isAdmin: 1 });
+      req.body = {
+        info_id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: { hostname: "", ip: "192.168.1.1" }, // hostname vacío pero ip tiene valor
+      };
+
+      mocks.obtenerUsuarioDestino.mockResolvedValue({ usuario_id: 2 });
+      mocks.getAsync.mockResolvedValue({
+        id: MOCK_INFO_ID,
+        usuario_id: 2,
+        datos: JSON.stringify(MOCK_DATOS),
+        datos_minimos: JSON.stringify(["hostname", "ip"]),
+      });
+      mocks.runAsync.mockResolvedValue({});
+      mocks.normalizar.mockImplementation(safeNormalize);
+
+      await actualizarInformacion(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: "Información actualizada",
+        data: {
+          info_id: MOCK_INFO_ID,
+          usuario_id: 2,
+          datos: { hostname: "", ip: "192.168.1.1" },
+        },
+      });
+    });
   });
 
   describe("eliminarInformacion - Edge Cases", () => {
