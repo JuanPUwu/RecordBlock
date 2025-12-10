@@ -60,15 +60,20 @@ describe("datosMinimosController", () => {
       });
     });
 
-    it("retorna 403 si no es admin", async () => {
+    it("retorna datos mínimos exitosamente para usuario no admin", async () => {
       const { req, res } = mockReqRes({ id: 1, isAdmin: 0 });
+      const mockData = { datos: JSON.stringify(MOCK_DATOS_MINIMOS) };
+
+      mocks.getAsync.mockResolvedValue(mockData);
 
       await obtenerDatosMinimos(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(403);
+      expect(mocks.getAsync).toHaveBeenCalledWith(
+        "SELECT datos FROM datos_minimos WHERE id = 1"
+      );
       expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: "Solo administrador",
+        success: true,
+        data: MOCK_DATOS_MINIMOS,
       });
     });
 

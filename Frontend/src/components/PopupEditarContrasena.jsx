@@ -17,14 +17,19 @@ export default function PopupEditarContrasena({
   setVerPassword2,
   usuarioSeleccionado,
   onSubmit,
+  mostrarNombreUsuario = true,
 }) {
   return (
     <Popup open={open} onClose={onClose} modal nested>
       <div className="cont-popUp">
         <h2>
           Cambio de contraseña
-          <br />
-          {usuarioSeleccionado?.nombre}
+          {mostrarNombreUsuario && (
+            <>
+              <br />
+              {usuarioSeleccionado?.nombre}
+            </>
+          )}
         </h2>
         <form onSubmit={handleSubmitCambiar(onSubmit)}>
           {/* Password 1*/}
@@ -104,5 +109,6 @@ PopupEditarContrasena.propTypes = {
   setVerPassword2: PropTypes.func.isRequired,
   usuarioSeleccionado: PropTypes.object,
   onSubmit: PropTypes.func.isRequired,
+  mostrarNombreUsuario: PropTypes.bool,
 };
 

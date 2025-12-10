@@ -4,12 +4,6 @@ import { normalizar } from "../utils/datosHelper.js";
 // GET Datos mínimos
 export const obtenerDatosMinimos = async (req, res) => {
   try {
-    if (!req.usuario.isAdmin)
-      return res.status(403).json({
-        success: false,
-        message: "Solo administrador",
-      });
-
     const row = await getAsync("SELECT datos FROM datos_minimos WHERE id = 1");
 
     if (!row)

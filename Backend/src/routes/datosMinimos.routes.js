@@ -15,19 +15,19 @@ const router = express.Router();
  * /api/datos_minimos:
  *   get:
  *     summary: Obtener la lista de datos mínimos
- *     description: Solo disponible para `Administradores`.
+ *     description: Disponible para usuarios autenticados.
  *     tags: [DatosMinimos]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista actual de datos mínimos
- *       403:
+ *       401:
  *         description: No autorizado
  *       500:
  *         description: Error en servidor
  */
-router.get("/", verificarToken, verificarAdmin, obtenerDatosMinimos);
+router.get("/", verificarToken, obtenerDatosMinimos);
 
 /**
  * @swagger

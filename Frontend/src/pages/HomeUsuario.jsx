@@ -1,52 +1,52 @@
 // Estilos
 import "../css/home.css";
 import "../css/swalStyles.css";
+import "../css/swalTableCSVStyles.css";
 
 // Hooks
 import { useAuth } from "../context/AuthContext";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
+
+// Hooks personalizados
+import { useFiltros } from "../hooks/useFiltros.js";
+import { useCrearInfo } from "../hooks/useCrearInfo.js";
+import { useEditarInfo } from "../hooks/useEditarInfo.js";
+import { useCSV } from "../hooks/useCSV.js";
+import { useDatosMinimosAdmin } from "../hooks/useDatosMinimosAdmin.js";
 
 // Servicios
 import { useUsuarioService } from "../services/usuarioService.js";
 import { useInfoUsuarioService } from "../services/infoUsuarioServices.js";
 
-// Librerias
-import { useRef, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import Popup from "reactjs-popup";
-import toast from "react-hot-toast";
-
 // Eschemas
 import { schemaCambiarContraseña } from "../validations/eschemas";
-
-// Utils
-import { resaltarTexto } from "../utils/textUtils.jsx";
-import { parseDateDMY } from "../utils/dateHelper.js";
 
 // Componentes
 import Nav from "../components/Nav.jsx";
 import SepHrz from "../components/SepHrz.jsx";
 import SearchNav from "../components/SearchNav.jsx";
-import CardAdmin from "../components/CardAdmin.jsx";
 import Spinner from "../components/Spinner.jsx";
+import Popup from "reactjs-popup";
+import CardAdmin from "../components/CardAdmin.jsx";
+import PopupEditarContrasena from "../components/PopupEditarContrasena.jsx";
+import PopupCrearInfo from "../components/PopupCrearInfo.jsx";
+import PopupEditarInfo from "../components/PopupEditarInfo.jsx";
+import ContenidoPrincipal from "../components/ContenidoPrincipal.jsx";
 
 // Imagenes
-import imgSalir from "../assets/img/salir.webp";
 import imgUsuario from "../assets/img/usuario.webp";
-import imgVisibility from "../assets/img/ojo.webp";
 import imgLimpiar from "../assets/img/reset.webp";
-import imgCandado from "../assets/img/candado.webp";
-import imgBorrar from "../assets/img/basura.webp";
-import imgEditar from "../assets/img/editar.webp";
-import imgAgregarFila from "../assets/img/agregarFila.webp";
 import imgCrearRegistro from "../assets/img/flecha.webp";
 import imgExcell from "../assets/img/excell.webp";
 import imgPdf from "../assets/img/pdf.webp";
-import imgVacio from "../assets/img/vacio.webp";
+import imgSalir from "../assets/img/salir.webp";
+import swalStyles from "../css/swalStyles.js";
 
 export default function HomeUsuario() {
-  // Todo Funciones Nav
-
   // ? Inicio Manejo formularios ->
   // Formulario Cambiar Contraseña
   const {
@@ -63,38 +63,9 @@ export default function HomeUsuario() {
 
   // ? -> Inicio utils
   // Usuario actual
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
-  // Terminsmo de busqueda dato/detalle
-  const [terminosBusqueda, setTerminosBusqueda] = useState({
-    dato: "",
-    detalle: "",
-  });
-
-  // Exportar como PDF
-  const exportarComoPDF = async () => {
-    setIsLoading(true);
-    const { exportarPDF } = await import("../utils/pdfUtils.js");
-    try {
-      await exportarPDF(whichInfo, opcionesClientes);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Exportar como excell
-  const exportarComoExcell = async () => {
-    setIsLoading(true);
-    const { exportarExcel } = await import("../utils/excellUtils.js");
-    try {
-      await exportarExcel(whichInfo, opcionesClientes);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const [verPassword, setVerPassword] = useState("password");
-  const [verPassword2, setVerPassword2] = useState("password");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [isRefrescarInfo, setIsRefrescarInfo] = useState(false);
   function refrescarInfo() {
@@ -105,10 +76,6 @@ export default function HomeUsuario() {
       setIsRefrescarInfo(false);
     }, 300);
   }
-
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [isInfoCargando, setIsInfoCargando] = useState(true);
   // ? <- Fin utils
 
   // * <-------------------------------------------------------------------------------->
@@ -117,6 +84,8 @@ export default function HomeUsuario() {
   const [popUpUsuarios, setPopUpUsuarios] = useState(false);
   const [popUpEditarContrasena, setPopUpEditarContrasena] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+  const [verPassword, setVerPassword] = useState("password");
+  const [verPassword2, setVerPassword2] = useState("password");
   const { actualizarUsuario } = useUsuarioService();
   const editarContraseña = async (data) => {
     setIsLoading(true);
@@ -132,79 +101,74 @@ export default function HomeUsuario() {
     } else {
       setIsLoading(false);
       toast.error(response.error);
-      return;
     }
   };
   // ? <- Fin editar cliente/acciones
 
   // * <-------------------------------------------------------------------------------->
 
-  // Todo Funciones section
-
   // ? -> Inicio ver info cliente
   const { obtenerInformacion } = useInfoUsuarioService();
-  const [whichInfo, setWhichInfo] = useState([]);
   const refInformacion = useRef(null);
+
+  const {
+    terminosBusqueda,
+    filtrarPorFecha,
+    setFiltrarPorFecha,
+    isDatoValue,
+    isDetalleValue,
+    whichInfo,
+    isInfoCargando,
+    setIsInfoCargando,
+    refDato,
+    refDetalle,
+    filtroInformacion,
+  } = useFiltros(refInformacion);
+
   const cargarInformacion = async () => {
     setIsInfoCargando(true);
-    const response = await obtenerInformacion(user?.value);
+    const userId = user?.id || user?.value;
+    const response = await obtenerInformacion(userId);
     refInformacion.current = response.data.data;
     filtroInformacion();
   };
 
+  // Cargar información al montar el componente
   useEffect(() => {
     cargarInformacion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filtrador de informacion
-  const refDato = useRef();
-  const refDetalle = useRef();
-  const [isDatoValue, setIsDatoValue] = useState(false);
-  const [isDetalleValue, setIsDetalleValue] = useState(false);
-  const filtroInformacion = () => {
-    const dato = refDato.current.value.trim().toLowerCase();
-    const detalle = refDetalle.current.value.trim().toLowerCase();
+  // Crear opciones de cliente para exportación (solo el usuario actual)
+  const opcionesClientesExportacion = user
+    ? [
+        {
+          value: user.id || user.value,
+          label: user.nombre,
+        },
+      ]
+    : [];
 
-    setTerminosBusqueda({ dato, detalle });
-
-    // Si no hay filtros, retorna todo
-    if (!dato && !detalle) {
-      setWhichInfo(refInformacion.current);
-      setIsInfoCargando(false);
-      setIsDatoValue(false);
-      setIsDetalleValue(false);
-      return;
+  // Exportar como PDF
+  const exportarComoPDF = async () => {
+    setIsLoading(true);
+    const { exportarPDF } = await import("../utils/pdfUtils.js");
+    try {
+      await exportarPDF(whichInfo, opcionesClientesExportacion);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    if (dato) {
-      setIsDatoValue(true);
-    } else {
-      setIsDatoValue(false);
+  // Exportar como excell
+  const exportarComoExcell = async () => {
+    setIsLoading(true);
+    const { exportarExcel } = await import("../utils/excellUtils.js");
+    try {
+      await exportarExcel(whichInfo, opcionesClientesExportacion);
+    } finally {
+      setIsLoading(false);
     }
-
-    if (detalle) {
-      setIsDetalleValue(true);
-    } else {
-      setIsDetalleValue(false);
-    }
-
-    const filtrados = refInformacion.current.filter((info) => {
-      const dataObj = info.datos[0] || {};
-      const keys = Object.keys(dataObj);
-
-      return keys.some((k) => {
-        const keyLower = k.toLowerCase();
-        const valueLower = String(dataObj[k]).toLowerCase();
-
-        const matchDato = dato ? keyLower.includes(dato) : true;
-        const matchDetalle = detalle ? valueLower.includes(detalle) : true;
-
-        return matchDato && matchDetalle;
-      });
-    });
-
-    setWhichInfo(filtrados);
-    setIsInfoCargando(false);
   };
   // ? <- Fin ver info cliente
 
@@ -212,138 +176,43 @@ export default function HomeUsuario() {
 
   // ? -> Inicio crear info cliente
   const [popUpCrearInfo, setPopUpCrearInfo] = useState(false);
-  const [draftCrear, setDraftCrear] = useState([]);
 
-  const { crearInformacion } = useInfoUsuarioService();
-
-  // Cambiar clave
-  const cambiarLlaveCrear = (index, newKey) => {
-    const copy = [...draftCrear];
-    copy[index].key = newKey;
-    setDraftCrear(copy);
+  // Crear un objeto clienteSeleccionado simulado para usar con los hooks
+  // El usuario siempre será el que inició sesión
+  const clienteSeleccionadoSimulado = {
+    value: user?.id || user?.value || null,
   };
 
-  // Cambiar valor
-  const cambiarValorCrear = (index, newValue) => {
-    const copy = [...draftCrear];
-    copy[index].value = newValue;
-    setDraftCrear(copy);
-  };
+  // Obtener datos mínimos (solo lectura, no se pueden editar)
+  const { datosMinimos, obtenerDatosMin } = useDatosMinimosAdmin();
 
-  // Eliminar par
-  const eliminarDatoCrear = (index) => {
-    // No permitir eliminar si solo queda un campo (debe haber mínimo uno)
-    if (draftCrear.length <= 1) {
-      toast.error("Debe haber al menos un campo");
-      return;
-    }
+  const {
+    draftCrear,
+    setDraftCrear,
+    scrollCrearRef,
+    inputCrearRef,
+    cambiarLlaveCrear,
+    cambiarValorCrear,
+    eliminarDatoCrear,
+    agregarDatoCrear,
+    crearRegistro,
+  } = useCrearInfo(clienteSeleccionadoSimulado, cargarInformacion);
 
-    const copy = [...draftCrear];
-    copy.splice(index, 1);
-    setDraftCrear(copy);
-  };
+  const { refInputFile, onFileSelected } = useCSV(
+    clienteSeleccionadoSimulado,
+    cargarInformacion
+  );
 
-  // Agregar par nuevo
-  const scrollCrearRef = useRef(null);
-  const inputCrearRef = useRef(null);
-  const agregarDatoCrear = () => {
-    setDraftCrear([...draftCrear, { key: "", value: "" }]);
-
-    requestAnimationFrame(() => {
-      if (scrollCrearRef.current) {
-        scrollCrearRef.current.scrollTo({
-          top: scrollCrearRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-      }
-
-      setTimeout(() => {
-        if (inputCrearRef.current) {
-          inputCrearRef.current.focus();
-        }
-      }, 250);
-    });
-  };
-
-  // Guardar nueva información
-  const crearRegistro = async () => {
-    const noEmojisRegex = /^[^\p{Extended_Pictographic}]*$/u;
-
-    // Limpiar campos vacíos
-    const cleanedDraft = draftCrear.filter(
-      (d) => d.key.trim() !== "" || d.value.trim() !== ""
-    );
-
-    // Validaciones
-    const emptyKey = cleanedDraft.find(
-      (d) => d.key.trim() === "" && d.value.trim() !== ""
-    );
-    if (emptyKey) {
-      toast.error(`El detalle "${emptyKey.value}" no tiene dato`);
-      return;
-    }
-
-    const emptyValue = cleanedDraft.find(
-      (d) => d.value.trim() === "" && d.key.trim() !== ""
-    );
-    if (emptyValue) {
-      toast.error(`El dato "${emptyValue.key}" no tiene detalle`);
-      return;
-    }
-
-    // Verificar mínimo 1 par válido
-    if (cleanedDraft.length === 0) {
-      toast.error("Ingresa por lo menos un dato válido");
-      return;
-    }
-
-    // Validar que no haya emojis
-    for (const { key, value } of cleanedDraft) {
-      if (!noEmojisRegex.test(key.trim())) {
-        toast.error(`El dato "${key}" contiene emojis, no es valido`);
-        return;
-      }
-      if (!noEmojisRegex.test(value.trim())) {
-        toast.error(`El detalle "${value}" contiene emojis, no es valido`);
-        return;
-      }
-    }
-
-    const keys = cleanedDraft.map((d) => d.key.trim());
-    const lowerKeys = keys.map((k) => k.toLowerCase());
-    const seen = new Map();
-    for (let i = 0; i < lowerKeys.length; i++) {
-      if (seen.has(lowerKeys[i])) {
-        toast.error(`El dato "${keys[i]}" ya existe`);
-        return;
-      }
-      seen.set(lowerKeys[i], true);
-    }
-
-    // Convertir a objeto
-    const obj = cleanedDraft.reduce((acc, { key, value }) => {
-      acc[key.trim()] = value.trim();
-      return acc;
-    }, {});
-
-    // Crear payload
-    const nuevaInfo = {
-      usuario_id: user.id,
-      datos: obj,
-    };
-
-    setIsLoading(true);
-    const response = await crearInformacion(nuevaInfo);
-
-    if (response.success) {
-      toast.success(`Registro creado con éxito`);
-      cargarInformacion();
+  const handleCrearRegistro = async () => {
+    const success = await crearRegistro(setIsLoading);
+    if (success) {
       setPopUpCrearInfo(false);
-      setIsLoading(false);
-    } else {
-      toast.error(response.error);
-      setIsLoading(false);
     }
+  };
+
+  const handleSubirCSV = async (e) => {
+    await onFileSelected(e, setIsLoading);
+    setPopUpCrearInfo(false);
   };
   // ? <- Fin crear info cliente
 
@@ -351,171 +220,26 @@ export default function HomeUsuario() {
 
   // ? -> Inicio editar info cliente
   const [popUpEditarInfo, setPopUpEditarInfo] = useState(false);
-  const [infoSeleccionada, setInfoSeleccionada] = useState(null);
-  const [infoAEditar, setInfoAEditar] = useState(null);
-  const [draftDatos, setDraftDatos] = useState([]);
 
-  useEffect(() => {
-    if (infoAEditar) {
-      // Pasamos los datos de objeto -> array de pares clave/valor
-      const entries = Object.entries(infoAEditar.datos[0]).map(([k, v]) => ({
-        key: k,
-        value: v,
-      }));
-      setDraftDatos(entries);
-    }
-  }, [infoAEditar]);
+  const {
+    setInfoSeleccionada,
+    infoAEditar,
+    setInfoAEditar,
+    draftDatos,
+    scrollRef,
+    inputRef,
+    cambiarLlaveDraft,
+    cambiarValorDraft,
+    eliminarDatoDraft,
+    agregarDatoDraft,
+    editarRegistro,
+    handleEditarInfo,
+  } = useEditarInfo(cargarInformacion);
 
-  // Cambiar clave
-  const cambiarLlaveDraft = (index, newKey) => {
-    const copy = [...draftDatos];
-    copy[index].key = newKey;
-    setDraftDatos(copy);
-  };
-
-  // Cambiar valor
-  const cambiarValorDraft = (index, newValue) => {
-    const copy = [...draftDatos];
-    copy[index].value = newValue;
-    setDraftDatos(copy);
-  };
-
-  // Eliminar par
-  const eliminarDatoDraft = (index) => {
-    // No permitir eliminar si solo queda un campo (debe haber mínimo uno)
-    if (draftDatos.length <= 1) {
-      toast.error("Debe haber al menos un campo");
-      return;
-    }
-
-    const copy = [...draftDatos];
-    copy.splice(index, 1);
-    setDraftDatos(copy);
-  };
-
-  // Agregar par nuevo
-  const scrollRef = useRef(null);
-  const inputRef = useRef(null);
-  const agregarDatoDraft = () => {
-    setDraftDatos([...draftDatos, { key: "", value: "" }]);
-
-    requestAnimationFrame(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTo({
-          top: scrollRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-      }
-
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      }, 250);
-    });
-  };
-
-  // Guardar cambios
-  const { actualizarInformacion } = useInfoUsuarioService();
-  const editarRegistro = async () => {
-    const noEmojisRegex = /^[^\p{Extended_Pictographic}]*$/u;
-
-    // 🔹 Limpiar campos vacíos totalmente {"": ""}
-    const cleanedDraft = draftDatos.filter(
-      (d) => d.key.trim() !== "" || d.value.trim() !== ""
-    );
-
-    // 🔹 Validar claves vacías
-    const emptyKey = cleanedDraft.find(
-      (d) => d.key.trim() === "" && d.value.trim() !== ""
-    );
-    if (emptyKey) {
-      toast.error(`El detalle "${emptyKey.value}" no tiene dato`);
-      return;
-    }
-
-    // 🔹 Validar valores vacíos
-    const emptyValue = cleanedDraft.find(
-      (d) => d.value.trim() === "" && d.key.trim() !== ""
-    );
-    if (emptyValue) {
-      toast.error(`El dato "${emptyValue.key}" no tiene detalle`);
-      return;
-    }
-
-    // 🔹 Validar que quede al menos un par válido (clave y valor completos)
-    const paresValidos = cleanedDraft.filter(
-      (d) => d.key.trim() !== "" && d.value.trim() !== ""
-    );
-    if (paresValidos.length === 0) {
-      toast.error("El registro debe tener por lo menos un dato válido");
-      return;
-    }
-
-    // 🔹 Validar que no haya emojis en keys ni values
-    for (const { key, value } of paresValidos) {
-      if (!noEmojisRegex.test(key.trim())) {
-        toast.error(`El dato "${key}" contiene emojis, no es valido`);
-        return;
-      }
-      if (!noEmojisRegex.test(value.trim())) {
-        toast.error(`El detalle "${value}" contiene emojis, no es valido`);
-        return;
-      }
-    }
-
-    // 🔹 Validar duplicados (ignorando mayúsculas/minúsculas)
-    const keys = paresValidos.map((d) => d.key.trim());
-    const lowerKeys = keys.map((k) => k.toLowerCase());
-    const seen = new Map();
-    for (let i = 0; i < lowerKeys.length; i++) {
-      const k = lowerKeys[i];
-      if (seen.has(k)) {
-        toast.error(`El dato "${keys[i]}" ya existe`);
-        return;
-      }
-      seen.set(k, true);
-    }
-
-    // 🔹 Convertir a objeto limpio (solo pares válidos)
-    const obj = paresValidos.reduce((acc, { key, value }) => {
-      acc[key.trim()] = value.trim();
-      return acc;
-    }, {});
-
-    // 🔹 Crear info actualizada
-    const infoActualizada = { ...infoAEditar, datos: obj };
-
-    // 🔹 Normalizar datos de infoSeleccionada para comparación
-    const datosSeleccionados = Array.isArray(infoSeleccionada.datos)
-      ? infoSeleccionada.datos[0] // asumimos un solo objeto
-      : infoSeleccionada.datos;
-
-    const infoSeleccionadaNormalized = {
-      ...infoSeleccionada,
-      datos: datosSeleccionados,
-    };
-
-    // 🔹 Si no hay cambios no hace nada
-    if (
-      JSON.stringify(infoSeleccionadaNormalized) ===
-      JSON.stringify(infoActualizada)
-    ) {
+  const handleEditarRegistro = async () => {
+    const success = await editarRegistro(setIsLoading);
+    if (success) {
       setPopUpEditarInfo(false);
-      return;
-    }
-
-    // 🔹 Enviar actualización
-    setIsLoading(true);
-    const response = await actualizarInformacion(infoActualizada);
-    if (response.success) {
-      toast.success(`Registro °${infoActualizada.info_id} actualizado`);
-      cargarInformacion();
-      setPopUpEditarInfo(false);
-      setIsLoading(false);
-    } else {
-      toast.error(response.error);
-      setIsLoading(false);
     }
   };
   // ? <- Fin editar info cliente
@@ -525,11 +249,6 @@ export default function HomeUsuario() {
   // ? -> Inicio eliminar informacion cliente
   const { eliminarInformacion } = useInfoUsuarioService();
   const eliminarInformacionCliente = async (info) => {
-    setIsLoading(true);
-    const { default: Swal } = await import("sweetalert2");
-    const { default: swalStyles } = await import("../css/swalStyles.js");
-    setIsLoading(false);
-
     const result = await Swal.fire({
       title: `¿Estás seguro de eliminar el registro °${info.info_id}?`,
       text: "Esta acción es irreversible",
@@ -565,13 +284,7 @@ export default function HomeUsuario() {
 
   // ? -> Inicio logout/acciones
   // Cerrar sesion
-  const { logout } = useAuth();
   const cerrarSesion = async () => {
-    setIsLoading(true);
-    const { default: Swal } = await import("sweetalert2");
-    const { default: swalStyles } = await import("../css/swalStyles.js");
-    setIsLoading(false);
-
     const result = await Swal.fire({
       title: "¿Estás seguro de cerrar sesión?",
       text: "Tendrás que iniciar sesión nuevamente",
@@ -606,7 +319,7 @@ export default function HomeUsuario() {
           onClick={() => {
             setPopUpUsuarios(true);
           }}
-          className="btn-nav btn-user"
+          className="btn-nav btn-nav-primary btn-user"
           title="Gestión de usuario"
         >
           <img src={imgUsuario} alt="" />
@@ -614,26 +327,19 @@ export default function HomeUsuario() {
         </button>
         <button
           onClick={() => refrescarInfo()}
-          className={`btn-nav ${isRefrescarInfo ? "btn-disabled" : ""}`}
+          className={`btn-nav btn-nav-secondary ${
+            isRefrescarInfo ? "btn-disabled" : ""
+          }`}
           disabled={isRefrescarInfo}
           title="Refrescar registros"
         >
           <img src={imgLimpiar} alt="" />
         </button>
         <button
-          className="btn-nav"
+          className="btn-nav btn-nav-success"
           title="Crear registro"
-          onClick={() => {
-            setDraftCrear([
-              { key: "Hostname", value: "" },
-              { key: "Plataforma", value: "" },
-              { key: "Marca/Modelo", value: "" },
-              { key: "Tipo", value: "" },
-              { key: "Firmware/Versión S.O", value: "" },
-              { key: "Ubicación", value: "" },
-              { key: "Licenciamiento", value: "" },
-            ]);
-
+          onClick={async () => {
+            await obtenerDatosMin(setIsLoading, setDraftCrear);
             setPopUpCrearInfo(true);
           }}
         >
@@ -657,24 +363,40 @@ export default function HomeUsuario() {
         />
         <button
           onClick={() => exportarComoPDF()}
-          className="btn-nav"
+          className="btn-nav btn-nav-danger"
           title="Exportar a pdf"
         >
           <img src={imgPdf} alt="" />
         </button>
         <button
           onClick={() => exportarComoExcell()}
-          className="btn-nav"
+          className="btn-nav btn-nav-success"
           title="Exportar a excel"
         >
           <img src={imgExcell} alt="" />
         </button>
         <div className="cont-cant-resultados">
           <span>{whichInfo.length} Resultados</span>
+          <label
+            className="checkbox-moderno"
+            aria-label="Mostrar licenamiento proximo a vencer"
+            title="Mostrar licenamiento proximo a vencer"
+          >
+            <input
+              type="checkbox"
+              checked={filtrarPorFecha}
+              onChange={(e) => {
+                const nuevoValor = e.target.checked;
+                setFiltrarPorFecha(nuevoValor);
+                filtroInformacion(nuevoValor);
+              }}
+            />
+            <span className="checkbox-slider"></span>
+          </label>
         </div>
         <button
           onClick={cerrarSesion}
-          className="btn-nav"
+          className="btn-nav btn-nav-danger"
           title="Cerrar sesión"
         >
           <img src={imgSalir} alt="" />
@@ -684,93 +406,16 @@ export default function HomeUsuario() {
 
       {/* Contenido principal */}
       <section>
-        {isInfoCargando ? (
-          <div className="loader section"></div>
-        ) : whichInfo.length === 0 ? (
-          <div className="cont-sin-resultados">
-            <img src={imgVacio} alt="" />
-            <span>No se encontraron resultados</span>
-          </div>
-        ) : (
-          [0, 1].map((col) => (
-            <div key={col}>
-              {whichInfo.map((info, index) =>
-                index % 2 === col ? (
-                  <div className="item" key={info.info_id}>
-                    <h3>
-                      <button
-                        onClick={() => {
-                          setInfoSeleccionada(info);
-                          setInfoAEditar({
-                            ...info,
-                            datos: info.datos.map((dato) => ({ ...dato })),
-                          });
-                          setPopUpEditarInfo(true);
-                        }}
-                      >
-                        <img src={imgEditar} alt="" />
-                      </button>
-                      {`Registro °${info.info_id}`}
-                      <button onClick={() => eliminarInformacionCliente(info)}>
-                        <img src={imgBorrar} alt="" />
-                      </button>
-                    </h3>
-
-                    {info.datos.map((dato, i) => {
-                      const entries = Object.entries(dato);
-                      const mitad = Math.ceil(entries.length / 2);
-                      const colIzq = entries.slice(0, mitad);
-                      const colDer = entries.slice(mitad);
-
-                      return (
-                        <div className="cont-dato" key={i}>
-                          <div className="columna">
-                            {colIzq.map(([key, value]) => (
-                              <p key={key}>
-                                <strong>
-                                  {resaltarTexto(
-                                    key,
-                                    terminosBusqueda.dato,
-                                    true
-                                  )}
-                                  :
-                                </strong>{" "}
-                                {resaltarTexto(
-                                  value,
-                                  terminosBusqueda.detalle,
-                                  false
-                                )}
-                              </p>
-                            ))}
-                          </div>
-                          <div className="columna">
-                            {colDer.map(([key, value]) => (
-                              <p key={key}>
-                                <strong>
-                                  {resaltarTexto(
-                                    key,
-                                    terminosBusqueda.dato,
-                                    true
-                                  )}
-                                  :
-                                </strong>{" "}
-                                {resaltarTexto(
-                                  value,
-                                  terminosBusqueda.detalle,
-                                  false
-                                )}
-                              </p>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null
-              )}
-            </div>
-          ))
-        )}
+        <ContenidoPrincipal
+          isInfoCargando={isInfoCargando}
+          whichInfo={whichInfo}
+          terminosBusqueda={terminosBusqueda}
+          onEditarInfo={(info) => {
+            handleEditarInfo(info);
+            setPopUpEditarInfo(true);
+          }}
+          onEliminarInfo={eliminarInformacionCliente}
+        />
       </section>
 
       {/* PopUp usuarios */}
@@ -787,7 +432,7 @@ export default function HomeUsuario() {
           <h2>Gestión de usuario</h2>
           <CardAdmin
             nameAdmin={user.nombre}
-            isAdmin={user.isAdmin}
+            rolAdmin={user.isAdmin ? "Administrador" : "Usuario"}
             onClick={() => {
               setPopUpEditarContrasena(true);
               setUsuarioSeleccionado(user);
@@ -797,228 +442,70 @@ export default function HomeUsuario() {
         </div>
       </Popup>
 
-      {/* PopUp editar contraseña */}
-      <Popup
+      {/* PopUp editar contraseña */}
+      <PopupEditarContrasena
         open={popUpEditarContrasena}
         onClose={() => {
           setPopUpEditarContrasena(false);
           setUsuarioSeleccionado(null);
           resetCambiar();
         }}
-        modal
-        nested
-      >
-        <div className="cont-popUp">
-          <h2>Cambio de contraseña</h2>
-          <form onSubmit={handleSubmitCambiar(editarContraseña)}>
-            {/* Password 1*/}
-            <div className="cont-label">
-              <label>Contraseña:</label>
-              {errorsCambiar.password && (
-                <span>{errorsCambiar.password.message}</span>
-              )}
-            </div>
-            <div className="cont-pass">
-              <input
-                type={verPassword}
-                {...registerCambiar("password")}
-                placeholder="∗∗∗∗∗∗∗∗∗∗"
-              />
-              <button
-                type="button"
-                onMouseDown={() => setVerPassword("text")}
-                onMouseUp={() => setVerPassword("password")}
-                onMouseLeave={() => setVerPassword("password")}
-              >
-                <img src={imgVisibility} alt="" />
-              </button>
-            </div>
-
-            {/* Password 2*/}
-            <div className="cont-label">
-              <label>Confirmar contraseña:</label>
-              {errorsCambiar.password2 && (
-                <span>{errorsCambiar.password2.message}</span>
-              )}
-            </div>
-            <div className="cont-pass">
-              <input
-                type={verPassword2}
-                {...registerCambiar("password2")}
-                placeholder="∗∗∗∗∗∗∗∗∗∗"
-              />
-              <button
-                type="button"
-                onMouseDown={() => setVerPassword2("text")}
-                onMouseUp={() => setVerPassword2("password")}
-                onMouseLeave={() => setVerPassword2("password")}
-              >
-                <img src={imgVisibility} alt="" />
-              </button>
-            </div>
-            <div className="sep-hrz"></div>
-            <button
-              className="btn-cambio-contraseña"
-              type="submit"
-              disabled={isSubmittingCambiar}
-              title="Cambiar contraseña"
-            >
-              <img src={imgCandado} alt="" />
-              {isSubmittingCambiar ? "Cambiando..." : "Cambiar"}
-            </button>
-          </form>
-        </div>
-      </Popup>
+        registerCambiar={registerCambiar}
+        handleSubmitCambiar={handleSubmitCambiar}
+        errorsCambiar={errorsCambiar}
+        isSubmittingCambiar={isSubmittingCambiar}
+        verPassword={verPassword}
+        setVerPassword={setVerPassword}
+        verPassword2={verPassword2}
+        setVerPassword2={setVerPassword2}
+        usuarioSeleccionado={usuarioSeleccionado}
+        onSubmit={editarContraseña}
+        mostrarNombreUsuario={false}
+      />
 
       {/* PopUp crear informacion */}
-      <Popup
+      <PopupCrearInfo
         open={popUpCrearInfo}
         onClose={() => {
           setPopUpCrearInfo(false);
           setDraftCrear([]);
         }}
-        modal
-        nested
-      >
-        <div className="cont-popUp-editarInfo">
-          <h2>Nuevo registro</h2>
-          <div ref={scrollCrearRef}>
-            {draftCrear.map(({ key, value }, i, array) => {
-              const esObligatorio = i < 7;
-
-              return (
-                <div key={i} className="cont-dato-editar">
-                  {esObligatorio ? (
-                    <span>{key}</span>
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder="Dato..."
-                      value={key}
-                      onChange={(e) => cambiarLlaveCrear(i, e.target.value)}
-                      ref={i === array.length - 1 ? inputCrearRef : null}
-                    />
-                  )}
-
-                  <input
-                    type="text"
-                    placeholder="Detalle..."
-                    value={value}
-                    onChange={(e) => cambiarValorCrear(i, e.target.value)}
-                    className={esObligatorio ? "input-obligatorio" : ""}
-                  />
-
-                  {!esObligatorio && (
-                    <button
-                      type="button"
-                      onClick={() => eliminarDatoCrear(i)}
-                      title="Eliminar campo"
-                    >
-                      <img src={imgBorrar} alt="Eliminar" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="sep-hrz"></div>
-          <div className="cont-btns">
-            <button
-              type="button"
-              onClick={agregarDatoCrear}
-              title="Agregar campo"
-            >
-              <img src={imgAgregarFila} alt="" />
-              Agregar campo
-            </button>
-            <button
-              type="button"
-              className="btn-crear"
-              onClick={crearRegistro}
-              title="Crear registro"
-            >
-              <img src={imgCrearRegistro} alt="" />
-              Crear
-            </button>
-          </div>
-        </div>
-      </Popup>
+        clienteSeleccionado={clienteSeleccionadoSimulado}
+        opcionesClientes={[]}
+        draftCrear={draftCrear}
+        datosMinimos={datosMinimos}
+        cambiarLlaveCrear={cambiarLlaveCrear}
+        cambiarValorCrear={cambiarValorCrear}
+        eliminarDatoCrear={eliminarDatoCrear}
+        agregarDatoCrear={agregarDatoCrear}
+        scrollCrearRef={scrollCrearRef}
+        inputCrearRef={inputCrearRef}
+        onSubirCSV={handleSubirCSV}
+        refInputFile={refInputFile}
+        onEditarDatosMinimos={() => {}}
+        onCreate={handleCrearRegistro}
+        mostrarEditarDatosMinimos={false}
+      />
 
       {/* PopUp editar informacion */}
-      <Popup
+      <PopupEditarInfo
         open={popUpEditarInfo}
         onClose={() => {
           setPopUpEditarInfo(false);
           setInfoSeleccionada(null);
           setInfoAEditar(null);
         }}
-        modal
-        nested
-      >
-        <div className="cont-popUp-editarInfo">
-          <h2>{`Registro °${infoAEditar?.info_id}`}</h2>
-
-          <div ref={scrollRef}>
-            {draftDatos.map(({ key, value }, i, array) => {
-              const esObligatorio = i < 7;
-
-              return (
-                <div key={i} className="cont-dato-editar">
-                  {esObligatorio ? (
-                    <span>{key}</span>
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder="Dato..."
-                      value={key}
-                      onChange={(e) => cambiarLlaveDraft(i, e.target.value)}
-                      ref={i === array.length - 1 ? inputRef : null}
-                    />
-                  )}
-
-                  <input
-                    type="text"
-                    placeholder="Detalle..."
-                    value={value}
-                    onChange={(e) => cambiarValorDraft(i, e.target.value)}
-                    className={esObligatorio ? "input-obligatorio" : ""}
-                  />
-
-                  {!esObligatorio && (
-                    <button
-                      type="button"
-                      onClick={() => eliminarDatoDraft(i)}
-                      title="Eliminar campo"
-                    >
-                      <img src={imgBorrar} alt="Eliminar" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="sep-hrz"></div>
-          <div className="cont-btns">
-            <button
-              type="button"
-              onClick={agregarDatoDraft}
-              title="Agregar campo"
-            >
-              <img src={imgAgregarFila} alt="" />
-              Agregar campo
-            </button>
-            <button
-              type="button"
-              onClick={editarRegistro}
-              title="Guardar registro"
-            >
-              <img src={imgEditar} alt="" />
-              Guardar
-            </button>
-          </div>
-        </div>
-      </Popup>
+        infoAEditar={infoAEditar}
+        opcionesClientes={[]}
+        draftDatos={draftDatos}
+        cambiarLlaveDraft={cambiarLlaveDraft}
+        cambiarValorDraft={cambiarValorDraft}
+        eliminarDatoDraft={eliminarDatoDraft}
+        agregarDatoDraft={agregarDatoDraft}
+        scrollRef={scrollRef}
+        inputRef={inputRef}
+        onSave={handleEditarRegistro}
+      />
     </>
   );
 }

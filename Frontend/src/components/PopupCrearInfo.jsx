@@ -24,6 +24,7 @@ export default function PopupCrearInfo({
   refInputFile,
   onEditarDatosMinimos,
   onCreate,
+  mostrarEditarDatosMinimos = true,
 }) {
   return (
     <Popup open={open} onClose={onClose} modal nested>
@@ -43,19 +44,23 @@ export default function PopupCrearInfo({
           <img src={imgSubirArchivo} alt="" />
         </button>
         <h2>
-          {`${
-            opcionesClientes.find(
-              (c) => c.value === clienteSeleccionado?.value
-            )?.label
-          } - Nuevo registro`}
+          {opcionesClientes.length > 0 &&
+          opcionesClientes.find((c) => c.value === clienteSeleccionado?.value)
+            ?.label
+            ? `${opcionesClientes.find(
+                (c) => c.value === clienteSeleccionado?.value
+              )?.label} - Nuevo registro`
+            : "Nuevo registro"}
         </h2>
-        <button
-          className="btn-change"
-          title="Editar datos minimos"
-          onClick={onEditarDatosMinimos}
-        >
-          <img src={imgEditar} alt="" />
-        </button>
+        {datosMinimos.length > 0 && mostrarEditarDatosMinimos && (
+          <button
+            className="btn-change"
+            title="Editar datos minimos"
+            onClick={onEditarDatosMinimos}
+          >
+            <img src={imgEditar} alt="" />
+          </button>
+        )}
 
         <div ref={scrollCrearRef}>
           {draftCrear.map(({ key, value }, i, array) => {
@@ -141,5 +146,6 @@ PopupCrearInfo.propTypes = {
   refInputFile: PropTypes.object.isRequired,
   onEditarDatosMinimos: PropTypes.func.isRequired,
   onCreate: PropTypes.func.isRequired,
+  mostrarEditarDatosMinimos: PropTypes.bool,
 };
 

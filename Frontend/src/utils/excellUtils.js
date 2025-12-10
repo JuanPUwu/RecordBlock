@@ -43,8 +43,9 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
           (c.id !== undefined && c.id === item.usuario_id)
       );
 
-      const clienteNombre =
-        clienteObj?.label ?? clienteObj?.nombre ?? item.usuario_id;
+      const clienteNombre = String(
+        clienteObj?.label ?? clienteObj?.nombre ?? item.usuario_id
+      );
 
       for (const detalle of item.datos) {
         const row = {

@@ -45,7 +45,9 @@ export default function ContenidoPrincipal({
           <button onClick={() => onEditarInfo(info)}>
             <img src={imgEditar} alt="" />
           </button>
-          {`Registro °${info.info_id} - ${info.usuario_nombre}`}
+          {info.usuario_nombre
+            ? `Registro °${info.info_id} - ${info.usuario_nombre}`
+            : `Registro °${info.info_id}`}
           <button onClick={() => onEliminarInfo(info)}>
             <img src={imgBorrar} alt="" />
           </button>

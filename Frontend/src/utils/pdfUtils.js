@@ -152,9 +152,8 @@ const obtenerNombreCliente = (clienteRegistros, opcionesClientes) => {
       (c.id !== undefined && c.id === clienteRegistros[0].usuario_id)
   );
 
-  return (
-    clienteObj?.label ?? clienteObj?.nombre ?? clienteRegistros[0].usuario_id
-  );
+  const nombre = clienteObj?.label ?? clienteObj?.nombre ?? clienteRegistros[0].usuario_id;
+  return String(nombre);
 };
 
 // Obtener headers de un cliente
@@ -454,7 +453,7 @@ const dibujarTablaCliente = async (config) => {
     font: boldFont,
     color: textColor,
   });
-  page.drawText(clienteNombre, {
+  page.drawText(String(clienteNombre), {
     x: marginX + boldFont.widthOfTextAtSize("Cliente: ", 8),
     y,
     size: 8,
