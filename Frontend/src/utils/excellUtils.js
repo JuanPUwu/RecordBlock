@@ -1,6 +1,13 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
+// Función para normalizar texto (igual que en el backend y pdfUtils)
+const normalizar = (texto) =>
+  texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "");
+
 export const exportarExcel = async (whichInfo, opcionesClientes) => {
   try {
     // 🔹 Asegurar que opcionesClientes sea un array
@@ -8,21 +15,38 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
       ? opcionesClientes
       : [opcionesClientes];
 
-    // 🔹 1. Reunir todas las claves de manera dinámica
+    // 🔹 1. Reunir todas las claves de manera dinámica (normalizando variaciones)
     const allKeys = new Set();
+    const mapaClaves = new Map(); // Mapa: clave normalizada -> clave original (primera que aparece)
+
+    allKeys.add("# Registro");
+    mapaClaves.set("# Registro", "# Registro");
+    allKeys.add("Cliente");
+    mapaClaves.set("Cliente", "Cliente");
 
     for (const item of whichInfo) {
-      allKeys.add("# Registro");
-      allKeys.add("Cliente");
-
       for (const detalle of item.datos) {
         for (const k of Object.keys(detalle)) {
-          allKeys.add(k);
+          const claveNormalizada = normalizar(k);
+          if (!mapaClaves.has(claveNormalizada)) {
+            // Guardar la primera versión que aparece como la original
+            mapaClaves.set(claveNormalizada, k);
+          }
+          allKeys.add(claveNormalizada);
         }
       }
     }
 
-    const headers = Array.from(allKeys);
+    // Retornar las claves originales (no normalizadas) para mostrar en el Excel
+    const headers = Array.from(allKeys).map((claveNorm) =>
+      mapaClaves.get(claveNorm)
+    );
+
+    // Crear mapa: header original -> clave normalizada
+    const mapaHeaderANormalizada = new Map();
+    for (const header of headers) {
+      mapaHeaderANormalizada.set(header, normalizar(header));
+    }
 
     // 🔹 2. Crear workbook y worksheet
     const workbook = new ExcelJS.Workbook();
@@ -48,11 +72,30 @@ export const exportarExcel = async (whichInfo, opcionesClientes) => {
       );
 
       for (const detalle of item.datos) {
+        // Normalizar las claves del detalle para unificar variaciones
+        const detalleNormalizado = {};
+        for (const [clave, valor] of Object.entries(detalle)) {
+          const claveNormalizada = normalizar(clave);
+          // Si hay múltiples claves que normalizan a lo mismo, mantener el primer valor encontrado
+          if (!detalleNormalizado.hasOwnProperty(claveNormalizada)) {
+            detalleNormalizado[claveNormalizada] = valor;
+          }
+        }
+
+        // Crear el row usando los headers originales pero buscando valores por clave normalizada
         const row = {
           "# Registro": `°${item.info_id}`,
           Cliente: clienteNombre,
-          ...detalle,
         };
+
+        // Mapear valores del detalle normalizado a los headers originales
+        for (const header of headers) {
+          if (header !== "# Registro" && header !== "Cliente") {
+            const claveNormalizada = mapaHeaderANormalizada.get(header);
+            row[header] = detalleNormalizado[claveNormalizada] ?? "";
+          }
+        }
+
         worksheet.addRow(row);
       }
     }

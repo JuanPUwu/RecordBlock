@@ -41,20 +41,28 @@ export const generarTablaCSV = (headers, filas) => {
 
   let tablaHTML = `
     <div class="cont-tabla-csv">
-      <table>
-        <thead>
-          <tr>
+      <div class="cont-hiden-scroll-csv">
+        <div class="cont-tabla-csv-header">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
   `;
 
   // Headers
   for (const header of headers) {
     tablaHTML += `<th>${header}</th>`;
   }
-  tablaHTML += `</tr></thead><tbody>`;
+  tablaHTML += `
+            </tr>
+          </thead>
+          <tbody>
+  `;
 
   // Filas
   for (const fila of filasAMostrar) {
     tablaHTML += `<tr>`;
+    tablaHTML += `<td></td>`; // Celda vacía para alinear con el header
     for (let colIndex = 0; colIndex < headers.length; colIndex++) {
       const valor = fila[colIndex] || "";
       tablaHTML += `<td title="${valor}">${valor}</td>`;
@@ -62,7 +70,7 @@ export const generarTablaCSV = (headers, filas) => {
     tablaHTML += `</tr>`;
   }
 
-  tablaHTML += `</tbody></table></div>`;
+  tablaHTML += `</tbody></table></div></div></div>`;
 
   if (hayMasFilas) {
     tablaHTML += `<p>Mostrando ${maxFilasMostrar} de ${filas.length} filas...</p>`;
@@ -70,4 +78,3 @@ export const generarTablaCSV = (headers, filas) => {
 
   return tablaHTML;
 };
-

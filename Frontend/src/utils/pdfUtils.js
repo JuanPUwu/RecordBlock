@@ -152,22 +152,51 @@ const obtenerNombreCliente = (clienteRegistros, opcionesClientes) => {
       (c.id !== undefined && c.id === clienteRegistros[0].usuario_id)
   );
 
-  const nombre = clienteObj?.label ?? clienteObj?.nombre ?? clienteRegistros[0].usuario_id;
+  const nombre =
+    clienteObj?.label ?? clienteObj?.nombre ?? clienteRegistros[0].usuario_id;
   return String(nombre);
 };
 
-// Obtener headers de un cliente
+// Función para normalizar texto (igual que en el backend)
+const normalizar = (texto) =>
+  texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "");
+
+// Obtener headers de un cliente (normalizando variaciones)
 const obtenerHeadersCliente = (clienteRegistros) => {
   const allKeysCliente = new Set();
+  const mapaClaves = new Map(); // Mapa: clave normalizada -> clave original (primera que aparece)
+
   allKeysCliente.add("#");
+  mapaClaves.set("#", "#");
+
   for (const item of clienteRegistros) {
     for (const detalle of item.datos) {
       for (const k of Object.keys(detalle)) {
-        allKeysCliente.add(k);
+        const claveNormalizada = normalizar(k);
+        if (!mapaClaves.has(claveNormalizada)) {
+          // Guardar la primera versión que aparece como la original
+          mapaClaves.set(claveNormalizada, k);
+        }
+        allKeysCliente.add(claveNormalizada);
       }
     }
   }
-  return Array.from(allKeysCliente);
+
+  // Retornar las claves originales (no normalizadas) para mostrar en el PDF
+  const headers = Array.from(allKeysCliente).map((claveNorm) =>
+    mapaClaves.get(claveNorm)
+  );
+
+  // Crear mapa: header original -> clave normalizada
+  const mapaHeaderANormalizada = new Map();
+  for (const header of headers) {
+    mapaHeaderANormalizada.set(header, normalizar(header));
+  }
+
+  return { headers, mapaHeaderANormalizada };
 };
 
 // Dibujar encabezado de tabla
@@ -238,6 +267,7 @@ const calcularLineasCeldas = (config) => {
   const {
     row,
     headers,
+    mapaHeaderANormalizada,
     getColWidth,
     font,
     fontSize,
@@ -247,9 +277,21 @@ const calcularLineasCeldas = (config) => {
   const cellLines = {};
   let maxLines = 1;
 
+  // Crear un mapa de claves normalizadas del row para búsqueda eficiente
+  const rowNormalizado = new Map();
+  for (const [clave, valor] of Object.entries(row)) {
+    const claveNorm = normalizar(clave);
+    // Si hay múltiples claves que normalizan a lo mismo, mantener el primer valor encontrado
+    if (!rowNormalizado.has(claveNorm)) {
+      rowNormalizado.set(claveNorm, valor);
+    }
+  }
+
   for (const h of headers) {
     const colWidth = getColWidth(h);
-    const value = String(row[h] ?? "");
+    // Buscar el valor usando la clave normalizada
+    const claveNormalizada = mapaHeaderANormalizada.get(h) || normalizar(h);
+    const value = String(rowNormalizado.get(claveNormalizada) ?? "");
     const lines = splitTextToLinesBody(value, colWidth, font, fontSize);
     cellLines[h] = lines;
     if (lines.length > maxLines) maxLines = lines.length;
@@ -342,6 +384,7 @@ const dibujarFilas = async (config) => {
     page,
     clienteRegistros,
     headers,
+    mapaHeaderANormalizada,
     y,
     marginX,
     marginInferior,
@@ -366,6 +409,7 @@ const dibujarFilas = async (config) => {
       const { cellLines, adjustedHeight } = calcularLineasCeldas({
         row,
         headers,
+        mapaHeaderANormalizada,
         getColWidth,
         font,
         fontSize,
@@ -462,7 +506,8 @@ const dibujarTablaCliente = async (config) => {
   });
   let currentY = y - 15;
 
-  const headers = obtenerHeadersCliente(clienteRegistros);
+  const { headers, mapaHeaderANormalizada } =
+    obtenerHeadersCliente(clienteRegistros);
   const { headerHeight, getColWidth } = dibujarEncabezado({
     page,
     headers,
@@ -483,6 +528,7 @@ const dibujarTablaCliente = async (config) => {
     page,
     clienteRegistros,
     headers,
+    mapaHeaderANormalizada,
     y: currentY,
     marginX,
     marginInferior,
