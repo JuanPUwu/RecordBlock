@@ -55,7 +55,7 @@ async function obtenerDatosMinimosIniciales() {
 }
 
 // Poblar informacion_usuario con datos de ejemplo
-async function seedInformacionUsuario(cantidadPorUsuario = 100) {
+async function seedInformacionUsuario(cantidadPorUsuario = 250) {
   try {
     const usuarios = await all("SELECT id FROM usuario WHERE isAdmin = 0");
     const datosMinimosIniciales = await obtenerDatosMinimosIniciales();

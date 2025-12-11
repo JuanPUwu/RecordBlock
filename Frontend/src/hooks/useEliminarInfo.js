@@ -31,7 +31,7 @@ export const useEliminarInfo = (cargarInformacion, setIsLoading) => {
       const response = await eliminarInformacion(infoEliminar);
       if (response.success) {
         setIsLoading(false);
-        toast.success(`Información °${info.info_id} eliminada`);
+        toast.success(`Registro °${info.info_id} eliminado`);
         cargarInformacion();
       } else {
         setIsLoading(false);
@@ -44,4 +44,3 @@ export const useEliminarInfo = (cargarInformacion, setIsLoading) => {
     eliminarInformacionCliente,
   };
 };
-

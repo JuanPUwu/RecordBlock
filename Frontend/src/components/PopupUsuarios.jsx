@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react";
 import Popup from "reactjs-popup";
 import PropTypes from "prop-types";
 import CardAdmin from "./CardAdmin.jsx";
 import CardUsuario from "./CardUsuario.jsx";
 import imgCrearCliente from "../assets/img/añadir.webp";
 import imgSearch from "../assets/img/busqueda.webp";
+import { useDebounce } from "../hooks/useDebounce.js";
 
 export default function PopupUsuarios({
   open,
@@ -15,6 +17,24 @@ export default function PopupUsuarios({
   onEditarContrasena,
   onEliminarCliente,
 }) {
+  const [valorBusqueda, setValorBusqueda] = useState("");
+  const valorDebounced = useDebounce(valorBusqueda, 150);
+
+  // Ejecutar búsqueda cuando cambia el valor debounced
+  useEffect(() => {
+    const eventoSimulado = {
+      target: { value: valorDebounced },
+    };
+    buscarClienteTabla(eventoSimulado);
+  }, [valorDebounced, buscarClienteTabla]);
+
+  // Limpiar el input cuando se cierra el popup
+  useEffect(() => {
+    if (!open) {
+      setValorBusqueda("");
+    }
+  }, [open]);
+
   return (
     <Popup open={open} onClose={onClose} modal nested>
       <div className="cont-popUp">
@@ -33,7 +53,8 @@ export default function PopupUsuarios({
               <input
                 type="text"
                 placeholder="Buscar usuario/cliente..."
-                onInput={buscarClienteTabla}
+                value={valorBusqueda}
+                onChange={(e) => setValorBusqueda(e.target.value)}
               />
               <img src={imgSearch} alt="" />
             </label>

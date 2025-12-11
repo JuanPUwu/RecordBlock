@@ -151,7 +151,7 @@ export const useHomeBase = (isAdmin = false) => {
   const forms = useHomeForms(isAdmin);
 
   // Clientes (solo admin)
-  const clientesHook = useClientes();
+  const clientesHook = useClientes(isAdmin);
   const {
     clienteSeleccionado,
     setClienteSeleccionado,

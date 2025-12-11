@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useUsuarioService } from "../services/usuarioService.js";
 import toast from "react-hot-toast";
 
-export const useClientes = () => {
+export const useClientes = (isAdmin = false) => {
   const [clientes, setClientes] = useState([]);
   const [opcionesClientes, setOpcionesClientes] = useState([]);
   const [opcionesClientesTabla, setOpcionesClientesTabla] = useState([]);
@@ -15,7 +15,16 @@ export const useClientes = () => {
   const { obtenerUsuarios } = useUsuarioService();
 
   const obtenerClientes = async () => {
+    if (!isAdmin) {
+      return;
+    }
+    
     const response = await obtenerUsuarios();
+    
+    if (!response.success || !response.data?.data) {
+      return;
+    }
+    
     setClientes(response.data.data);
     setOpcionesClientes(
       response.data.data
@@ -29,8 +38,11 @@ export const useClientes = () => {
   };
 
   useEffect(() => {
-    obtenerClientes();
-  }, []);
+    if (isAdmin) {
+      obtenerClientes();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   const buscarCliente = async (e) => {
     if (e.target.value === "") {
