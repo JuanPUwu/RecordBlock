@@ -1,13 +1,13 @@
 import PropTypes from "prop-types";
 import Nav from "./Nav.jsx";
 import SearchNav from "./SearchNav.jsx";
+import BuscadorCliente from "./BuscadorCliente.jsx";
 import Select from "react-select";
 import selectNavStyles from "../css/selectNavStyles.js";
 
 // Imágenes
 import imgUsuario from "../assets/img/usuario.webp";
 import imgLimpiar from "../assets/img/reset.webp";
-import imgSearch from "../assets/img/busqueda.webp";
 import imgCrearRegistro from "../assets/img/flecha.webp";
 import imgExcell from "../assets/img/excell.webp";
 import imgPdf from "../assets/img/pdf.webp";
@@ -37,6 +37,8 @@ export default function HomeNav({
   filtroInformacion,
   isDatoValue,
   isDetalleValue,
+  handleInputDato,
+  handleInputDetalle,
   // Estados
   isRefrescarInfo,
   // Handlers
@@ -52,11 +54,11 @@ export default function HomeNav({
       {/* Botón Usuario/Usuarios */}
       <button
         onClick={onUsuarioClick}
-        className={`btn-nav btn-nav-primary ${!isAdmin ? "btn-user" : ""}`}
+        className={`btn-nav btn-nav-primary ${isAdmin ? "" : "btn-user"}`}
         title={isAdmin ? "Gestión de usuarios" : "Gestión de usuario"}
       >
         <img src={imgUsuario} alt="" />
-        {!isAdmin && <span>{user.nombre}</span>}
+        {isAdmin ? null : <span>{user.nombre}</span>}
       </button>
 
       {/* Selector de cliente (solo admin) */}
@@ -72,24 +74,12 @@ export default function HomeNav({
             placeholder="Seleccione un cliente..."
           />
           <span>o</span>
-          <div className="cont-inpNav">
-            <input
-              type="text"
-              placeholder="Busque por cliente..."
-              onInput={(e) => buscarCliente(e)}
-              ref={refBusquedaCliente}
-            />
-            <img src={imgSearch} alt="" />
-            {resultadosBusquedaClientes.length > 0 && (
-              <div>
-                {resultadosBusquedaClientes.map((c) => (
-                  <button key={c.value} onClick={() => seleccionBusqueda(c)}>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <BuscadorCliente
+            refBusquedaCliente={refBusquedaCliente}
+            buscarCliente={buscarCliente}
+            resultadosBusquedaClientes={resultadosBusquedaClientes}
+            seleccionBusqueda={seleccionBusqueda}
+          />
         </>
       )}
 
@@ -133,15 +123,19 @@ export default function HomeNav({
       {/* Búsqueda */}
       <SearchNav
         refDato={refDato}
-        onInputDato={filtroInformacion}
         refDetalle={refDetalle}
-        onInputDetalle={filtroInformacion}
+        onInputDato={handleInputDato}
+        onInputDetalle={handleInputDetalle}
         clearDato={() => {
-          refDato.current.value = "";
+          if (refDato.current) {
+            refDato.current.value = "";
+          }
           filtroInformacion();
         }}
         clearDetalle={() => {
-          refDetalle.current.value = "";
+          if (refDetalle.current) {
+            refDetalle.current.value = "";
+          }
           filtroInformacion();
         }}
         isDatoValue={isDatoValue}
@@ -216,6 +210,8 @@ HomeNav.propTypes = {
   filtroInformacion: PropTypes.func.isRequired,
   isDatoValue: PropTypes.bool.isRequired,
   isDetalleValue: PropTypes.bool.isRequired,
+  handleInputDato: PropTypes.func.isRequired,
+  handleInputDetalle: PropTypes.func.isRequired,
   isRefrescarInfo: PropTypes.bool,
   onUsuarioClick: PropTypes.func.isRequired,
   onRefrescarClick: PropTypes.func.isRequired,
@@ -224,4 +220,3 @@ HomeNav.propTypes = {
   exportarComoExcell: PropTypes.func.isRequired,
   cerrarSesion: PropTypes.func.isRequired,
 };
-

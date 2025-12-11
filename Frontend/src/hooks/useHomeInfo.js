@@ -28,6 +28,8 @@ export const useHomeInfo = (
     refDato,
     refDetalle,
     filtroInformacion,
+    handleInputDato,
+    handleInputDetalle,
   } = useFiltros(refInformacion);
 
   // Determinar el userId según el rol
@@ -90,6 +92,8 @@ export const useHomeInfo = (
     refDato,
     refDetalle,
     filtroInformacion,
+    handleInputDato,
+    handleInputDetalle,
     exportarComoPDF,
     exportarComoExcell,
   };

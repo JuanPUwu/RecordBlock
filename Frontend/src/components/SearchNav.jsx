@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import "../css/searchNav.css";
 import imgSearch from "../assets/img/busqueda.webp";
 import imgX from "../assets/img/x.webp";
@@ -13,6 +14,74 @@ export default function SearchNav({
   isDatoValue,
   isDetalleValue,
 }) {
+  const [valorDato, setValorDato] = useState("");
+  const [valorDetalle, setValorDetalle] = useState("");
+  const inputDatoRef = useRef(null);
+  const inputDetalleRef = useRef(null);
+
+  // Sincronizar refs externos con refs internos
+  useEffect(() => {
+    if (refDato?.current && !inputDatoRef.current) {
+      inputDatoRef.current = refDato.current;
+    }
+    if (refDetalle?.current && !inputDetalleRef.current) {
+      inputDetalleRef.current = refDetalle.current;
+    }
+  }, [refDato, refDetalle]);
+
+  // Sincronizar cuando se limpia desde fuera
+  useEffect(() => {
+    if (refDato?.current?.value === "") {
+      setValorDato("");
+    }
+  }, [isDatoValue, refDato]);
+
+  useEffect(() => {
+    if (refDetalle?.current?.value === "") {
+      setValorDetalle("");
+    }
+  }, [isDetalleValue, refDetalle]);
+
+  const handleChangeDato = (e) => {
+    const nuevoValor = e.target.value;
+    setValorDato(nuevoValor);
+    if (refDato?.current) {
+      refDato.current.value = nuevoValor;
+    }
+    onInputDato(e);
+  };
+
+  const handleChangeDetalle = (e) => {
+    const nuevoValor = e.target.value;
+    setValorDetalle(nuevoValor);
+    if (refDetalle?.current) {
+      refDetalle.current.value = nuevoValor;
+    }
+    onInputDetalle(e);
+  };
+
+  const handleClearDato = () => {
+    setValorDato("");
+    if (refDato?.current) {
+      refDato.current.value = "";
+    }
+    // Simular evento de cambio con valor vacío para actualizar el estado en useFiltros
+    const fakeEvent = { target: { value: "" } };
+    onInputDato(fakeEvent);
+    clearDato();
+  };
+
+  const handleClearDetalle = () => {
+    setValorDetalle("");
+    if (refDetalle?.current) {
+      refDetalle.current.value = "";
+    }
+    // Simular evento de cambio con valor vacío para actualizar el estado en useFiltros
+    const fakeEvent = { target: { value: "" } };
+    onInputDetalle(fakeEvent);
+    clearDetalle();
+  };
+
   return (
     <div className="cont-searchNav">
       <div className="input-group">
@@ -20,11 +89,11 @@ export default function SearchNav({
           type="text"
           placeholder="Buscar por dato..."
           ref={refDato}
-          onChange={onInputDato}
-          onInput={onInputDato}
+          value={valorDato}
+          onChange={handleChangeDato}
         />
         <button
-          onClick={clearDato}
+          onClick={handleClearDato}
           className={isDatoValue ? "" : "no-active"}
           disabled={!isDatoValue}
         >
@@ -39,11 +108,11 @@ export default function SearchNav({
           type="text"
           placeholder="Buscar por detalle..."
           ref={refDetalle}
-          onChange={onInputDetalle}
-          onInput={onInputDetalle}
+          value={valorDetalle}
+          onChange={handleChangeDetalle}
         />
         <button
-          onClick={clearDetalle}
+          onClick={handleClearDetalle}
           className={isDetalleValue ? "" : "no-active"}
           disabled={!isDetalleValue}
         >

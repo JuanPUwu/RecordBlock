@@ -40,6 +40,8 @@ export default function HomeAdmin() {
     filtroInformacion,
     isDatoValue,
     isDetalleValue,
+    handleInputDato,
+    handleInputDetalle,
     exportarComoPDF,
     exportarComoExcell,
     clienteSeleccionadoSimulado,
@@ -142,6 +144,8 @@ export default function HomeAdmin() {
         filtroInformacion={filtroInformacion}
         isDatoValue={isDatoValue}
         isDetalleValue={isDetalleValue}
+        handleInputDato={handleInputDato}
+        handleInputDetalle={handleInputDetalle}
         onUsuarioClick={() => {
           obtenerClientes();
           setPopUpUsuarios(true);

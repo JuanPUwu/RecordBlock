@@ -16,6 +16,131 @@ import Swal from "sweetalert2";
 import swalStyles from "../css/swalStyles.js";
 
 /**
+ * Obtiene los valores de clientes condicionalmente según isAdmin
+ */
+const getClientesValues = (clientesHook, isAdmin) => {
+  if (!isAdmin) {
+    return {
+      clienteSeleccionado: null,
+      setClienteSeleccionado: null,
+      opcionesClientes: [],
+      opcionesClientesTabla: [],
+      refBusquedaCliente: null,
+      resultadosBusquedaClientes: [],
+      obtenerClientes: () => {},
+      buscarCliente: () => {},
+      buscarClienteTabla: () => {},
+      seleccionBusqueda: () => {},
+      limpiarClienteSeleccionado: () => {},
+    };
+  }
+
+  return {
+    clienteSeleccionado: clientesHook.clienteSeleccionado,
+    setClienteSeleccionado: clientesHook.setClienteSeleccionado,
+    opcionesClientes: clientesHook.opcionesClientes,
+    opcionesClientesTabla: clientesHook.opcionesClientesTabla,
+    refBusquedaCliente: clientesHook.refBusquedaCliente,
+    resultadosBusquedaClientes: clientesHook.resultadosBusquedaClientes,
+    obtenerClientes: clientesHook.obtenerClientes,
+    buscarCliente: clientesHook.buscarCliente,
+    buscarClienteTabla: clientesHook.buscarClienteTabla,
+    seleccionBusqueda: clientesHook.seleccionBusqueda,
+    limpiarClienteSeleccionado: clientesHook.limpiarClienteSeleccionado,
+  };
+};
+
+/**
+ * Crea un cliente nuevo
+ */
+const handleCrearCliente = async (
+  data,
+  crearUsuario,
+  obtenerClientes,
+  setPopUpCrearCliente
+) => {
+  if (!crearUsuario) return;
+  const { password2, ...usuario } = data;
+  const response = await crearUsuario(usuario);
+  if (response.success) {
+    toast.success("Cliente creado con éxito\n¡Verificación pendiente!");
+    obtenerClientes();
+    setPopUpCrearCliente(false);
+  } else {
+    toast.error(response.error);
+  }
+};
+
+/**
+ * Muestra el diálogo de confirmación para eliminar cliente
+ */
+const mostrarDialogoEliminar = (cliente) => {
+  return Swal.fire({
+    title: `¿Eliminar cliente ${cliente.nombre}?`,
+    text: "Esta acción es irreversible",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Sí, Eliminar",
+    cancelButtonText: "Cancelar",
+    ...swalStyles,
+  });
+};
+
+/**
+ * Limpia la selección de cliente si coincide con el eliminado
+ */
+const limpiarSeleccionSiCoincide = ({
+  cliente,
+  clienteSeleccionado,
+  setClienteSeleccionado,
+  refBusquedaCliente,
+  resultadosBusquedaClientes,
+}) => {
+  if (clienteSeleccionado?.value === cliente.id) {
+    setClienteSeleccionado(null);
+    refBusquedaCliente.current.value = "";
+    resultadosBusquedaClientes.length = 0;
+  }
+};
+
+/**
+ * Elimina un cliente
+ */
+const handleEliminarCliente = async ({
+  cliente,
+  eliminarUsuario,
+  setIsLoading,
+  clienteSeleccionado,
+  setClienteSeleccionado,
+  refBusquedaCliente,
+  resultadosBusquedaClientes,
+  obtenerClientes,
+}) => {
+  if (!eliminarUsuario) return;
+  const result = await mostrarDialogoEliminar(cliente);
+
+  if (!result.isConfirmed) return;
+
+  setIsLoading(true);
+  const response = await eliminarUsuario(cliente.id);
+
+  if (response.success) {
+    toast.success(`Cliente ${cliente.nombre} eliminado`);
+    limpiarSeleccionSiCoincide({
+      cliente,
+      clienteSeleccionado,
+      setClienteSeleccionado,
+      refBusquedaCliente,
+      resultadosBusquedaClientes,
+    });
+    obtenerClientes();
+  } else {
+    toast.error(response.error || "No se pudo eliminar el cliente");
+  }
+  setIsLoading(false);
+};
+
+/**
  * Hook maestro que contiene toda la lógica común de HomeUsuario y HomeAdmin
  */
 export const useHomeBase = (isAdmin = false) => {
@@ -26,22 +151,30 @@ export const useHomeBase = (isAdmin = false) => {
   const forms = useHomeForms(isAdmin);
 
   // Clientes (solo admin)
-  const clientesHook = isAdmin ? useClientes() : null;
-  const clienteSeleccionado = clientesHook?.clienteSeleccionado || null;
-  const setClienteSeleccionado = clientesHook?.setClienteSeleccionado || null;
-  const opcionesClientes = clientesHook?.opcionesClientes || [];
-  const opcionesClientesTabla = clientesHook?.opcionesClientesTabla || [];
-  const refBusquedaCliente = clientesHook?.refBusquedaCliente || null;
-  const resultadosBusquedaClientes = clientesHook?.resultadosBusquedaClientes || [];
-  const obtenerClientes = clientesHook?.obtenerClientes || (() => {});
-  const buscarCliente = clientesHook?.buscarCliente || (() => {});
-  const buscarClienteTabla = clientesHook?.buscarClienteTabla || (() => {});
-  const seleccionBusqueda = clientesHook?.seleccionBusqueda || (() => {});
-  const limpiarClienteSeleccionado = clientesHook?.limpiarClienteSeleccionado || (() => {});
+  const clientesHook = useClientes();
+  const {
+    clienteSeleccionado,
+    setClienteSeleccionado,
+    opcionesClientes,
+    opcionesClientesTabla,
+    refBusquedaCliente,
+    resultadosBusquedaClientes,
+    obtenerClientes,
+    buscarCliente,
+    buscarClienteTabla,
+    seleccionBusqueda,
+    limpiarClienteSeleccionado,
+  } = getClientesValues(clientesHook, isAdmin);
 
   // Información
-  const homeInfo = useHomeInfo(user, clienteSeleccionado, opcionesClientes, isAdmin, setIsLoading);
-  const { cargarInformacion } = homeInfo;
+  const homeInfo = useHomeInfo(
+    user,
+    clienteSeleccionado,
+    opcionesClientes,
+    isAdmin,
+    setIsLoading
+  );
+  const { cargarInformacion, handleInputDato, handleInputDetalle } = homeInfo;
 
   // Para usuario: crear clienteSeleccionado simulado
   const clienteSeleccionadoSimulado = isAdmin
@@ -163,56 +296,35 @@ export const useHomeBase = (isAdmin = false) => {
   const eliminarUsuario = isAdmin ? usuarioService.eliminarUsuario : null;
 
   const crearCliente = async (data) => {
-    if (!crearUsuario) return;
-    const { password2, ...usuario } = data;
-    const response = await crearUsuario(usuario);
-    if (response.success) {
-      toast.success("Cliente creado con éxito\n¡Verificación pendiente!");
-      obtenerClientes();
-    } else {
-      toast.error(response.error);
-      return;
-    }
-    setPopUpCrearCliente(false);
+    await handleCrearCliente(
+      data,
+      crearUsuario,
+      obtenerClientes,
+      setPopUpCrearCliente
+    );
   };
 
   const eliminarCliente = async (cliente) => {
-    if (!eliminarUsuario) return;
-    const result = await Swal.fire({
-      title: `¿Eliminar cliente ${cliente.nombre}?`,
-      text: "Esta acción es irreversible",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, Eliminar",
-      cancelButtonText: "Cancelar",
-      ...swalStyles,
+    await handleEliminarCliente({
+      cliente,
+      eliminarUsuario,
+      setIsLoading,
+      clienteSeleccionado,
+      setClienteSeleccionado,
+      refBusquedaCliente,
+      resultadosBusquedaClientes,
+      obtenerClientes,
     });
-
-    if (result.isConfirmed) {
-      setIsLoading(true);
-      const response = await eliminarUsuario(cliente.id);
-
-      if (response.success) {
-        setIsLoading(false);
-        toast.success(`Cliente ${cliente.nombre} eliminado`);
-        if (clienteSeleccionado?.value === cliente.id) {
-          setClienteSeleccionado(null);
-          refBusquedaCliente.current.value = "";
-          resultadosBusquedaClientes.length = 0;
-        }
-        obtenerClientes();
-      } else {
-        setIsLoading(false);
-        toast.error(response.error || "No se pudo eliminar el cliente");
-      }
-    }
   };
 
   // Cargar información al montar o cuando cambia cliente seleccionado
-  useEffect(() => {
-    cargarInformacion();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, isAdmin ? [clienteSeleccionado] : []);
+  useEffect(
+    () => {
+      cargarInformacion();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    isAdmin ? [clienteSeleccionado] : []
+  );
 
   // Inicializar draft de datos mínimos cuando se abre el popup
   useEffect(() => {
@@ -244,6 +356,8 @@ export const useHomeBase = (isAdmin = false) => {
     limpiarClienteSeleccionado,
     // Información
     ...homeInfo,
+    handleInputDato,
+    handleInputDetalle,
     clienteSeleccionadoSimulado,
     // Datos mínimos
     datosMinimos,
@@ -306,4 +420,3 @@ export const useHomeBase = (isAdmin = false) => {
     cargarInformacion,
   };
 };
-

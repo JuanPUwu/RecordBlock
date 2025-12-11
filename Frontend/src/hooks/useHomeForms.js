@@ -21,17 +21,17 @@ export const useHomeForms = (isAdmin = false) => {
   });
 
   // Formulario Crear Usuario (solo admin)
-  const formCrearUsuario = isAdmin
-    ? useForm({
-        resolver: yupResolver(schemaCrearUsuario),
-      })
-    : null;
+  const formCrearUsuario = useForm({
+    resolver: yupResolver(schemaCrearUsuario),
+  });
 
-  const registerCrear = formCrearUsuario?.register || null;
-  const handleSubmitCrear = formCrearUsuario?.handleSubmit || null;
-  const resetCrear = formCrearUsuario?.reset || null;
-  const errorsCrear = formCrearUsuario?.formState?.errors || {};
-  const isSubmittingCrear = formCrearUsuario?.formState?.isSubmitting || false;
+  const registerCrear = isAdmin ? formCrearUsuario.register : null;
+  const handleSubmitCrear = isAdmin ? formCrearUsuario.handleSubmit : null;
+  const resetCrear = isAdmin ? formCrearUsuario.reset : null;
+  const errorsCrear = isAdmin ? formCrearUsuario.formState.errors : {};
+  const isSubmittingCrear = isAdmin
+    ? formCrearUsuario.formState.isSubmitting
+    : false;
 
   // Estados para ver contraseñas
   const [verPassword, setVerPassword] = useState("password");
@@ -57,4 +57,3 @@ export const useHomeForms = (isAdmin = false) => {
     setVerPassword2,
   };
 };
-

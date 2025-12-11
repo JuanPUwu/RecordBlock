@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { parseDateDMY } from "../utils/dateHelper.js";
+import { useDebounce } from "./useDebounce.js";
 
 export const useFiltros = (refInformacion) => {
   const [terminosBusqueda, setTerminosBusqueda] = useState({
@@ -11,10 +12,16 @@ export const useFiltros = (refInformacion) => {
   const [isDetalleValue, setIsDetalleValue] = useState(false);
   const [whichInfo, setWhichInfo] = useState([]);
   const [isInfoCargando, setIsInfoCargando] = useState(true);
+  const [valorDatoInput, setValorDatoInput] = useState("");
+  const [valorDetalleInput, setValorDetalleInput] = useState("");
 
   const refDato = useRef();
   const refDetalle = useRef();
   const refFiltrarPorFecha = useRef(filtrarPorFecha);
+
+  // Debounce de los valores de input
+  const debouncedDato = useDebounce(valorDatoInput, 150);
+  const debouncedDetalle = useDebounce(valorDetalleInput, 150);
 
   useEffect(() => {
     refFiltrarPorFecha.current = filtrarPorFecha;
@@ -75,7 +82,18 @@ export const useFiltros = (refInformacion) => {
     });
   };
 
-  const filtroInformacion = (valorCheckbox = null) => {
+  // Efecto para aplicar el filtro cuando cambian los valores debounced
+  useEffect(() => {
+    if (refDato.current) {
+      refDato.current.value = debouncedDato;
+    }
+    if (refDetalle.current) {
+      refDetalle.current.value = debouncedDetalle;
+    }
+    aplicarFiltro(debouncedDato, debouncedDetalle, filtrarPorFecha);
+  }, [debouncedDato, debouncedDetalle, filtrarPorFecha]);
+
+  const aplicarFiltro = (datoInput, detalleInput, valorCheckbox = null) => {
     // Si se pasa un valor explícito del checkbox (true o false), usarlo
     // Si se pasa null o undefined, usar el estado actual directamente (no el ref)
     // Esto asegura que siempre tengamos el valor más reciente del estado
@@ -84,11 +102,8 @@ export const useFiltros = (refInformacion) => {
         ? valorCheckbox
         : filtrarPorFecha;
 
-    // Obtener valores de los refs si existen, sino usar strings vacíos
-    const valorDato = refDato.current?.value || "";
-    const valorDetalle = refDetalle.current?.value || "";
-    const dato = valorDato.trim().toLowerCase();
-    const detalle = valorDetalle.trim().toLowerCase();
+    const dato = datoInput.trim().toLowerCase();
+    const detalle = detalleInput.trim().toLowerCase();
 
     setTerminosBusqueda({ dato, detalle });
 
@@ -136,6 +151,23 @@ export const useFiltros = (refInformacion) => {
     setIsInfoCargando(false);
   };
 
+  const filtroInformacion = (valorCheckbox = null) => {
+    // Obtener valores actuales de los inputs
+    const valorDato = valorDatoInput || refDato.current?.value || "";
+    const valorDetalle = valorDetalleInput || refDetalle.current?.value || "";
+    aplicarFiltro(valorDato, valorDetalle, valorCheckbox);
+  };
+
+  const handleInputDato = (e) => {
+    const nuevoValor = e.target.value;
+    setValorDatoInput(nuevoValor);
+  };
+
+  const handleInputDetalle = (e) => {
+    const nuevoValor = e.target.value;
+    setValorDetalleInput(nuevoValor);
+  };
+
   return {
     terminosBusqueda,
     filtrarPorFecha,
@@ -148,5 +180,7 @@ export const useFiltros = (refInformacion) => {
     refDato,
     refDetalle,
     filtroInformacion,
+    handleInputDato,
+    handleInputDetalle,
   };
 };

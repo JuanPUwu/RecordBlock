@@ -30,6 +30,8 @@ export default function HomeUsuario() {
     filtroInformacion,
     isDatoValue,
     isDetalleValue,
+    handleInputDato,
+    handleInputDetalle,
     exportarComoPDF,
     exportarComoExcell,
     // Datos mínimos
@@ -107,6 +109,8 @@ export default function HomeUsuario() {
         filtroInformacion={filtroInformacion}
         isDatoValue={isDatoValue}
         isDetalleValue={isDetalleValue}
+        handleInputDato={handleInputDato}
+        handleInputDetalle={handleInputDetalle}
         isRefrescarInfo={isRefrescarInfo}
         onUsuarioClick={() => setPopUpUsuarios(true)}
         onRefrescarClick={refrescarInfo}
