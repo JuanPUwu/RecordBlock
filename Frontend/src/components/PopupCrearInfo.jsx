@@ -1,6 +1,5 @@
 import Popup from "reactjs-popup";
 import PropTypes from "prop-types";
-import { useRef } from "react";
 import imgSubirArchivo from "../assets/img/subirArchivo.webp";
 import imgEditar from "../assets/img/editar.webp";
 import imgAgregarFila from "../assets/img/agregarFila.webp";
@@ -47,9 +46,11 @@ export default function PopupCrearInfo({
           {opcionesClientes.length > 0 &&
           opcionesClientes.find((c) => c.value === clienteSeleccionado?.value)
             ?.label
-            ? `${opcionesClientes.find(
-                (c) => c.value === clienteSeleccionado?.value
-              )?.label} - Nuevo registro`
+            ? `${
+                opcionesClientes.find(
+                  (c) => c.value === clienteSeleccionado?.value
+                )?.label
+              } - Nuevo registro`
             : "Nuevo registro"}
         </h2>
         {datosMinimos.length > 0 && mostrarEditarDatosMinimos && (
@@ -148,4 +149,3 @@ PopupCrearInfo.propTypes = {
   onCreate: PropTypes.func.isRequired,
   mostrarEditarDatosMinimos: PropTypes.bool,
 };
-

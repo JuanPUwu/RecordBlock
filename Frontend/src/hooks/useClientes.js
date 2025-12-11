@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUsuarioService } from "../services/usuarioService.js";
 import toast from "react-hot-toast";
 
@@ -7,8 +6,9 @@ export const useClientes = () => {
   const [clientes, setClientes] = useState([]);
   const [opcionesClientes, setOpcionesClientes] = useState([]);
   const [opcionesClientesTabla, setOpcionesClientesTabla] = useState([]);
-  const [resultadosBusquedaClientes, setResultadosBusquedaClientes] =
-    useState([]);
+  const [resultadosBusquedaClientes, setResultadosBusquedaClientes] = useState(
+    []
+  );
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const refBusquedaCliente = useRef();
 
@@ -93,4 +93,3 @@ export const useClientes = () => {
     limpiarClienteSeleccionado,
   };
 };
-

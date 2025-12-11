@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { useDatosMinimosService } from "../services/datosMinimos.js";
 
@@ -90,7 +90,11 @@ export const useDatosMinimosAdmin = () => {
   };
 
   // Guardar datos minimos
-  const guardarDatosMinimos = async (setIsLoading, obtenerDatosMin, setDraftCrear) => {
+  const guardarDatosMinimos = async (
+    setIsLoading,
+    obtenerDatosMin,
+    setDraftCrear
+  ) => {
     const noEmojisRegex = /^[^\p{Extended_Pictographic}]*$/u;
 
     // Limpiar datos vacíos
@@ -164,4 +168,3 @@ export const useDatosMinimosAdmin = () => {
     guardarDatosMinimos,
   };
 };
-

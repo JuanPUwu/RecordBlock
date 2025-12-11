@@ -22,14 +22,14 @@ export default function PopupEditarInfo({
     <Popup open={open} onClose={onClose} modal nested>
       <div className="cont-popUp-editarInfo">
         <h2>
-          {opcionesClientes.length > 0 &&
-          opcionesClientes.find((c) => c.value === infoAEditar?.usuario_id)
-            ? `${
-                opcionesClientes.find(
-                  (c) => c.value === infoAEditar?.usuario_id
-                )?.label
-              } - Registro °${infoAEditar?.info_id}`
-            : `Registro °${infoAEditar?.info_id}`}
+          {(() => {
+            const cliente = opcionesClientes.find(
+              (c) => c.value === infoAEditar?.usuario_id
+            );
+            return cliente
+              ? `${cliente.label} - Registro °${infoAEditar?.info_id}`
+              : `Registro °${infoAEditar?.info_id}`;
+          })()}
         </h2>
 
         <div ref={scrollRef}>
@@ -84,11 +84,7 @@ export default function PopupEditarInfo({
             <img src={imgAgregarFila} alt="" />
             <span>Agregar campo</span>
           </button>
-          <button
-            type="button"
-            onClick={onSave}
-            title="Guardar registro"
-          >
+          <button type="button" onClick={onSave} title="Guardar registro">
             <img src={imgEditar} alt="" />
             <span>Guardar</span>
           </button>
@@ -112,4 +108,3 @@ PopupEditarInfo.propTypes = {
   inputRef: PropTypes.object.isRequired,
   onSave: PropTypes.func.isRequired,
 };
-
