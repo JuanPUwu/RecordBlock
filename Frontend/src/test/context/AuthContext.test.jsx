@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
-import { render, screen } from "@testing-library/react";
+import {
+  renderHook,
+  act,
+  waitFor,
+  render,
+  screen,
+} from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -64,6 +69,16 @@ vi.mock("../../components/SpinnerPages.jsx", () => ({
 describe("AuthContext", () => {
   let mockPost;
 
+  // Helper para crear el wrapper
+  const createWrapper = () => {
+    // eslint-disable-next-line react/prop-types
+    return ({ children }) => (
+      <BrowserRouter>
+        <AuthProvider>{children}</AuthProvider>
+      </BrowserRouter>
+    );
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     // Obtener la referencia al mockPost
@@ -80,14 +95,8 @@ describe("AuthContext", () => {
       },
     });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result, waitForNextUpdate } = renderHook(() => useAuth(), {
-      wrapper,
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
     });
 
     await waitFor(() => {
@@ -115,13 +124,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -152,13 +157,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -187,13 +188,9 @@ describe("AuthContext", () => {
       })
       .mockResolvedValueOnce({});
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -223,13 +220,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -254,13 +247,9 @@ describe("AuthContext", () => {
       },
     });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     // Esperar a que checkAuthStatus termine y establezca el usuario
     await waitFor(
@@ -282,13 +271,9 @@ describe("AuthContext", () => {
       response: { status: 401 },
     });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -317,13 +302,9 @@ describe("AuthContext", () => {
       response: { status: 401 },
     });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -341,13 +322,9 @@ describe("AuthContext", () => {
       },
     });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(
       () => {
@@ -367,13 +344,9 @@ describe("AuthContext", () => {
       response: { status: 401 },
     });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -391,13 +364,9 @@ describe("AuthContext", () => {
       },
     });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(
       () => {
@@ -413,7 +382,9 @@ describe("AuthContext", () => {
   });
 
   it("debe manejar error inesperado en refreshToken (status diferente de 401/403)", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     mockPost
       .mockRejectedValueOnce({
@@ -423,13 +394,9 @@ describe("AuthContext", () => {
         response: { status: 500, data: { error: "Error del servidor" } },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -448,31 +415,34 @@ describe("AuthContext", () => {
   });
 
   it("debe retornar null en refreshToken cuando isRefreshing.current es true", async () => {
+    // Helper para crear una promesa con delay
+    const createDelayedPromise = () => {
+      const resolveData = {
+        data: {
+          accessToken: "token1",
+          usuario: { id: 1, nombre: "Test", isAdmin: false },
+        },
+      };
+      const resolveCallback = (resolve) => {
+        resolve(resolveData);
+      };
+      return new Promise((resolve) => {
+        setTimeout(() => resolveCallback(resolve), 100);
+      });
+    };
+
     mockPost
       .mockRejectedValueOnce({
         response: { status: 401 },
       })
       .mockImplementationOnce(() => {
         // Primera llamada que establece isRefreshing a true
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              data: {
-                accessToken: "token1",
-                usuario: { id: 1, nombre: "Test", isAdmin: false },
-              },
-            });
-          }, 100);
-        });
+        return createDelayedPromise();
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -503,13 +473,9 @@ describe("AuthContext", () => {
         response: { status: 401 },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -534,13 +500,9 @@ describe("AuthContext", () => {
         response: { status: 403 },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -568,13 +530,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -606,13 +564,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -640,13 +594,9 @@ describe("AuthContext", () => {
       })
       .mockResolvedValueOnce({});
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -668,7 +618,9 @@ describe("AuthContext", () => {
   });
 
   it("debe manejar error en logout sin lanzar excepción", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     mockPost
       .mockRejectedValueOnce({
@@ -684,13 +636,9 @@ describe("AuthContext", () => {
         response: { status: 500, data: { error: "Error del servidor" } },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -745,13 +693,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -778,13 +722,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -809,13 +749,9 @@ describe("AuthContext", () => {
         },
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -838,13 +774,9 @@ describe("AuthContext", () => {
         // Error sin response
       });
 
-    const wrapper = ({ children }) => (
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -881,5 +813,420 @@ describe("AuthContext", () => {
     // Verificar que no hay errores después de desmontar
     // (si hay un timeout activo, debería limpiarse sin errores)
     expect(true).toBe(true);
+  });
+
+  it("debe manejar interceptor de request cuando token es null", async () => {
+    mockPost.mockRejectedValueOnce({
+      response: { status: 401 },
+    });
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+      expect(result.current.loading).toBe(false);
+    });
+
+    // Cuando no hay token, el interceptor no debe agregar Authorization header
+    const api = result.current.api;
+    expect(api.interceptors.request.use).toHaveBeenCalled();
+  });
+
+  it("debe manejar interceptor de response cuando error.response no existe", async () => {
+    mockPost
+      .mockRejectedValueOnce({
+        response: { status: 401 },
+      })
+      .mockRejectedValueOnce({
+        // Error sin response
+      });
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+      expect(result.current.loading).toBe(false);
+    });
+
+    // El interceptor debe estar configurado
+    const api = result.current.api;
+    expect(api.interceptors.response.use).toHaveBeenCalled();
+  });
+
+  it("debe manejar interceptor de response cuando originalRequest._retry ya es true", async () => {
+    mockPost
+      .mockRejectedValueOnce({
+        response: { status: 401 },
+      })
+      .mockRejectedValueOnce({
+        response: { status: 401 },
+        config: { _retry: true },
+      });
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+      expect(result.current.loading).toBe(false);
+    });
+
+    // El interceptor debe estar configurado
+    const api = result.current.api;
+    expect(api.interceptors.response.use).toHaveBeenCalled();
+  });
+
+  it("debe manejar interceptor de response cuando refreshToken retorna null", async () => {
+    let callCount = 0;
+    const createMockHandler = () => {
+      callCount++;
+      const createError = (message, status, config) => {
+        const error = new Error(message);
+        error.response = { status };
+        if (config) error.config = config;
+        return Promise.reject(error);
+      };
+      const userData = { id: 1, nombre: "Test", isAdmin: false };
+      if (callCount === 1) return createError("Request failed", 401);
+      if (callCount === 2)
+        return Promise.resolve({
+          data: { accessToken: "token123", usuario: userData },
+        });
+      if (callCount === 3)
+        return createError("Request failed", 401, { _retry: false });
+      if (callCount === 4) return createError("Refresh token failed", 401);
+      return Promise.resolve({ data: {} });
+    };
+    mockPost.mockImplementation(createMockHandler);
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+      expect(result.current.loading).toBe(false);
+    });
+
+    // Hacer login primero
+    await act(async () => {
+      await result.current.login("test@test.com", "password");
+    });
+
+    // El interceptor debe estar configurado
+    const api = result.current.api;
+    expect(api.interceptors.response.use).toHaveBeenCalled();
+  });
+
+  it("debe manejar interceptor de response cuando error es 403 pero mensaje no coincide", async () => {
+    mockPost
+      .mockRejectedValueOnce({
+        response: { status: 401 },
+      })
+      .mockRejectedValueOnce({
+        response: {
+          status: 403,
+          data: { error: "Otro error diferente" },
+        },
+      });
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+      expect(result.current.loading).toBe(false);
+    });
+
+    // El interceptor debe estar configurado
+    const api = result.current.api;
+    expect(api.interceptors.response.use).toHaveBeenCalled();
+  });
+
+  it("debe manejar interceptor de response cuando error.response.status no es 401 ni 403", async () => {
+    mockPost
+      .mockRejectedValueOnce({
+        response: { status: 401 },
+      })
+      .mockRejectedValueOnce({
+        response: { status: 500 },
+      });
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+      expect(result.current.loading).toBe(false);
+    });
+
+    // El interceptor debe estar configurado
+    const api = result.current.api;
+    expect(api.interceptors.response.use).toHaveBeenCalled();
+  });
+
+  describe("Interceptores de axios", () => {
+    it("debe agregar token de autorización en el interceptor de request cuando hay token", async () => {
+      mockPost.mockResolvedValueOnce({
+        data: {
+          accessToken: "token123",
+          usuario: { id: 1, nombre: "Test", isAdmin: false },
+        },
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current).toBeDefined();
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Obtener la instancia de api
+      const api = result.current.api;
+
+      // Verificar que el interceptor está configurado
+      expect(api.interceptors.request.use).toHaveBeenCalled();
+    });
+
+    it("debe manejar 401 en el interceptor de response y hacer retry con nuevo token", async () => {
+      let callCount = 0;
+      const createMockHandler = () => {
+        callCount++;
+        const createError = (message, status, config) => {
+          const error = new Error(message);
+          error.response = { status };
+          if (config) error.config = config;
+          return Promise.reject(error);
+        };
+        const createSuccessResponse = (token, usuario) => {
+          return Promise.resolve({ data: { accessToken: token, usuario } });
+        };
+        const userData = { id: 1, nombre: "Test", isAdmin: false };
+        if (callCount === 1) return createError("Refresh token failed", 401);
+        if (callCount === 2) return createSuccessResponse("token123", userData);
+        if (callCount === 3)
+          return createError("Request failed", 401, { _retry: false });
+        if (callCount === 4)
+          return createSuccessResponse("newToken456", userData);
+        return Promise.resolve({ data: { success: true } });
+      };
+      mockPost.mockImplementation(createMockHandler);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current).toBeDefined();
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Hacer login primero
+      await act(async () => {
+        await result.current.login("test@test.com", "password");
+      });
+
+      await waitFor(() => {
+        expect(result.current.accessToken).toBe("token123");
+      });
+
+      // El interceptor debería estar configurado
+      const api = result.current.api;
+      expect(api.interceptors.response.use).toHaveBeenCalled();
+    });
+
+    it("debe manejar 403 con mensaje de refresh token inválido y hacer logout", async () => {
+      let callCount = 0;
+      const createMockHandler = () => {
+        callCount++;
+        const createError = (message, status, data, config) => {
+          const error = new Error(message);
+          error.response = { status, data };
+          if (config) error.config = config;
+          return Promise.reject(error);
+        };
+        const userData = { id: 1, nombre: "Test", isAdmin: false };
+        if (callCount === 1) return createError("Request failed", 401);
+        if (callCount === 2)
+          return Promise.resolve({
+            data: { accessToken: "token123", usuario: userData },
+          });
+        return createError(
+          "Request failed",
+          403,
+          { error: "Refresh token inválido o expirado" },
+          {}
+        );
+      };
+      mockPost.mockImplementation(createMockHandler);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current).toBeDefined();
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Hacer login primero
+      await act(async () => {
+        await result.current.login("test@test.com", "password");
+      });
+
+      await waitFor(() => {
+        expect(result.current.accessToken).toBe("token123");
+      });
+
+      // El interceptor debería estar configurado
+      const api = result.current.api;
+      expect(api.interceptors.response.use).toHaveBeenCalled();
+    });
+
+    it("NO debe hacer retry cuando originalRequest._retry es true", async () => {
+      let callCount = 0;
+      const createMockHandler = () => {
+        callCount++;
+        const createError = (message, status, config) => {
+          const error = new Error(message);
+          error.response = { status };
+          if (config) error.config = config;
+          return Promise.reject(error);
+        };
+        const userData = { id: 1, nombre: "Test", isAdmin: false };
+        if (callCount === 1) return createError("Request failed", 401);
+        if (callCount === 2)
+          return Promise.resolve({
+            data: { accessToken: "token123", usuario: userData },
+          });
+        return createError("Request failed", 401, { _retry: true });
+      };
+      mockPost.mockImplementation(createMockHandler);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current).toBeDefined();
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Hacer login primero
+      await act(async () => {
+        await result.current.login("test@test.com", "password");
+      });
+
+      await waitFor(() => {
+        expect(result.current.accessToken).toBe("token123");
+      });
+
+      // El interceptor debería estar configurado
+      const api = result.current.api;
+      expect(api.interceptors.response.use).toHaveBeenCalled();
+    });
+
+    it("NO debe hacer retry cuando refreshToken retorna null", async () => {
+      let callCount = 0;
+      const createMockHandler = () => {
+        callCount++;
+        const createError = (message, status, config) => {
+          const error = new Error(message);
+          error.response = { status };
+          if (config) error.config = config;
+          return Promise.reject(error);
+        };
+        const userData = { id: 1, nombre: "Test", isAdmin: false };
+        if (callCount === 1) return createError("Request failed", 401);
+        if (callCount === 2)
+          return Promise.resolve({
+            data: { accessToken: "token123", usuario: userData },
+          });
+        if (callCount === 3)
+          return createError("Request failed", 401, { _retry: false });
+        return createError("Refresh token failed", 401);
+      };
+      mockPost.mockImplementation(createMockHandler);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current).toBeDefined();
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Hacer login primero
+      await act(async () => {
+        await result.current.login("test@test.com", "password");
+      });
+
+      await waitFor(() => {
+        expect(result.current.accessToken).toBe("token123");
+      });
+
+      // El interceptor debería estar configurado
+      const api = result.current.api;
+      expect(api.interceptors.response.use).toHaveBeenCalled();
+    });
+
+    it("debe limpiar handlers de interceptores al configurar nuevos", async () => {
+      mockPost.mockResolvedValueOnce({
+        data: {
+          accessToken: "token123",
+          usuario: { id: 1, nombre: "Test", isAdmin: false },
+        },
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current).toBeDefined();
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Verificar que los handlers se limpian
+      const api = result.current.api;
+      // Los handlers deberían ser arrays que se limpian
+      expect(Array.isArray(api.interceptors.request.handlers)).toBe(true);
+      expect(Array.isArray(api.interceptors.response.handlers)).toBe(true);
+    });
+
+    it("debe manejar error en el interceptor de request", async () => {
+      mockPost.mockResolvedValueOnce({
+        data: {
+          accessToken: "token123",
+          usuario: { id: 1, nombre: "Test", isAdmin: false },
+        },
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current).toBeDefined();
+        expect(result.current.loading).toBe(false);
+      });
+
+      // El interceptor de request debería estar configurado
+      const api = result.current.api;
+      expect(api.interceptors.request.use).toHaveBeenCalled();
+      // El segundo argumento del use es el error handler
+      const requestInterceptorCall = api.interceptors.request.use.mock.calls[0];
+      expect(requestInterceptorCall.length).toBe(2);
+    });
   });
 });

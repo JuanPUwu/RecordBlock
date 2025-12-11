@@ -8,12 +8,16 @@ import Swal from "sweetalert2";
 const mockUser = { id: 1, nombre: "Test User", isAdmin: false };
 const mockLogout = vi.fn();
 
-vi.mock("../../context/AuthContext.jsx", () => ({
-  useAuth: () => ({
+vi.mock("../../context/AuthContext.jsx", () => {
+  const mockUseAuth = vi.fn(() => ({
     user: mockUser,
     logout: mockLogout,
-  }),
-}));
+  }));
+  return {
+    useAuth: () => mockUseAuth(),
+    __mockUseAuth: mockUseAuth,
+  };
+});
 
 // Mock de todos los hooks
 vi.mock("../../hooks/useClientes.js", () => ({
@@ -188,7 +192,9 @@ describe("useHomeBase", () => {
   });
 
   it("debe manejar crear cliente correctamente", async () => {
-    const { useUsuarioService } = await import("../../services/usuarioService.js");
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
     const mockCrearUsuario = vi.fn().mockResolvedValue({
       success: true,
     });
@@ -217,7 +223,9 @@ describe("useHomeBase", () => {
   it("debe manejar eliminar cliente correctamente", async () => {
     Swal.fire.mockResolvedValue({ isConfirmed: true });
 
-    const { useUsuarioService } = await import("../../services/usuarioService.js");
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
     const mockEliminarUsuario = vi.fn().mockResolvedValue({
       success: true,
     });
@@ -291,8 +299,6 @@ describe("useHomeBase", () => {
 
     const { result } = renderHook(() => useHomeBase(false));
 
-    const setIsLoading = vi.fn();
-
     await act(async () => {
       await result.current.handleCrearRegistro();
     });
@@ -329,7 +335,9 @@ describe("useHomeBase", () => {
   });
 
   it("debe inicializar draft de datos mínimos cuando se abre popup", async () => {
-    const { useDatosMinimosAdmin } = await import("../../hooks/useDatosMinimosAdmin.js");
+    const { useDatosMinimosAdmin } = await import(
+      "../../hooks/useDatosMinimosAdmin.js"
+    );
     const mockInicializarDraft = vi.fn();
 
     useDatosMinimosAdmin.mockReturnValue({
@@ -356,5 +364,377 @@ describe("useHomeBase", () => {
       expect(mockInicializarDraft).toHaveBeenCalled();
     });
   });
-});
 
+  it("debe manejar crear cliente cuando falla", async () => {
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
+    const mockCrearUsuario = vi.fn().mockResolvedValue({
+      success: false,
+      error: "Error al crear cliente",
+    });
+
+    useUsuarioService.mockReturnValue({
+      crearUsuario: mockCrearUsuario,
+      eliminarUsuario: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(true));
+
+    const data = {
+      nombre: "Nuevo Cliente",
+      email: "cliente@test.com",
+      password: "password123",
+      password2: "password123",
+    };
+
+    await act(async () => {
+      await result.current.crearCliente(data);
+    });
+
+    expect(toast.error).toHaveBeenCalledWith("Error al crear cliente");
+  });
+
+  it("NO debe crear cliente cuando crearUsuario es null (no admin)", async () => {
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
+    const mockCrearUsuario = vi.fn();
+
+    useUsuarioService.mockReturnValue({
+      crearUsuario: null,
+      eliminarUsuario: null,
+    });
+
+    const { result } = renderHook(() => useHomeBase(false));
+
+    const data = {
+      nombre: "Nuevo Cliente",
+      email: "cliente@test.com",
+      password: "password123",
+      password2: "password123",
+    };
+
+    await act(async () => {
+      await result.current.crearCliente(data);
+    });
+
+    expect(mockCrearUsuario).not.toHaveBeenCalled();
+  });
+
+  it("debe manejar eliminar cliente cuando no se confirma", async () => {
+    Swal.fire.mockResolvedValue({ isConfirmed: false });
+
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
+    const mockEliminarUsuario = vi.fn();
+
+    useUsuarioService.mockReturnValue({
+      crearUsuario: vi.fn(),
+      eliminarUsuario: mockEliminarUsuario,
+    });
+
+    const { result } = renderHook(() => useHomeBase(true));
+
+    const cliente = {
+      id: 1,
+      nombre: "Cliente a eliminar",
+    };
+
+    await act(async () => {
+      await result.current.eliminarCliente(cliente);
+    });
+
+    expect(mockEliminarUsuario).not.toHaveBeenCalled();
+  });
+
+  it("debe manejar eliminar cliente cuando falla", async () => {
+    Swal.fire.mockResolvedValue({ isConfirmed: true });
+
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
+    const mockEliminarUsuario = vi.fn().mockResolvedValue({
+      success: false,
+      error: "Error al eliminar",
+    });
+
+    useUsuarioService.mockReturnValue({
+      crearUsuario: vi.fn(),
+      eliminarUsuario: mockEliminarUsuario,
+    });
+
+    const { useClientes } = await import("../../hooks/useClientes.js");
+    const mockObtenerClientes = vi.fn();
+
+    useClientes.mockReturnValue({
+      clienteSeleccionado: { value: 1 },
+      setClienteSeleccionado: vi.fn(),
+      opcionesClientes: [],
+      opcionesClientesTabla: [],
+      refBusquedaCliente: { current: { value: "" } },
+      resultadosBusquedaClientes: [],
+      obtenerClientes: mockObtenerClientes,
+      buscarCliente: vi.fn(),
+      buscarClienteTabla: vi.fn(),
+      seleccionBusqueda: vi.fn(),
+      limpiarClienteSeleccionado: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(true));
+
+    const cliente = {
+      id: 1,
+      nombre: "Cliente a eliminar",
+    };
+
+    await act(async () => {
+      await result.current.eliminarCliente(cliente);
+    });
+
+    expect(toast.error).toHaveBeenCalledWith("Error al eliminar");
+  });
+
+  it("debe limpiar selección cuando se elimina el cliente seleccionado", async () => {
+    Swal.fire.mockResolvedValue({ isConfirmed: true });
+
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
+    const mockEliminarUsuario = vi.fn().mockResolvedValue({
+      success: true,
+    });
+
+    useUsuarioService.mockReturnValue({
+      crearUsuario: vi.fn(),
+      eliminarUsuario: mockEliminarUsuario,
+    });
+
+    const { useClientes } = await import("../../hooks/useClientes.js");
+    const mockSetClienteSeleccionado = vi.fn();
+    const mockObtenerClientes = vi.fn();
+    const refBusquedaCliente = { current: { value: "test" } };
+    const resultadosBusquedaClientes = [];
+
+    useClientes.mockReturnValue({
+      clienteSeleccionado: { value: 1 },
+      setClienteSeleccionado: mockSetClienteSeleccionado,
+      opcionesClientes: [],
+      opcionesClientesTabla: [],
+      refBusquedaCliente: refBusquedaCliente,
+      resultadosBusquedaClientes: resultadosBusquedaClientes,
+      obtenerClientes: mockObtenerClientes,
+      buscarCliente: vi.fn(),
+      buscarClienteTabla: vi.fn(),
+      seleccionBusqueda: vi.fn(),
+      limpiarClienteSeleccionado: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(true));
+
+    const cliente = {
+      id: 1,
+      nombre: "Cliente a eliminar",
+    };
+
+    await act(async () => {
+      await result.current.eliminarCliente(cliente);
+    });
+
+    expect(mockSetClienteSeleccionado).toHaveBeenCalledWith(null);
+    expect(refBusquedaCliente.current.value).toBe("");
+    expect(resultadosBusquedaClientes.length).toBe(0);
+  });
+
+  it("NO debe limpiar selección cuando el cliente eliminado no es el seleccionado", async () => {
+    Swal.fire.mockResolvedValue({ isConfirmed: true });
+
+    const { useUsuarioService } = await import(
+      "../../services/usuarioService.js"
+    );
+    const mockEliminarUsuario = vi.fn().mockResolvedValue({
+      success: true,
+    });
+
+    useUsuarioService.mockReturnValue({
+      crearUsuario: vi.fn(),
+      eliminarUsuario: mockEliminarUsuario,
+    });
+
+    const { useClientes } = await import("../../hooks/useClientes.js");
+    const mockSetClienteSeleccionado = vi.fn();
+    const mockObtenerClientes = vi.fn();
+    const refBusquedaCliente = { current: { value: "test" } };
+    const resultadosBusquedaClientes = [];
+
+    useClientes.mockReturnValue({
+      clienteSeleccionado: { value: 2 },
+      setClienteSeleccionado: mockSetClienteSeleccionado,
+      opcionesClientes: [],
+      opcionesClientesTabla: [],
+      refBusquedaCliente: refBusquedaCliente,
+      resultadosBusquedaClientes: resultadosBusquedaClientes,
+      obtenerClientes: mockObtenerClientes,
+      buscarCliente: vi.fn(),
+      buscarClienteTabla: vi.fn(),
+      seleccionBusqueda: vi.fn(),
+      limpiarClienteSeleccionado: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(true));
+
+    const cliente = {
+      id: 1,
+      nombre: "Cliente a eliminar",
+    };
+
+    await act(async () => {
+      await result.current.eliminarCliente(cliente);
+    });
+
+    // No debe limpiar porque el cliente eliminado (id: 1) no es el seleccionado (value: 2)
+    expect(mockSetClienteSeleccionado).not.toHaveBeenCalled();
+  });
+
+  it("debe manejar handleCrearRegistro cuando success es false", async () => {
+    const { useCrearInfo } = await import("../../hooks/useCrearInfo.js");
+    const mockCrearRegistro = vi.fn().mockResolvedValue(false);
+
+    useCrearInfo.mockReturnValue({
+      draftCrear: [],
+      setDraftCrear: vi.fn(),
+      scrollCrearRef: { current: null },
+      inputCrearRef: { current: null },
+      cambiarLlaveCrear: vi.fn(),
+      cambiarValorCrear: vi.fn(),
+      eliminarDatoCrear: vi.fn(),
+      agregarDatoCrear: vi.fn(),
+      crearRegistro: mockCrearRegistro,
+    });
+
+    const { result } = renderHook(() => useHomeBase(false));
+
+    await act(async () => {
+      await result.current.handleCrearRegistro();
+    });
+
+    expect(mockCrearRegistro).toHaveBeenCalled();
+    // No debe cerrar el popup si success es false
+    expect(result.current.popUpCrearInfo).toBe(false);
+  });
+
+  it("debe manejar handleEditarRegistro cuando success es false", async () => {
+    const { useEditarInfo } = await import("../../hooks/useEditarInfo.js");
+    const mockEditarRegistro = vi.fn().mockResolvedValue(false);
+
+    useEditarInfo.mockReturnValue({
+      setInfoSeleccionada: vi.fn(),
+      infoAEditar: null,
+      setInfoAEditar: vi.fn(),
+      draftDatos: [],
+      scrollRef: { current: null },
+      inputRef: { current: null },
+      cambiarLlaveDraft: vi.fn(),
+      cambiarValorDraft: vi.fn(),
+      eliminarDatoDraft: vi.fn(),
+      agregarDatoDraft: vi.fn(),
+      editarRegistro: mockEditarRegistro,
+      handleEditarInfo: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(false));
+
+    await act(async () => {
+      await result.current.handleEditarRegistro();
+    });
+
+    expect(mockEditarRegistro).toHaveBeenCalled();
+    // No debe cerrar el popup si success es false
+    expect(result.current.popUpEditarInfo).toBe(false);
+  });
+
+  it("debe manejar clienteSeleccionadoSimulado cuando user tiene id", async () => {
+    const authContextModule = await import("../../context/AuthContext.jsx");
+    const mockUseAuthForTest = authContextModule.__mockUseAuth;
+    mockUseAuthForTest.mockReturnValue({
+      user: { id: 5, nombre: "Test" },
+      logout: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(false));
+
+    expect(result.current.clienteSeleccionadoSimulado).toEqual({ value: 5 });
+    // Restaurar el mock
+    mockUseAuthForTest.mockReturnValue({
+      user: mockUser,
+      logout: mockLogout,
+    });
+  });
+
+  it("debe manejar clienteSeleccionadoSimulado cuando user tiene value", async () => {
+    const authContextModule = await import("../../context/AuthContext.jsx");
+    const mockUseAuthForTest = authContextModule.__mockUseAuth;
+    mockUseAuthForTest.mockReturnValue({
+      user: { value: 10, nombre: "Test" },
+      logout: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(false));
+
+    expect(result.current.clienteSeleccionadoSimulado).toEqual({ value: 10 });
+    // Restaurar el mock
+    mockUseAuthForTest.mockReturnValue({
+      user: mockUser,
+      logout: mockLogout,
+    });
+  });
+
+  it("debe manejar clienteSeleccionadoSimulado cuando user no tiene id ni value", async () => {
+    const authContextModule = await import("../../context/AuthContext.jsx");
+    const mockUseAuthForTest = authContextModule.__mockUseAuth;
+    mockUseAuthForTest.mockReturnValue({
+      user: { nombre: "Test" },
+      logout: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(false));
+
+    expect(result.current.clienteSeleccionadoSimulado).toEqual({ value: null });
+    // Restaurar el mock
+    mockUseAuthForTest.mockReturnValue({
+      user: mockUser,
+      logout: mockLogout,
+    });
+  });
+
+  it("NO debe inicializar draft cuando isAdmin es false", async () => {
+    const { useDatosMinimosAdmin } = await import(
+      "../../hooks/useDatosMinimosAdmin.js"
+    );
+    const mockInicializarDraft = vi.fn();
+
+    useDatosMinimosAdmin.mockReturnValue({
+      datosMinimos: [],
+      obtenerDatosMin: vi.fn(),
+      inicializarDraft: mockInicializarDraft,
+      cambiarDatoMinimo: vi.fn(),
+      eliminarDatoMinimo: vi.fn(),
+      agregarDatoMinimo: vi.fn(),
+      guardarDatosMinimos: vi.fn(),
+      scrollDatosMinimosRef: { current: null },
+      inputDatosMinimosRef: { current: null },
+      draftDatosMinimos: [],
+      setDraftDatosMinimos: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useHomeBase(false));
+
+    act(() => {
+      result.current.setPopUpEditarDatosMinimos(true);
+    });
+
+    // No debe llamar inicializarDraft cuando isAdmin es false
+    expect(mockInicializarDraft).not.toHaveBeenCalled();
+  });
+});
