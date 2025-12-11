@@ -89,6 +89,7 @@ export const useEditarInfo = (cargarInformacion) => {
   };
 
   return {
+    infoSeleccionada,
     setInfoSeleccionada,
     infoAEditar,
     setInfoAEditar,
